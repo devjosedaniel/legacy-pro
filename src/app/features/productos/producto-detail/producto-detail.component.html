@@ -1,0 +1,197 @@
+<div class="producto-detail">
+  <header class="producto-detail__header">
+    <a routerLink="/dashboard/productos" class="producto-detail__back">← Volver a productos</a>
+
+    @if (product(); as p) {
+      <div class="producto-detail__title-row">
+        <div>
+          <span class="producto-detail__category">{{ getCategoryName(p) }}</span>
+          <h2>{{ p.nombre }}</h2>
+          <p class="producto-detail__meta">
+            <span>{{ p.sku }}</span>
+            @if (p.plancha) {
+              <span>{{ p.plancha.marca }} · Calibre {{ p.plancha.calibre }} · {{ formatMedidas(p.plancha.medidas.ancho, p.plancha.medidas.alto) }}</span>
+            }
+          </p>
+        </div>
+        <a [routerLink]="['/dashboard/productos', p.id, 'editar']" class="btn btn--outline">Editar</a>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error">{{ errorMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <p class="producto-detail__loading">Cargando ficha...</p>
+  } @else if (product(); as p) {
+    @if (stock(); as s) {
+      <section class="producto-detail__stats">
+        <article class="stat panel">
+          <span class="stat__label">Stock propio</span>
+          <strong class="stat__value">{{ s.propio }}</strong>
+        </article>
+        <article class="stat panel">
+          <span class="stat__label">Consignación</span>
+          <strong class="stat__value">{{ consignacionTotal() }}</strong>
+        </article>
+        <article class="stat panel">
+          <span class="stat__label">Stock mínimo</span>
+          <strong class="stat__value">{{ p.stockMinimo }}</strong>
+        </article>
+        <article class="stat panel">
+          <span class="stat__label">Retazos disponibles</span>
+          <strong class="stat__value">{{ retazosDisponiblesCount() }}</strong>
+        </article>
+      </section>
+    }
+
+    <section class="panel producto-detail__section">
+      <h3>Lotes en stock</h3>
+      @if (stock()?.lotes?.length) {
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>Lote</th>
+              <th>Tipo</th>
+              <th>Proveedor</th>
+              <th>Cantidad</th>
+              <th>Ingreso</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (lote of stock()!.lotes; track lote.loteId ?? lote.numeroLote) {
+              <tr>
+                <td><strong>{{ lote.numeroLote }}</strong></td>
+                <td>{{ lote.stockTipo === 'propio' ? 'Propio' : 'Consignación' }}</td>
+                <td>{{ lote.proveedor ?? '—' }}</td>
+                <td>{{ lote.cantidad }}</td>
+                <td>{{ lote.fechaIngreso }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="producto-detail__empty">Sin lotes con stock.</p>
+      }
+    </section>
+
+    <section class="panel producto-detail__section">
+      <header class="producto-detail__section-header">
+        <h3>Retazos</h3>
+        <select [value]="retazoFilter()" (change)="onRetazoFilterChange($any($event.target).value)">
+          <option value="disponible">Disponibles</option>
+          <option value="consumido">Consumidos</option>
+          <option value="inactivo">Inactivos</option>
+          <option value="all">Todos</option>
+        </select>
+      </header>
+
+      @if (retazoSuccess()) {
+        <div class="alert alert--success">{{ retazoSuccess() }}</div>
+      }
+
+      <form [formGroup]="retazoForm" (ngSubmit)="submitRetazo()" class="producto-detail__retazo-form">
+        <p class="producto-detail__form-title">Registrar retazo manual</p>
+        <div class="producto-detail__form-row">
+          <div class="field">
+            <label for="retazo-ancho">Ancho *</label>
+            <input id="retazo-ancho" type="number" formControlName="ancho" min="0.01" step="0.01" />
+          </div>
+          <div class="field">
+            <label for="retazo-alto">Alto *</label>
+            <input id="retazo-alto" type="number" formControlName="alto" min="0.01" step="0.01" />
+          </div>
+          <div class="field">
+            <label for="retazo-notas">Notas</label>
+            <input id="retazo-notas" type="text" formControlName="notas" placeholder="Opcional" />
+          </div>
+          <button type="submit" class="btn btn--primary" [disabled]="isSavingRetazo()">
+            {{ isSavingRetazo() ? 'Guardando...' : '+ Retazo' }}
+          </button>
+        </div>
+      </form>
+
+      @if (filteredRetazos().length === 0) {
+        <p class="producto-detail__empty">No hay retazos con este filtro.</p>
+      } @else {
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Medidas</th>
+              <th>Origen</th>
+              <th>Estado</th>
+              <th>Lote origen</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (retazo of filteredRetazos(); track retazo.id) {
+              <tr>
+                <td><strong>{{ retazo.codigo }}</strong></td>
+                <td>{{ formatMedidas(retazo.ancho, retazo.alto) }}</td>
+                <td>{{ retazoOrigenLabels[retazo.origen] }}</td>
+                <td>
+                  <span class="badge" [attr.data-estado]="retazo.estado">
+                    {{ retazoEstadoLabels[retazo.estado] }}
+                  </span>
+                </td>
+                <td>{{ retazo.loteNumero ?? '—' }}</td>
+                <td class="producto-detail__actions">
+                  @if (retazo.estado === 'disponible') {
+                    <button type="button" class="btn btn--outline btn--sm" (click)="updateRetazoEstado(retazo, 'consumido')">
+                      Consumir
+                    </button>
+                    <button type="button" class="btn btn--outline btn--sm" (click)="updateRetazoEstado(retazo, 'inactivo')">
+                      Inactivar
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+
+    <section class="panel producto-detail__section">
+      <header class="producto-detail__section-header">
+        <h3>Kardex — movimientos</h3>
+        <a routerLink="/dashboard/movimientos/nuevo" class="btn btn--outline btn--sm">+ Movimiento</a>
+      </header>
+
+      @if (movements().length === 0) {
+        <p class="producto-detail__empty">Sin movimientos registrados.</p>
+      } @else {
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>Número</th>
+              <th>Tipo</th>
+              <th>Lote</th>
+              <th>Cantidad</th>
+              <th>Usuario</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (mov of movements(); track mov.id) {
+              <tr>
+                <td><strong>{{ mov.numero }}</strong></td>
+                <td>
+                  <span [attr.data-dir]="mov.direccion">{{ movementLabels[mov.tipo] }}</span>
+                </td>
+                <td>{{ mov.numeroLote }}</td>
+                <td>{{ mov.direccion === 'bajada' ? '-' : '+' }}{{ mov.cantidad }}</td>
+                <td>{{ mov.usuario }}</td>
+                <td>{{ formatDate(mov.fechaRegistro) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  }
+</div>

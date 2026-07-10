@@ -1,0 +1,241 @@
+<div class="retazos">
+  <header class="retazos__header">
+    <div>
+      <h2>Retazos</h2>
+      <p>Busca sobrantes por código de etiqueta (RTZ-AAAA-NNNNNN).</p>
+    </div>
+  </header>
+
+  <section class="retazos__manual panel">
+    <div class="retazos__manual-header">
+      <span class="retazos__manual-icon" aria-hidden="true">➕</span>
+      <div>
+        <h3>Registrar retazo manual</h3>
+        <p>Alta de un retazo por unidad. Elige el producto y las medidas del sobrante.</p>
+      </div>
+    </div>
+
+    @if (manualSuccess()) {
+      <div class="alert alert--success">{{ manualSuccess() }}</div>
+    }
+
+    <form [formGroup]="manualForm" (ngSubmit)="submitManual()" class="retazos__manual-form">
+      <div class="field">
+        <label for="manual-producto">Producto *</label>
+        <select id="manual-producto" formControlName="productId" [disabled]="!productsLoaded()">
+          <option value="">Selecciona un producto</option>
+          @for (product of productos(); track product.id) {
+            <option [value]="product.id">{{ product.nombre }} — {{ product.sku }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="manual-ancho">Ancho *</label>
+        <input id="manual-ancho" type="number" formControlName="ancho" min="0.01" step="0.01" placeholder="cm" />
+      </div>
+
+      <div class="field">
+        <label for="manual-alto">Alto *</label>
+        <input id="manual-alto" type="number" formControlName="alto" min="0.01" step="0.01" placeholder="cm" />
+      </div>
+
+      <div class="field">
+        <label for="manual-codigo">Código RTZ</label>
+        <input
+          id="manual-codigo"
+          type="text"
+          formControlName="codigo"
+          placeholder="Opcional (se genera automático)"
+        />
+      </div>
+
+      <div class="field">
+        <label for="manual-notas">Notas</label>
+        <input id="manual-notas" type="text" formControlName="notas" placeholder="Opcional" />
+      </div>
+
+      <button type="submit" class="btn btn--primary" [disabled]="isSavingManual() || !productsLoaded()">
+        {{ isSavingManual() ? 'Guardando...' : 'Registrar retazo' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="retazos__import panel">
+    <div class="retazos__import-header">
+      <div class="retazos__import-title">
+        <span class="retazos__import-icon" aria-hidden="true">📤</span>
+        <div>
+          <h3>Subir retazos (carga inicial)</h3>
+          <p>
+            Importa retazos existentes desde CSV. No es el flujo diario; sirve para migración o
+            inventario inicial desde otro sistema.
+          </p>
+        </div>
+      </div>
+      <button type="button" class="btn btn--outline btn--sm" (click)="downloadTemplate()">
+        Descargar plantilla
+      </button>
+    </div>
+
+    <div class="retazos__import-format">
+      <strong>Formato CSV</strong> (coma o punto y coma):
+      <code>codigo,sku,ancho,alto,notas</code>
+      <span>— Código opcional (RTZ automático). El SKU debe existir en productos.</span>
+    </div>
+
+    <div class="retazos__import-actions">
+      <label class="btn btn--primary retazos__file-btn">
+        Seleccionar archivo CSV
+        <input type="file" accept=".csv,.txt,text/csv" (change)="onFileSelected($event)" hidden />
+      </label>
+      <button type="button" class="btn btn--outline" (click)="loadTemplate()">Usar plantilla ejemplo</button>
+      @if (selectedFileName()) {
+        <span class="retazos__file-name">{{ selectedFileName() }}</span>
+      }
+    </div>
+
+    @if (parseErrors().length > 0) {
+      <div class="retazos__parse-errors">
+        <strong>Errores al leer el archivo:</strong>
+        <ul>
+          @for (err of parseErrors(); track err.linea) {
+            <li>Línea {{ err.linea }}: {{ err.mensaje }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (previewRows().length > 0) {
+      <div class="retazos__preview">
+        <div class="retazos__preview-header">
+          <strong>{{ previewRows().length }} fila(s) lista(s) para importar</strong>
+          <div>
+            <button type="button" class="btn btn--outline btn--sm" (click)="clearPreview()">Limpiar</button>
+            <button
+              type="button"
+              class="btn btn--primary btn--sm"
+              (click)="importar()"
+              [disabled]="isImporting()"
+            >
+              {{ isImporting() ? 'Importando...' : 'Importar retazos' }}
+            </button>
+          </div>
+        </div>
+        <table class="retazos__table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>SKU producto</th>
+              <th>Ancho</th>
+              <th>Alto</th>
+              <th>Notas</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of previewRows(); track $index) {
+              <tr>
+                <td>{{ row.codigo || '(auto)' }}</td>
+                <td>{{ row.sku }}</td>
+                <td>{{ row.ancho }}</td>
+                <td>{{ row.alto }}</td>
+                <td>{{ row.notas ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (importErrors().length > 0) {
+      <div class="retazos__parse-errors">
+        <strong>Errores en la importación:</strong>
+        <ul>
+          @for (err of importErrors(); track err.linea) {
+            <li>Línea {{ err.linea }}: {{ err.mensaje }}</li>
+          }
+        </ul>
+      </div>
+    }
+  </section>
+
+  <section class="retazos__filters panel">
+    <div class="retazos__search-row">
+      <input
+        type="search"
+        placeholder="Ej: RTZ-2026-000001"
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+        (keyup.enter)="buscar()"
+      />
+      <select [value]="estadoFilter()" (change)="onEstadoChange($any($event.target).value)">
+        <option value="disponible">Disponibles</option>
+        <option value="consumido">Consumidos</option>
+        <option value="inactivo">Inactivos</option>
+        <option value="all">Todos</option>
+      </select>
+      <button type="button" class="btn btn--primary" (click)="buscar()" [disabled]="isLoading()">
+        {{ isLoading() ? 'Buscando...' : 'Buscar' }}
+      </button>
+    </div>
+  </section>
+
+  @if (successMessage()) {
+    <div class="alert alert--success">{{ successMessage() }}</div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert--error">{{ errorMessage() }}</div>
+  }
+
+  @if (searched() && !isLoading() && retazos().length === 0) {
+    <div class="retazos__empty panel">
+      <span>🏷️</span>
+      <h3>Sin resultados</h3>
+      <p>No se encontraron retazos con ese criterio.</p>
+    </div>
+  }
+
+  @if (retazos().length > 0) {
+    <div class="retazos__table-wrap panel">
+      <table class="retazos__table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Producto</th>
+            <th>Medidas</th>
+            <th>Origen</th>
+            <th>Estado</th>
+            <th>Lote</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (retazo of retazos(); track retazo.id) {
+            <tr>
+              <td><strong>{{ retazo.codigo }}</strong></td>
+              <td>
+                @if (retazo.productoNombre) {
+                  <a [routerLink]="['/dashboard/productos', retazo.productId]">{{ retazo.productoNombre }}</a>
+                } @else {
+                  —
+                }
+              </td>
+              <td>{{ formatMedidas(retazo.ancho, retazo.alto) }}</td>
+              <td>{{ retazoOrigenLabels[retazo.origen] }}</td>
+              <td>{{ retazoEstadoLabels[retazo.estado] }}</td>
+              <td>{{ retazo.loteNumero ?? '—' }}</td>
+              <td class="retazos__actions">
+                @if (retazo.estado === 'disponible') {
+                  <button type="button" class="btn btn--outline btn--sm" (click)="updateEstado(retazo, 'consumido')">
+                    Consumir
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

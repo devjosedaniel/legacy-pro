@@ -1,0 +1,168 @@
+<div class="producto-form">
+  <header class="producto-form__header">
+    <a routerLink="/dashboard/productos" class="producto-form__back">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+      </svg>
+      Volver
+    </a>
+    <div>
+      <h2>{{ pageTitle }}</h2>
+      <p>Selecciona la categoría y completa la ficha del producto.</p>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="alert alert--success" role="status">{{ successMessage() }}</div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="producto-form__card panel" novalidate>
+    <section class="producto-form__section">
+      <h3>Categoría</h3>
+      <p class="producto-form__section-desc">El tipo de producto define qué campos se mostrarán.</p>
+
+      @if (isEdit()) {
+        <div class="producto-form__category-selected">
+          <span class="producto-form__category-icon">{{ selectedCategory()?.icon }}</span>
+          <div>
+            <strong>{{ selectedCategory()?.name }}</strong>
+            <span>{{ selectedCategory()?.description }}</span>
+          </div>
+        </div>
+      } @else {
+        <div class="producto-form__categories">
+          @for (cat of categories; track cat.id) {
+            <button
+              type="button"
+              class="producto-form__category-card"
+              [class.producto-form__category-card--active]="categorySlug() === cat.slug"
+              [class.producto-form__category-card--disabled]="!supportedCategories.includes(cat.slug)"
+              (click)="selectCategory(cat.slug)"
+            >
+              <span class="producto-form__category-icon">{{ cat.icon }}</span>
+              <strong>{{ cat.name }}</strong>
+              <span>{{ cat.description }}</span>
+              @if (!supportedCategories.includes(cat.slug)) {
+                <em class="producto-form__category-soon">Próximamente</em>
+              }
+            </button>
+          }
+        </div>
+        @if (form.controls.categorySlug.touched && form.controls.categorySlug.errors?.['required']) {
+          <span class="field__error">Selecciona una categoría</span>
+        }
+      }
+    </section>
+
+    @if (categorySlug() && !isCategorySupported()) {
+      <section class="producto-form__section producto-form__pending">
+        <span>🚧</span>
+        <h3>Formulario en desarrollo</h3>
+        <p>El registro de productos en la categoría <strong>{{ selectedCategory()?.name }}</strong> estará disponible próximamente.</p>
+      </section>
+    }
+
+    @if (isPlanchas()) {
+      <section class="producto-form__section">
+        <h3>Datos de plancha</h3>
+
+        <div class="field" [class.field--error]="form.controls.nombre.touched && form.controls.nombre.invalid">
+          <label for="nombre">Producto / Descripción *</label>
+          <input
+            id="nombre"
+            type="text"
+            formControlName="nombre"
+            placeholder="Ej: PLANCHA FLEXCEL NX 114-045"
+          />
+          <span class="field__hint">Nombre completo según ficha técnica</span>
+          @if (form.controls.nombre.touched && form.controls.nombre.errors?.['required']) {
+            <span class="field__error">El nombre es requerido</span>
+          }
+        </div>
+
+        <div class="field-row">
+          <div class="field" [class.field--error]="form.controls.marcaId.touched && form.controls.marcaId.invalid">
+            <label for="marcaId">Marca *</label>
+            <select id="marcaId" formControlName="marcaId">
+              <option value="" disabled>Seleccionar marca</option>
+              @for (m of marcas(); track m.id) {
+                <option [value]="m.id">{{ m.nombre }}</option>
+              }
+              <option [value]="otraMarca">Otra marca...</option>
+            </select>
+          </div>
+
+          @if (showCustomMarca()) {
+            <div class="field">
+              <label for="marcaCustom">Nombre de marca *</label>
+              <input id="marcaCustom" type="text" formControlName="marcaCustom" placeholder="Ej: TORAY" />
+            </div>
+          }
+
+          <div class="field" [class.field--error]="form.controls.calibreId.touched && form.controls.calibreId.invalid">
+            <label for="calibreId">Calibre *</label>
+            <select id="calibreId" formControlName="calibreId">
+              <option value="" disabled>Seleccionar calibre</option>
+              @for (cal of calibres(); track cal.id) {
+                <option [value]="cal.id">{{ cal.nombre }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field" [class.field--error]="form.controls.ancho.touched && form.controls.ancho.invalid">
+            <label for="ancho">Ancho *</label>
+            <input id="ancho" type="number" formControlName="ancho" placeholder="Ej: 80" min="0.01" step="0.01" />
+          </div>
+          <div class="field" [class.field--error]="form.controls.alto.touched && form.controls.alto.invalid">
+            <label for="alto">Alto *</label>
+            <input id="alto" type="number" formControlName="alto" placeholder="Ej: 106.70" min="0.01" step="0.01" />
+          </div>
+        </div>
+      </section>
+
+      <section class="producto-form__section">
+        <h3>Control de inventario</h3>
+
+        <div class="producto-form__info">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+          </svg>
+          <p>El stock propio y la consignación se registran desde <strong>Movimientos</strong>.</p>
+        </div>
+
+        <div class="field" [class.field--error]="form.controls.stockMinimo.touched && form.controls.stockMinimo.invalid">
+          <label for="stockMinimo">Stock mínimo (propio) *</label>
+          <input id="stockMinimo" type="number" formControlName="stockMinimo" min="0" step="1" />
+        </div>
+      </section>
+
+      <section class="producto-form__section">
+        <h3>Notas adicionales</h3>
+        <div class="field">
+          <label for="notas">Observaciones</label>
+          <textarea id="notas" formControlName="notas" rows="3" placeholder="Notas opcionales..."></textarea>
+        </div>
+      </section>
+    }
+
+    @if (isCategorySupported()) {
+      <footer class="producto-form__footer">
+        <a routerLink="/dashboard/productos" class="btn btn--outline">Cancelar</a>
+        <button type="submit" class="btn btn--primary" [disabled]="isSaving()">
+          @if (isSaving()) {
+            Guardando...
+          } @else if (isEdit()) {
+            Guardar cambios
+          } @else {
+            Registrar producto
+          }
+        </button>
+      </footer>
+    }
+  </form>
+</div>

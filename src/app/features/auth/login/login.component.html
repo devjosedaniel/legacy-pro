@@ -1,0 +1,165 @@
+<div class="login">
+  <section class="login__brand" aria-hidden="true">
+    <div class="login__brand-content">
+      <div class="login__logo">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="40" height="40" rx="10" fill="currentColor" opacity="0.15" />
+          <path
+            d="M12 14h16v3H12v-3zm0 6h16v3H12v-3zm0 6h10v3H12v-3z"
+            fill="currentColor"
+          />
+          <rect x="28" y="26" width="4" height="7" rx="1" fill="currentColor" />
+        </svg>
+        <span>Inventario Pro</span>
+      </div>
+      <h1>Gestiona tu inventario desde cualquier lugar</h1>
+      <p>
+        Control de stock, movimientos y reportes en tiempo real. Optimizado para móviles,
+        tablets y escritorio.
+      </p>
+      <ul class="login__features">
+        <li>
+          <span class="login__feature-icon">📦</span>
+          Control de productos y categorías
+        </li>
+        <li>
+          <span class="login__feature-icon">📊</span>
+          Dashboard con métricas en vivo
+        </li>
+        <li>
+          <span class="login__feature-icon">📱</span>
+          Funciona sin conexión como PWA
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="login__form-section">
+    <div class="login__form-wrapper">
+      <div class="login__mobile-logo">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="40" height="40" rx="10" fill="currentColor" opacity="0.15" />
+          <path
+            d="M12 14h16v3H12v-3zm0 6h16v3H12v-3zm0 6h10v3H12v-3z"
+            fill="currentColor"
+          />
+          <rect x="28" y="26" width="4" height="7" rx="1" fill="currentColor" />
+        </svg>
+        <div>
+          <strong>Inventario Pro</strong>
+          <span>Iniciar sesión</span>
+        </div>
+      </div>
+
+      <header class="login__header">
+        <h2>Bienvenido</h2>
+        <p>Ingresa tus credenciales para continuar</p>
+      </header>
+
+      @if (errorMessage()) {
+        <div class="login__alert" role="alert">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="login__form" novalidate>
+        <div class="field" [class.field--error]="form.controls.usuario.touched && form.controls.usuario.invalid">
+          <label for="usuario">Usuario</label>
+          <div class="field__input-wrap">
+            <svg class="field__icon" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+            </svg>
+            <input
+              id="usuario"
+              type="text"
+              formControlName="usuario"
+              placeholder="Tu usuario Serflex"
+              autocomplete="username"
+            />
+          </div>
+          @if (form.controls.usuario.touched && form.controls.usuario.errors?.['required']) {
+            <span class="field__error">El usuario es requerido</span>
+          }
+        </div>
+
+        <div class="field" [class.field--error]="form.controls.password.touched && form.controls.password.invalid">
+          <label for="password">Contraseña</label>
+          <div class="field__input-wrap">
+            <svg class="field__icon" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fill-rule="evenodd"
+                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <input
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              class="field__toggle"
+              (click)="togglePassword()"
+              [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            >
+              @if (showPassword()) {
+                <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z"
+                    clip-rule="evenodd"
+                  />
+                  <path
+                    d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z"
+                  />
+                </svg>
+              } @else {
+                <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path
+                    fill-rule="evenodd"
+                    d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              }
+            </button>
+          </div>
+          @if (form.controls.password.touched && form.controls.password.errors?.['required']) {
+            <span class="field__error">La contraseña es requerida</span>
+          }
+          @if (form.controls.password.touched && form.controls.password.errors?.['minlength']) {
+            <span class="field__error">Mínimo 6 caracteres</span>
+          }
+        </div>
+
+        <div class="login__options">
+          <label class="checkbox">
+            <input type="checkbox" formControlName="remember" />
+            <span class="checkbox__mark"></span>
+            Recordarme
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn--primary" [disabled]="isLoading()">
+          @if (isLoading()) {
+            <span class="btn__spinner"></span>
+            Ingresando...
+          } @else {
+            Iniciar sesión
+          }
+        </button>
+      </form>
+    </div>
+  </section>
+</div>

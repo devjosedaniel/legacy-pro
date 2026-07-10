@@ -1,0 +1,142 @@
+<div class="home">
+  <section class="home__welcome">
+    <div>
+      <h2>Hola, {{ firstName }} 👋</h2>
+      <p>Resumen en tiempo real de tu inventario Serflex.</p>
+    </div>
+    <div class="home__date">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path
+          fill-rule="evenodd"
+          d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+          clip-rule="evenodd"
+        />
+      </svg>
+      <span>{{ today }}</span>
+    </div>
+  </section>
+
+  <section class="home__stats">
+    @for (stat of stats(); track stat.label) {
+      <article class="stat-card" [style.--accent]="stat.color">
+        <div class="stat-card__header">
+          <span class="stat-card__icon">{{ stat.icon }}</span>
+          <span class="stat-card__trend" [attr.data-trend]="stat.trend">
+            @if (stat.trend === 'up') { ↑ }
+            @if (stat.trend === 'down') { ↓ }
+          </span>
+        </div>
+        <p class="stat-card__value">{{ stat.value }}</p>
+        <p class="stat-card__label">{{ stat.label }}</p>
+        <p class="stat-card__change">{{ stat.change }}</p>
+      </article>
+    }
+  </section>
+
+  <div class="home__grid">
+    <section class="panel">
+      <header class="panel__header">
+        <h3>Actividad reciente</h3>
+        <a routerLink="/dashboard/movimientos" class="panel__badge panel__badge--link">
+          {{ recentActivity().length }} movimientos
+        </a>
+      </header>
+      <div class="panel__body">
+        @if (recentActivity().length === 0) {
+          <p class="panel__empty">Aún no hay movimientos registrados.</p>
+        } @else {
+          <ul class="activity-list">
+            @for (item of recentActivity(); track item.id) {
+              <li class="activity-item">
+                <div class="activity-item__icon" [attr.data-type]="item.type">
+                  @switch (item.type) {
+                    @case ('entrada') { ↓ }
+                    @case ('salida') { ↑ }
+                    @case ('ajuste') { ⟳ }
+                  }
+                </div>
+                <div class="activity-item__content">
+                  <strong>{{ item.product }}</strong>
+                  <span>
+                    {{ item.numero }} · {{ getActivityLabel(item.type) }} ·
+                    {{ item.quantity > 0 ? '+' : '' }}{{ item.quantity }} uds · {{ item.user }}
+                  </span>
+                </div>
+                <time class="activity-item__time">{{ item.time }}</time>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </section>
+
+    <section class="panel" [class.panel--warning]="lowStock().length > 0">
+      <header class="panel__header">
+        <h3>Stock bajo</h3>
+        <span
+          class="panel__badge"
+          [class.panel__badge--warning]="lowStock().length > 0"
+        >
+          {{ lowStock().length }} alertas
+        </span>
+      </header>
+      <div class="panel__body">
+        @if (lowStock().length === 0) {
+          <p class="panel__empty panel__empty--ok">
+            Todos los productos están por encima del stock mínimo.
+          </p>
+        } @else {
+          <ul class="stock-list">
+            @for (item of lowStock(); track item.id) {
+              <li class="stock-item">
+                <div class="stock-item__info">
+                  <strong>{{ item.name }}</strong>
+                  <span>{{ item.sku }} · {{ item.category }}</span>
+                </div>
+                <div class="stock-item__bar-wrap">
+                  <div class="stock-item__bar">
+                    <div
+                      class="stock-item__bar-fill"
+                      [style.width.%]="getStockPercent(item)"
+                    ></div>
+                  </div>
+                  <span class="stock-item__count">{{ item.stock }}/{{ item.minStock }}</span>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </section>
+  </div>
+
+  <section class="home__quick-actions">
+    <h3>Acciones rápidas</h3>
+    <div class="quick-actions">
+      <a routerLink="/dashboard/productos/nuevo" class="quick-action">
+        <span>➕</span>
+        Nuevo producto
+      </a>
+      <a routerLink="/dashboard/movimientos/nuevo" class="quick-action">
+        <span>📥</span>
+        Nuevo movimiento
+      </a>
+      <a routerLink="/dashboard/productos" class="quick-action">
+        <span>📦</span>
+        Ver productos
+      </a>
+      <a routerLink="/dashboard/retazos" class="quick-action">
+        <span>🏷️</span>
+        Buscar retazos
+      </a>
+      <a routerLink="/dashboard/retazos" class="quick-action quick-action--secondary">
+        <span>📤</span>
+        Subir retazos CSV
+      </a>
+      <a routerLink="/dashboard/retazos" class="quick-action">
+        <span>➕</span>
+        Registrar retazo
+      </a>
+    </div>
+  </section>
+</div>

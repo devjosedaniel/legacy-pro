@@ -1,0 +1,162 @@
+<div class="productos">
+  <header class="productos__header">
+    <div>
+      @if (selectedCategoryInfo(); as cat) {
+        <span class="productos__category">{{ cat.icon }} {{ cat.name }}</span>
+      }
+      <h2>Productos</h2>
+      <p>
+        {{ totalCount() }} productos
+        @if (categoryFilter() === 'all') {
+          · {{ consignacionCount() }} con stock en consignación
+        }
+      </p>
+    </div>
+    <a routerLink="/dashboard/productos/nuevo" class="btn btn--primary">
+      + Nuevo producto
+    </a>
+  </header>
+
+  <section class="productos__filters panel">
+    <div class="productos__search">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+      </svg>
+      <input
+        type="search"
+        placeholder="Buscar producto, marca, SKU..."
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+      />
+    </div>
+
+    <div class="productos__filter-row">
+      <div class="field field--inline">
+        <label for="categoria">Categoría</label>
+        <select id="categoria" [value]="categoryFilter()" (change)="onCategoryChange($any($event.target).value)">
+          <option value="all">Todas</option>
+          @for (cat of categories; track cat.id) {
+            <option [value]="cat.slug">{{ cat.icon }} {{ cat.name }}</option>
+          }
+        </select>
+      </div>
+
+      @if (showPlanchaColumns()) {
+        <div class="field field--inline">
+          <label for="marca">Marca</label>
+          <select id="marca" [value]="marcaFilter()" (change)="onMarcaChange($any($event.target).value)">
+            <option value="">Todas</option>
+            @for (marca of marcas(); track marca.id) {
+              <option [value]="marca.id">{{ marca.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field field--inline">
+          <label for="calibre">Calibre</label>
+          <select id="calibre" [value]="calibreFilter()" (change)="onCalibreChange($any($event.target).value)">
+            <option value="">Todos</option>
+            @for (cal of calibres(); track cal.id) {
+              <option [value]="cal.id">{{ cal.nombre }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      <div class="field field--inline">
+        <label for="stock">Tipo de stock</label>
+        <select id="stock" [value]="stockFilter()" (change)="onStockFilterChange($any($event.target).value)">
+          <option value="all">Todos</option>
+          <option value="propio">Con stock propio</option>
+          <option value="consignacion">Con consignación</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn--outline btn--sm" (click)="clearFilters()">
+        Limpiar
+      </button>
+    </div>
+  </section>
+
+  @if (filtered().length === 0) {
+    <div class="productos__empty panel">
+      <span>📦</span>
+      <h3>No se encontraron productos</h3>
+      <p>Prueba con otros filtros o registra un nuevo producto.</p>
+      <a routerLink="/dashboard/productos/nuevo" class="btn btn--primary">+ Nuevo producto</a>
+    </div>
+  } @else {
+    <div class="productos__table-wrap panel">
+      <table class="productos__table">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            @if (categoryFilter() === 'all') {
+              <th>Categoría</th>
+            }
+            @if (showPlanchaColumns()) {
+              <th>Marca</th>
+              <th>Calibre</th>
+              <th>Medidas</th>
+            }
+            <th>Stock</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (product of filtered(); track product.id) {
+            <tr>
+              <td class="productos__name" data-label="Producto">
+                <strong>{{ product.nombre }}</strong>
+                <span class="productos__sku">{{ product.sku }}</span>
+              </td>
+              @if (categoryFilter() === 'all') {
+                <td data-label="Categoría">
+                  <span class="productos__cat-badge">{{ getCategoryIcon(product) }} {{ getCategoryName(product) }}</span>
+                </td>
+              }
+              @if (showPlanchaColumns()) {
+                <td data-label="Marca">{{ product.plancha?.marca ?? '—' }}</td>
+                <td data-label="Calibre">{{ product.plancha?.calibre ?? '—' }}</td>
+                <td data-label="Medidas">
+                  @if (product.plancha) {
+                    <span class="productos__medidas">{{ formatMedidas(product) }}</span>
+                    <span class="productos__medidas-label">Ancho × Alto</span>
+                  } @else {
+                    —
+                  }
+                </td>
+              }
+              <td data-label="Stock">
+                <div class="productos__stock">
+                  <span
+                    class="badge"
+                    [class.badge--stock-ok]="stockBadge(product) === 'ok'"
+                    [class.badge--stock-low]="stockBadge(product) === 'low'"
+                    [class.badge--stock-zero]="stockBadge(product) === 'zero'"
+                    [class.badge--consignacion]="stockBadge(product) === 'consignacion'"
+                  >
+                    {{ stockLabel(product) }}
+                  </span>
+                  @if (hasConsignacion(getStock(product))) {
+                    <span class="productos__consignacion-detail">{{ consignacionDetail(product) }}</span>
+                  }
+                </div>
+              </td>
+              <td class="productos__actions" data-label="">
+                <a [routerLink]="['/dashboard/productos', product.id]" class="btn btn--outline btn--sm">
+                  Ver
+                </a>
+                <a [routerLink]="['/dashboard/productos', product.id, 'editar']" class="btn btn--outline btn--sm">
+                  Editar
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <p class="productos__count">Mostrando {{ filtered().length }} de {{ totalCount() }} productos</p>
+  }
+</div>

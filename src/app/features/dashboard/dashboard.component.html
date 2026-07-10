@@ -1,0 +1,135 @@
+<div class="dashboard">
+  @if (sidebarOpen()) {
+    <div class="dashboard__overlay" (click)="closeSidebar()" aria-hidden="true"></div>
+  }
+
+  <aside class="dashboard__sidebar" [class.dashboard__sidebar--open]="sidebarOpen()">
+    <div class="dashboard__sidebar-header">
+      <div class="dashboard__brand">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="40" height="40" rx="10" fill="currentColor" opacity="0.15" />
+          <path d="M12 14h16v3H12v-3zm0 6h16v3H12v-3zm0 6h10v3H12v-3z" fill="currentColor" />
+          <rect x="28" y="26" width="4" height="7" rx="1" fill="currentColor" />
+        </svg>
+        <span>Inventario Pro</span>
+      </div>
+      <button class="dashboard__close-btn" (click)="closeSidebar()" aria-label="Cerrar menú">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
+          <path
+            fill-rule="evenodd"
+            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <nav class="dashboard__nav">
+      @for (item of navItems; track item.route) {
+        @if (item.disabled) {
+          <span class="dashboard__nav-item dashboard__nav-item--disabled" [title]="'Próximamente'">
+            <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
+            {{ item.label }}
+            <span class="dashboard__badge">Pronto</span>
+          </span>
+        } @else {
+          <a
+            class="dashboard__nav-item"
+            [routerLink]="item.route"
+            routerLinkActive="dashboard__nav-item--active"
+            [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+            (click)="closeSidebar()"
+          >
+            <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
+            {{ item.label }}
+          </a>
+        }
+      }
+    </nav>
+
+    <div class="dashboard__sidebar-footer">
+      <div class="dashboard__user">
+        <div class="dashboard__avatar">{{ user()?.avatar }}</div>
+        <div class="dashboard__user-info">
+          <strong>{{ user()?.name }}</strong>
+          <span>{{ user()?.role }}</span>
+        </div>
+      </div>
+      <button class="dashboard__logout" (click)="logout()">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+          <path
+            fill-rule="evenodd"
+            d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <div class="dashboard__main">
+    <header class="dashboard__header">
+      <button class="dashboard__menu-btn" (click)="toggleSidebar()" aria-label="Abrir menú">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="22" height="22">
+          <path
+            fill-rule="evenodd"
+            d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </button>
+
+      <div class="dashboard__header-title">
+        <h1>Panel de control</h1>
+        <p>Resumen de tu inventario</p>
+      </div>
+
+      <div class="dashboard__header-actions">
+        <button class="dashboard__notification" aria-label="Notificaciones">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
+            <path
+              d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"
+            />
+          </svg>
+          <span class="dashboard__notification-dot"></span>
+        </button>
+        <div class="dashboard__header-avatar">{{ user()?.avatar }}</div>
+      </div>
+    </header>
+
+    <main class="dashboard__content">
+      @if (isLoadingData()) {
+        <div class="dashboard__loading">Cargando inventario...</div>
+      } @else if (loadError()) {
+        <div class="dashboard__error">
+          <p>{{ loadError() }}</p>
+          <button type="button" class="btn btn--primary" (click)="retryLoad()">Reintentar</button>
+        </div>
+      } @else {
+        <router-outlet />
+      }
+    </main>
+  </div>
+
+  <nav class="dashboard__bottom-nav">
+    @for (item of navItems.slice(0, 4); track item.route) {
+      @if (item.disabled) {
+        <span class="dashboard__bottom-item dashboard__bottom-item--disabled">
+          <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
+          <span>{{ item.label }}</span>
+        </span>
+      } @else {
+        <a
+          class="dashboard__bottom-item"
+          [routerLink]="item.route"
+          routerLinkActive="dashboard__bottom-item--active"
+          [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+        >
+          <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    }
+  </nav>
+</div>

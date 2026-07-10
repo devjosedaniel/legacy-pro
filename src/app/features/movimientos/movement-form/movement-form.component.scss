@@ -1,0 +1,231 @@
+@use '../../../shared/styles/forms';
+
+:host { display: block; }
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.movement-form__header { margin-bottom: 1.25rem; }
+
+.movement-form__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
+  &:hover { color: var(--color-primary); }
+}
+
+.movement-form__header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.movement-form__header p {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.alert { margin-bottom: 1rem; }
+
+.movement-form__card {
+  padding: 1.5rem;
+  @media (min-width: 768px) { padding: 2rem; }
+}
+
+.movement-form__section {
+  margin-bottom: 1.75rem;
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+
+.movement-form__direction {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.movement-form__dir-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1.25rem 1rem;
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+
+  em {
+    font-style: normal;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--color-text-muted);
+  }
+
+  &--active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+  }
+
+  &:hover:not(&--active) {
+    border-color: #c7d2fe;
+  }
+}
+
+.movement-form__dir-icon {
+  font-size: 1.5rem;
+  color: var(--color-success);
+
+  &--down { color: var(--color-danger); }
+}
+
+.movement-form__product-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-top: 0.5rem;
+}
+
+.movement-form__product-filters {
+  padding: 1rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+}
+
+.movement-form__filters-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.movement-form__filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.movement-form__filters-count {
+  display: block;
+  margin-top: 0.625rem;
+  font-size: 0.75rem;
+  color: var(--color-text-light);
+}
+
+.movement-form__footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.movement-form__lotes {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.movement-form__lotes-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.movement-form__lotes-empty {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.movement-form__lotes-grid {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.movement-form__lote-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+
+  input {
+    margin-top: 0.2rem;
+    accent-color: var(--color-primary);
+  }
+
+  &--selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+  }
+
+  &:hover:not(&--selected) {
+    border-color: #c7d2fe;
+  }
+}
+
+.movement-form__lote-card-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+
+  strong {
+    width: 100%;
+    font-size: 0.95rem;
+  }
+
+  em {
+    font-style: normal;
+    color: var(--color-text-muted);
+  }
+}
+
+.movement-form__retazo {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.movement-form__retazo-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+}
