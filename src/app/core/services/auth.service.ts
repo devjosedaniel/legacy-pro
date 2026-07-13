@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { catchError, map, Observable, throwError } from 'rxjs';
@@ -18,11 +18,19 @@ export class AuthService {
   private readonly router = inject(Router);
   private readonly currentUser = signal<User | null>(this.loadSession());
   private sessionExpiredHandled = false;
+  private expiryTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly user = this.currentUser.asReadonly();
-  readonly isAuthenticated = computed(
-    () => this.currentUser() !== null && !!this.getToken() && !this.isTokenExpired(),
-  );
+
+  constructor() {
+    if (this.currentUser() && this.getToken() && !this.isTokenExpired()) {
+      this.startSessionWatch();
+    }
+  }
+
+  isAuthenticated(): boolean {
+    return this.currentUser() !== null && !!this.getToken() && !this.isTokenExpired();
+  }
 
   login(credentials: LoginCredentials): Observable<User> {
     return this.http
@@ -38,6 +46,7 @@ export class AuthService {
           this.persistSession(user);
           localStorage.setItem(TOKEN_KEY, response.token);
           localStorage.setItem(TOKEN_EXP_KEY, String(response.exp));
+          this.startSessionWatch();
           return user;
         }),
         catchError((error) => throwError(() => new Error(extractApiError(error)))),
@@ -122,9 +131,26 @@ export class AuthService {
   }
 
   private clearSession(): void {
+    this.stopSessionWatch();
     this.currentUser.set(null);
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(TOKEN_EXP_KEY);
+  }
+
+  private startSessionWatch(): void {
+    this.stopSessionWatch();
+    this.expiryTimer = setInterval(() => {
+      if (this.getToken() && this.isTokenExpired()) {
+        this.handleSessionExpired();
+      }
+    }, 60_000);
+  }
+
+  private stopSessionWatch(): void {
+    if (this.expiryTimer) {
+      clearInterval(this.expiryTimer);
+      this.expiryTimer = null;
+    }
   }
 }
