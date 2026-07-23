@@ -25,17 +25,6 @@
     </div>
 
     <nav class="dashboard__nav">
-      <a
-        class="dashboard__nav-item"
-        [routerLink]="homeNavItem.route"
-        routerLinkActive="dashboard__nav-item--active"
-        [routerLinkActiveOptions]="{ exact: true }"
-        (click)="closeSidebar()"
-      >
-        <span class="dashboard__nav-icon" [attr.data-icon]="homeNavItem.icon"></span>
-        {{ homeNavItem.label }}
-      </a>
-
       <div class="dashboard__nav-group" [class.dashboard__nav-group--open]="inventarioMenuOpen()">
         <button
           type="button"
@@ -63,6 +52,7 @@
                   class="dashboard__nav-item dashboard__nav-item--child"
                   [routerLink]="item.route"
                   routerLinkActive="dashboard__nav-item--active"
+                  [routerLinkActiveOptions]="{ exact: item.route === '/dashboard/inventario' }"
                   (click)="closeSidebar()"
                 >
                   <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
@@ -109,8 +99,8 @@
       </button>
 
       <div class="dashboard__header-title">
-        <h1>Panel de control</h1>
-        <p>Resumen de tu inventario</p>
+        <h1>{{ pageHeader().module }}</h1>
+        <p>{{ pageHeader().title }}</p>
       </div>
 
       <div class="dashboard__header-actions">
@@ -152,7 +142,7 @@
           class="dashboard__bottom-item"
           [routerLink]="item.route"
           routerLinkActive="dashboard__bottom-item--active"
-          [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+          [routerLinkActiveOptions]="{ exact: item.route === '/dashboard/inventario' }"
         >
           <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
           <span>{{ item.label }}</span>

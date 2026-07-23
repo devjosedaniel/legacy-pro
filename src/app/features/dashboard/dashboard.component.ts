@@ -12,11 +12,17 @@ interface NavItem {
 }
 
 const INVENTARIO_ROUTE_PREFIXES = [
+  '/dashboard/inventario',
   '/dashboard/productos',
   '/dashboard/movimientos',
   '/dashboard/retazos',
   '/dashboard/reportes',
 ] as const;
+
+interface PageHeader {
+  module: string;
+  title: string;
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -34,34 +40,32 @@ export class DashboardComponent implements OnInit {
   protected readonly isLoadingData = signal(true);
   protected readonly loadError = signal<string | null>(null);
   protected readonly inventarioMenuOpen = signal(true);
-
-  protected readonly homeNavItem: NavItem = {
-    label: 'Inicio',
-    icon: 'home',
-    route: '/dashboard',
-  };
+  protected readonly pageHeader = signal<PageHeader>({
+    module: 'Inventario',
+    title: 'Resumen',
+  });
 
   protected readonly inventarioNavItems: NavItem[] = [
+    { label: 'Resumen', icon: 'home', route: '/dashboard/inventario' },
     { label: 'Productos', icon: 'box', route: '/dashboard/productos' },
     { label: 'Movimientos', icon: 'arrows', route: '/dashboard/movimientos' },
     { label: 'Retazos', icon: 'grid', route: '/dashboard/retazos' },
     { label: 'Reportes', icon: 'chart', route: '/dashboard/reportes' },
   ];
 
-  /** Barra inferior móvil: inicio + accesos rápidos de inventario */
-  protected readonly bottomNavItems: NavItem[] = [
-    this.homeNavItem,
-    ...this.inventarioNavItems.slice(0, 3),
-  ];
+  /** Barra inferior móvil: accesos de inventario */
+  protected readonly bottomNavItems: NavItem[] = this.inventarioNavItems.slice(0, 4);
 
   ngOnInit(): void {
     this.syncInventarioMenu(this.router.url);
+    this.syncPageHeader(this.router.url);
 
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((event) => {
         const nav = event as NavigationEnd;
         this.syncInventarioMenu(nav.urlAfterRedirects);
+        this.syncPageHeader(nav.urlAfterRedirects);
       });
 
     this.dataService.loadAll().subscribe({
@@ -116,5 +120,32 @@ export class DashboardComponent implements OnInit {
 
   private isInventarioRoute(url: string): boolean {
     return INVENTARIO_ROUTE_PREFIXES.some((prefix) => url.startsWith(prefix));
+  }
+
+  private syncPageHeader(url: string): void {
+    const path = url.split('?')[0];
+
+    if (path.startsWith('/dashboard/inventario')) {
+      this.pageHeader.set({ module: 'Inventario', title: 'Resumen' });
+      return;
+    }
+    if (path.startsWith('/dashboard/productos')) {
+      this.pageHeader.set({ module: 'Inventario', title: 'Productos' });
+      return;
+    }
+    if (path.startsWith('/dashboard/movimientos')) {
+      this.pageHeader.set({ module: 'Inventario', title: 'Movimientos' });
+      return;
+    }
+    if (path.startsWith('/dashboard/retazos')) {
+      this.pageHeader.set({ module: 'Inventario', title: 'Retazos' });
+      return;
+    }
+    if (path.startsWith('/dashboard/reportes')) {
+      this.pageHeader.set({ module: 'Inventario', title: 'Reportes' });
+      return;
+    }
+
+    this.pageHeader.set({ module: 'Legacy Pro', title: 'Inicio' });
   }
 }

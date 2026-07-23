@@ -14,8 +14,9 @@ export const routes: Routes = [
       import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
     canActivate: [authGuard],
     children: [
+      { path: '', redirectTo: 'inventario', pathMatch: 'full' },
       {
-        path: '',
+        path: 'inventario',
         loadComponent: () =>
           import('./features/dashboard/home/dashboard-home.component').then(
             (m) => m.DashboardHomeComponent,
@@ -79,6 +80,6 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-  { path: '**', redirectTo: 'dashboard' },
+  { path: '', redirectTo: 'dashboard/inventario', pathMatch: 'full' },
+  { path: '**', redirectTo: 'dashboard/inventario' },
 ];

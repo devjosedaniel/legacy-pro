@@ -6,8 +6,6 @@ import { Router } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
 
-
-
 @Component({
 
   selector: 'app-login',
@@ -57,7 +55,7 @@ export class LoginComponent implements OnInit {
     }
 
     if (this.auth.isAuthenticated()) {
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/dashboard/inventario']);
     }
   }
 
@@ -99,7 +97,7 @@ export class LoginComponent implements OnInit {
 
         this.isLoading.set(false);
 
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/dashboard/inventario']);
 
       },
 
