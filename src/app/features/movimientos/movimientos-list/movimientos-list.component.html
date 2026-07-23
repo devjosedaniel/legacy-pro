@@ -1,134 +1,152 @@
-<div class="movimientos">
-  <header class="movimientos__header">
-    <div>
-      <h2>Movimientos</h2>
-      <p>{{ subidasCount() }} subidas · {{ bajadasCount() }} bajadas registradas</p>
-    </div>
-    <a routerLink="/dashboard/movimientos/nuevo" class="btn btn--primary">
-      + Nuevo movimiento
-    </a>
-  </header>
-
-  <section class="movimientos__filters panel">
-    <div class="movimientos__search">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-      </svg>
-      <input
-        type="search"
-        placeholder="Buscar por número, lote, producto..."
-        [value]="search()"
-        (input)="search.set($any($event.target).value)"
-      />
-    </div>
-
-    <div class="movimientos__filter-row">
-      <div class="field field--inline">
-        <label for="dir">Dirección</label>
-        <select id="dir" [value]="direccionFilter()" (change)="direccionFilter.set($any($event.target).value)">
-          <option value="all">Todas</option>
-          <option value="subida">↑ Subida</option>
-          <option value="bajada">↓ Bajada</option>
-        </select>
-      </div>
-
-      <div class="field field--inline">
-        <label for="tipo">Tipo</label>
-        <select id="tipo" [value]="tipoFilter()" (change)="tipoFilter.set($any($event.target).value)">
-          <option value="all">Todos</option>
-          @for (entry of movementLabels | keyvalue; track entry.key) {
-            <option [value]="entry.key">{{ entry.value }}</option>
-          }
-        </select>
-      </div>
-
-      <div class="field field--inline">
-        <label for="cat">Categoría</label>
-        <select id="cat" [value]="categoryFilter()" (change)="categoryFilter.set($any($event.target).value)">
-          <option value="all">Todas</option>
-          @for (cat of categories; track cat.id) {
-            <option [value]="cat.slug">{{ cat.name }}</option>
-          }
-        </select>
-      </div>
-
-      <button type="button" class="btn btn--outline btn--sm" (click)="clearFilters()">Limpiar</button>
-    </div>
-  </section>
-
-  @if (filtered().length === 0) {
-    <div class="movimientos__empty panel">
-      <span>🔄</span>
-      <h3>Sin movimientos</h3>
-      <p>Registra el primer movimiento de inventario.</p>
-      <a routerLink="/dashboard/movimientos/nuevo" class="btn btn--primary">+ Nuevo movimiento</a>
-    </div>
-  } @else {
-    <div class="movimientos__table-wrap panel">
-      <table class="movimientos__table">
-        <thead>
-          <tr>
-            <th>Número</th>
-            <th>Fecha</th>
-            <th>Dir.</th>
-            <th>Tipo</th>
-            <th>Producto</th>
-            <th>Lote</th>
-            <th>Cant.</th>
-            <th>Usuario</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (m of filtered(); track m.id) {
-            <tr>
-              <td class="movimientos__num" data-label="Número">
-                <strong>{{ m.numero }}</strong>
-                @if (m.documentoRef) {
-                  <span>{{ m.documentoRef }}</span>
-                }
-              </td>
-              <td data-label="Fecha">
-                {{ formatDate(m.fechaRegistro) }}
-                <span class="movimientos__time">{{ formatTime(m.fechaRegistro) }}</span>
-              </td>
-              <td data-label="Dir.">
-                <span
-                  class="movimientos__dir"
-                  [class.movimientos__dir--subida]="m.direccion === 'subida'"
-                  [class.movimientos__dir--bajada]="m.direccion === 'bajada'"
-                >
-                  {{ m.direccion === 'subida' ? '↑' : '↓' }}
-                </span>
-              </td>
-              <td data-label="Tipo">
-                <span class="movimientos__tipo">{{ movementLabels[m.tipo] }}</span>
-                @if (m.proveedor) {
-                  <span class="movimientos__proveedor">{{ m.proveedor }}</span>
-                }
-              </td>
-              <td class="movimientos__product" data-label="Producto">
-                {{ getProductName(m) }}
-              </td>
-              <td data-label="Lote">
-                <strong>{{ m.numeroLote }}</strong>
-                <span>{{ m.fechaIngreso }}</span>
-              </td>
-              <td data-label="Cant.">
-                <span
-                  class="movimientos__qty"
-                  [class.movimientos__qty--subida]="m.direccion === 'subida'"
-                  [class.movimientos__qty--bajada]="m.direccion === 'bajada'"
-                >
-                  {{ m.direccion === 'subida' ? '+' : '−' }}{{ m.cantidad }}
-                </span>
-              </td>
-              <td data-label="Usuario">{{ m.usuario }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    <p class="movimientos__count">Mostrando {{ filtered().length }} movimientos</p>
-  }
-</div>
+<div class="movimientos">
+  <header class="movimientos__header">
+    <div>
+      <h2>Movimientos</h2>
+      <p>{{ totalSubidas() }} subidas · {{ totalBajadas() }} bajadas registradas</p>
+    </div>
+    <a routerLink="/dashboard/movimientos/nuevo" class="btn btn--primary">
+      + Nuevo movimiento
+    </a>
+  </header>
+
+  <section class="movimientos__filters panel">
+    <div class="movimientos__search">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+      </svg>
+      <input
+        type="search"
+        placeholder="Buscar por número, lote, producto..."
+        [value]="search()"
+        (input)="onSearchInput($any($event.target).value)"
+      />
+    </div>
+
+    <div class="movimientos__filter-row">
+      <div class="field field--inline">
+        <label for="dir">Dirección</label>
+        <select id="dir" [value]="direccionFilter()" (change)="onDireccionChange($any($event.target).value)">
+          <option value="all">Todas</option>
+          <option value="subida">↑ Subida</option>
+          <option value="bajada">↓ Bajada</option>
+        </select>
+      </div>
+
+      <div class="field field--inline">
+        <label for="tipo">Tipo</label>
+        <select id="tipo" [value]="tipoFilter()" (change)="onTipoChange($any($event.target).value)">
+          <option value="all">Todos</option>
+          @for (entry of movementLabels | keyvalue; track entry.key) {
+            <option [value]="entry.key">{{ entry.value }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field field--inline">
+        <label for="cat">Categoría</label>
+        <select id="cat" [value]="categoryFilter()" (change)="onCategoryChange($any($event.target).value)">
+          <option value="all">Todas</option>
+          @for (cat of categories; track cat.id) {
+            <option [value]="cat.slug">{{ cat.name }}</option>
+          }
+        </select>
+      </div>
+
+      <button type="button" class="btn btn--outline btn--sm" (click)="clearFilters()">Limpiar</button>
+    </div>
+  </section>
+
+  @if (loadError()) {
+    <div class="alert alert--error">{{ loadError() }}</div>
+  }
+
+  @if (isLoading()) {
+    <div class="movimientos__empty panel">
+      <p>Cargando movimientos...</p>
+    </div>
+  } @else if (movements().length === 0) {
+    <div class="movimientos__empty panel">
+      <span>🔄</span>
+      <h3>Sin movimientos</h3>
+      <p>No hay resultados con estos filtros.</p>
+      <a routerLink="/dashboard/movimientos/nuevo" class="btn btn--primary">+ Nuevo movimiento</a>
+    </div>
+  } @else {
+    <div class="movimientos__table-wrap panel">
+      <table class="movimientos__table">
+        <thead>
+          <tr>
+            <th>Número</th>
+            <th>Fecha</th>
+            <th>Dir.</th>
+            <th>Tipo</th>
+            <th>Producto</th>
+            <th>Lote</th>
+            <th>Cant.</th>
+            <th>Usuario</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of movements(); track m.id) {
+            <tr>
+              <td class="movimientos__num" data-label="Número">
+                <strong>{{ m.numero }}</strong>
+                @if (m.documentoRef) {
+                  <span>{{ m.documentoRef }}</span>
+                }
+              </td>
+              <td data-label="Fecha">
+                {{ formatDate(m.fechaRegistro) }}
+                <span class="movimientos__time">{{ formatTime(m.fechaRegistro) }}</span>
+              </td>
+              <td data-label="Dir.">
+                <span
+                  class="movimientos__dir"
+                  [class.movimientos__dir--subida]="m.direccion === 'subida'"
+                  [class.movimientos__dir--bajada]="m.direccion === 'bajada'"
+                >
+                  {{ m.direccion === 'subida' ? '↑' : '↓' }}
+                </span>
+              </td>
+              <td data-label="Tipo">
+                <span class="movimientos__tipo">{{ movementLabels[m.tipo] }}</span>
+                @if (m.proveedor) {
+                  <span class="movimientos__proveedor">{{ m.proveedor }}</span>
+                }
+              </td>
+              <td class="movimientos__product" data-label="Producto">
+                {{ getProductName(m) }}
+              </td>
+              <td data-label="Lote">
+                <strong>{{ m.numeroLote }}</strong>
+                <span>{{ m.fechaIngreso }}</span>
+                @if (m.fechaExpiracion) {
+                  <span class="movimientos__expiracion">Exp: {{ m.fechaExpiracion }}</span>
+                }
+              </td>
+              <td data-label="Cant.">
+                <span
+                  class="movimientos__qty"
+                  [class.movimientos__qty--subida]="m.direccion === 'subida'"
+                  [class.movimientos__qty--bajada]="m.direccion === 'bajada'"
+                >
+                  {{ m.direccion === 'subida' ? '+' : '−' }}{{ m.cantidad }}
+                </span>
+              </td>
+              <td data-label="Usuario">{{ m.usuario }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination
+      [page]="page()"
+      [pageSize]="pageSize"
+      [total]="total()"
+      [disabled]="isLoading()"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+</div>
+

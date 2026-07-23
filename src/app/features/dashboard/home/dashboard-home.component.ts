@@ -1,5 +1,6 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { Movement } from '../../../core/models/movement.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { CategoryService } from '../../../core/services/category.service';
@@ -40,13 +41,19 @@ interface LowStockItem {
   templateUrl: './dashboard-home.component.html',
   styleUrl: './dashboard-home.component.scss',
 })
-export class DashboardHomeComponent {
+export class DashboardHomeComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly productService = inject(ProductService);
   private readonly movementService = inject(MovementService);
   private readonly categoryService = inject(CategoryService);
 
   protected readonly user = this.auth.user;
+
+  protected readonly todayKey = new Date().toISOString().split('T')[0];
+  protected readonly movimientosHoy = signal(0);
+  protected readonly entradasHoy = signal(0);
+  protected readonly salidasHoy = signal(0);
+  protected readonly recentMovements = signal<Movement[]>([]);
 
   protected get firstName(): string {
     return this.user()?.name?.split(' ')[0] ?? 'Usuario';
@@ -61,11 +68,6 @@ export class DashboardHomeComponent {
 
   protected readonly stats = computed((): StatCard[] => {
     const products = this.productService.all().filter((p) => p.activo);
-    const movements = this.movementService.all();
-    const todayKey = new Date().toISOString().split('T')[0];
-    const todayMovements = movements.filter((m) => m.fechaRegistro.startsWith(todayKey));
-    const entradasHoy = todayMovements.filter((m) => m.direccion === 'subida').length;
-    const salidasHoy = todayMovements.filter((m) => m.direccion === 'bajada').length;
 
     let stockPropio = 0;
     let stockConsignacion = 0;
@@ -82,6 +84,7 @@ export class DashboardHomeComponent {
     }
 
     const planchasCount = products.filter((p) => p.categorySlug === 'planchas').length;
+    const todayMovements = this.movimientosHoy();
 
     return [
       {
@@ -105,8 +108,8 @@ export class DashboardHomeComponent {
       },
       {
         label: 'Movimientos hoy',
-        value: String(todayMovements.length),
-        change: `${entradasHoy} entradas · ${salidasHoy} salidas`,
+        value: String(todayMovements),
+        change: `${this.entradasHoy()} entradas · ${this.salidasHoy()} salidas`,
         trend: 'neutral',
         icon: '🔄',
         color: '#06b6d4',
@@ -123,7 +126,7 @@ export class DashboardHomeComponent {
   });
 
   protected readonly recentActivity = computed((): ActivityItem[] => {
-    return this.movementService.getRecent(8).map((movement) => ({
+    return this.recentMovements().map((movement) => ({
       id: movement.id,
       type: this.mapActivityType(movement),
       product: this.productService.getById(movement.productId)?.nombre ?? 'Producto',
@@ -155,6 +158,31 @@ export class DashboardHomeComponent {
           this.categoryService.getBySlug(product.categorySlug)?.name ?? product.categorySlug,
       }));
   });
+
+  ngOnInit(): void {
+    const today = this.todayKey;
+    forkJoin({
+      hoy: this.movementService.count({ fechaDesde: today, fechaHasta: today }),
+      entradas: this.movementService.count({
+        fechaDesde: today,
+        fechaHasta: today,
+        direccion: 'subida',
+      }),
+      salidas: this.movementService.count({
+        fechaDesde: today,
+        fechaHasta: today,
+        direccion: 'bajada',
+      }),
+      recientes: this.movementService.fetchPage({ page: 1, pageSize: 8 }),
+    }).subscribe({
+      next: ({ hoy, entradas, salidas, recientes }) => {
+        this.movimientosHoy.set(hoy);
+        this.entradasHoy.set(entradas);
+        this.salidasHoy.set(salidas);
+        this.recentMovements.set(recientes.items);
+      },
+    });
+  }
 
   protected getActivityLabel(type: ActivityItem['type']): string {
     const labels = { entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste' };

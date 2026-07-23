@@ -89,6 +89,50 @@
   overflow-y: auto;
 }
 
+.dashboard__nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.dashboard__nav-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin-left: 0.35rem;
+  padding-left: 0.65rem;
+  border-left: 2px solid rgba(255, 255, 255, 0.12);
+}
+
+.dashboard__nav-item--parent {
+  width: 100%;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+}
+
+.dashboard__nav-item--child {
+  padding: 0.625rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+.dashboard__nav-chevron {
+  margin-left: auto;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+  opacity: 0.75;
+}
+
+.dashboard__nav-group--open .dashboard__nav-chevron {
+  transform: rotate(-135deg);
+  margin-top: 0.2rem;
+}
+
 .dashboard__nav-item {
   display: flex;
   align-items: center;
@@ -130,6 +174,7 @@
   flex-shrink: 0;
 
   &[data-icon='home']::before { content: '🏠'; font-size: 1rem; }
+  &[data-icon='inventory']::before { content: '🗃️'; font-size: 1rem; }
   &[data-icon='box']::before { content: '📦'; font-size: 1rem; }
   &[data-icon='arrows']::before { content: '🔄'; font-size: 1rem; }
   &[data-icon='grid']::before { content: '📂'; font-size: 1rem; }

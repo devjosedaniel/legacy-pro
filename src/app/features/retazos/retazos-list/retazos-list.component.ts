@@ -11,10 +11,13 @@ import {
 import { ProductService } from '../../../core/services/product.service';
 import { RetazoService } from '../../../core/services/retazo.service';
 import { parseRetazosCsv } from '../../../core/utils/retazo-csv.parser';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+
+const PAGE_SIZE = 25;
 
 @Component({
   selector: 'app-retazos-list',
-  imports: [RouterLink, ReactiveFormsModule],
+  imports: [RouterLink, ReactiveFormsModule, PaginationComponent],
   templateUrl: './retazos-list.component.html',
   styleUrl: './retazos-list.component.scss',
 })
@@ -29,6 +32,9 @@ export class RetazosListComponent implements OnInit {
   protected readonly search = signal('');
   protected readonly estadoFilter = signal<RetazoEstado | 'all'>('disponible');
   protected readonly retazos = signal<Retazo[]>([]);
+  protected readonly total = signal(0);
+  protected readonly page = signal(1);
+  protected readonly pageSize = PAGE_SIZE;
   protected readonly isLoading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly successMessage = signal<string | null>(null);
@@ -64,44 +70,56 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
 
   ngOnInit(): void {
     this.productService.ensureLoaded().subscribe({
-      next: () => this.productsLoaded.set(true),
+      next: () => {
+        this.productsLoaded.set(true);
+        this.loadPage(1);
+      },
       error: (err: Error) => this.errorMessage.set(err.message),
     });
   }
 
-  protected onSearch(value: string): void {
+  protected onSearchInput(value: string): void {
     this.search.set(value);
   }
 
   protected onEstadoChange(value: string): void {
     this.estadoFilter.set(value as RetazoEstado | 'all');
-    if (this.searched()) {
-      this.buscar();
-    }
+    this.loadPage(1);
   }
 
   protected buscar(): void {
-    const codigo = this.search().trim();
-    if (codigo.length < 3) {
-      this.errorMessage.set('Escribe al menos 3 caracteres del código.');
-      return;
-    }
+    this.loadPage(1);
+  }
 
+  protected onPageChange(next: number): void {
+    this.loadPage(next);
+  }
+
+  private loadPage(page: number): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
     this.successMessage.set(null);
     this.searched.set(true);
 
-    this.retazoService.listAll({ codigo, estado: this.estadoFilter() }).subscribe({
-      next: (items) => {
-        this.retazos.set(items);
-        this.isLoading.set(false);
-      },
-      error: (err: Error) => {
-        this.isLoading.set(false);
-        this.errorMessage.set(err.message);
-      },
-    });
+    this.retazoService
+      .fetchPage({
+        page,
+        pageSize: PAGE_SIZE,
+        codigo: this.search().trim() || undefined,
+        estado: this.estadoFilter(),
+      })
+      .subscribe({
+        next: (res) => {
+          this.retazos.set(res.items);
+          this.total.set(res.total);
+          this.page.set(res.page);
+          this.isLoading.set(false);
+        },
+        error: (err: Error) => {
+          this.isLoading.set(false);
+          this.errorMessage.set(err.message);
+        },
+      });
   }
 
   protected onFileSelected(event: Event): void {
@@ -153,8 +171,7 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
         this.successMessage.set(result.mensaje);
 
         if (result.totalCreados > 0) {
-          this.retazos.set(result.creados);
-          this.searched.set(true);
+          this.loadPage(1);
           this.previewRows.set([]);
           this.selectedFileName.set('');
         }
@@ -202,9 +219,8 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
           this.isSavingManual.set(false);
           this.manualSuccess.set(`Retazo ${retazo.codigo} registrado correctamente.`);
           this.manualForm.patchValue({ ancho: null, alto: null, codigo: '', notas: '' });
-          this.retazos.set([retazo]);
           this.search.set(retazo.codigo);
-          this.searched.set(true);
+          this.loadPage(1);
         },
         error: (err: Error) => {
           this.isSavingManual.set(false);
@@ -215,7 +231,7 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
 
   protected updateEstado(retazo: Retazo, estado: RetazoEstado): void {
     this.retazoService.updateEstado(retazo.id, estado).subscribe({
-      next: () => this.buscar(),
+      next: () => this.loadPage(this.page()),
       error: (err: Error) => this.errorMessage.set(err.message),
     });
   }

@@ -58,6 +58,7 @@
               <th>Proveedor</th>
               <th>Cantidad</th>
               <th>Ingreso</th>
+              <th>Expiración</th>
             </tr>
           </thead>
           <tbody>
@@ -68,6 +69,7 @@
                 <td>{{ lote.proveedor ?? '—' }}</td>
                 <td>{{ lote.cantidad }}</td>
                 <td>{{ lote.fechaIngreso }}</td>
+                <td>{{ lote.fechaExpiracion ?? '—' }}</td>
               </tr>
             }
           </tbody>
@@ -113,7 +115,9 @@
         </div>
       </form>
 
-      @if (filteredRetazos().length === 0) {
+      @if (loadingRetazos() && retazos().length === 0) {
+        <p class="producto-detail__empty">Cargando retazos...</p>
+      } @else if (retazos().length === 0) {
         <p class="producto-detail__empty">No hay retazos con este filtro.</p>
       } @else {
         <table class="detail-table">
@@ -128,7 +132,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (retazo of filteredRetazos(); track retazo.id) {
+            @for (retazo of retazos(); track retazo.id) {
               <tr>
                 <td><strong>{{ retazo.codigo }}</strong></td>
                 <td>{{ formatMedidas(retazo.ancho, retazo.alto) }}</td>
@@ -153,6 +157,13 @@
             }
           </tbody>
         </table>
+        <app-pagination
+          [page]="retazosPage()"
+          [pageSize]="pageSize"
+          [total]="retazosTotal()"
+          [disabled]="loadingRetazos()"
+          (pageChange)="onRetazosPageChange($event)"
+        />
       }
     </section>
 
@@ -162,7 +173,9 @@
         <a routerLink="/dashboard/movimientos/nuevo" class="btn btn--outline btn--sm">+ Movimiento</a>
       </header>
 
-      @if (movements().length === 0) {
+      @if (loadingMovements() && movements().length === 0) {
+        <p class="producto-detail__empty">Cargando movimientos...</p>
+      } @else if (movements().length === 0) {
         <p class="producto-detail__empty">Sin movimientos registrados.</p>
       } @else {
         <table class="detail-table">
@@ -191,6 +204,13 @@
             }
           </tbody>
         </table>
+        <app-pagination
+          [page]="movementsPage()"
+          [pageSize]="pageSize"
+          [total]="movementsTotal()"
+          [disabled]="loadingMovements()"
+          (pageChange)="onMovementsPageChange($event)"
+        />
       }
     </section>
   }

@@ -1,0 +1,26 @@
+@if (total() > 0) {
+  <nav class="pagination" aria-label="Paginación">
+    <p class="pagination__info">
+      Mostrando {{ rangeStart() }}–{{ rangeEnd() }} de {{ total() }}
+    </p>
+    <div class="pagination__controls">
+      <button
+        type="button"
+        class="btn btn--outline btn--sm"
+        [disabled]="disabled() || page() <= 1"
+        (click)="goTo(page() - 1)"
+      >
+        Anterior
+      </button>
+      <span class="pagination__page">Página {{ page() }} de {{ totalPages() }}</span>
+      <button
+        type="button"
+        class="btn btn--outline btn--sm"
+        [disabled]="disabled() || page() >= totalPages()"
+        (click)="goTo(page() + 1)"
+      >
+        Siguiente
+      </button>
+    </div>
+  </nav>
+}

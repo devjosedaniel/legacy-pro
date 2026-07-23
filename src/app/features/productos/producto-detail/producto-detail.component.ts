@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MOVEMENT_LABELS, Movement } from '../../../core/models/movement.model';
@@ -13,10 +13,13 @@ import { CategoryService } from '../../../core/services/category.service';
 import { MovementService } from '../../../core/services/movement.service';
 import { ProductService } from '../../../core/services/product.service';
 import { RetazoService } from '../../../core/services/retazo.service';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+
+const PAGE_SIZE = 15;
 
 @Component({
   selector: 'app-producto-detail',
-  imports: [RouterLink, ReactiveFormsModule],
+  imports: [RouterLink, ReactiveFormsModule, PaginationComponent],
   templateUrl: './producto-detail.component.html',
   styleUrl: './producto-detail.component.scss',
 })
@@ -31,10 +34,19 @@ export class ProductoDetailComponent implements OnInit {
   protected readonly movementLabels = MOVEMENT_LABELS;
   protected readonly retazoEstadoLabels = RETAZO_ESTADO_LABELS;
   protected readonly retazoOrigenLabels = RETAZO_ORIGEN_LABELS;
+  protected readonly pageSize = PAGE_SIZE;
 
   protected readonly product = signal<Product | null>(null);
   protected readonly retazos = signal<Retazo[]>([]);
+  protected readonly movements = signal<Movement[]>([]);
+  protected readonly retazosTotal = signal(0);
+  protected readonly movementsTotal = signal(0);
+  protected readonly retazosPage = signal(1);
+  protected readonly movementsPage = signal(1);
+  protected readonly retazosDisponiblesCount = signal(0);
   protected readonly isLoading = signal(true);
+  protected readonly loadingMovements = signal(false);
+  protected readonly loadingRetazos = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly retazoFilter = signal<RetazoEstado | 'all'>('disponible');
   protected readonly isSavingRetazo = signal(false);
@@ -46,26 +58,7 @@ export class ProductoDetailComponent implements OnInit {
     notas: [''],
   });
 
-  protected readonly stock = computed(() => {
-    const p = this.product();
-    return p ? this.movementService.getStock(p.id) : null;
-  });
-
-  protected readonly movements = computed((): Movement[] => {
-    const p = this.product();
-    return p ? this.movementService.getByProduct(p.id) : [];
-  });
-
-  protected readonly filteredRetazos = computed(() => {
-    const filter = this.retazoFilter();
-    const items = this.retazos();
-    if (filter === 'all') return items;
-    return items.filter((r) => r.estado === filter);
-  });
-
-  protected readonly retazosDisponiblesCount = computed(
-    () => this.retazos().filter((r) => r.estado === 'disponible').length,
-  );
+  protected readonly stock = signal<ReturnType<MovementService['getStock']> | null>(null);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -100,7 +93,15 @@ export class ProductoDetailComponent implements OnInit {
 
   protected onRetazoFilterChange(value: string): void {
     this.retazoFilter.set(value as RetazoEstado | 'all');
-    this.reloadRetazos();
+    this.loadRetazos(1);
+  }
+
+  protected onRetazosPageChange(page: number): void {
+    this.loadRetazos(page);
+  }
+
+  protected onMovementsPageChange(page: number): void {
+    this.loadMovements(page);
   }
 
   protected submitRetazo(): void {
@@ -127,7 +128,8 @@ export class ProductoDetailComponent implements OnInit {
           this.isSavingRetazo.set(false);
           this.retazoSuccess.set(`Retazo ${retazo.codigo} registrado.`);
           this.retazoForm.reset({ ancho: null, alto: null, notas: '' });
-          this.reloadRetazos();
+          this.loadRetazos(1);
+          this.loadRetazosDisponiblesCount();
         },
         error: (err: Error) => {
           this.isSavingRetazo.set(false);
@@ -138,7 +140,10 @@ export class ProductoDetailComponent implements OnInit {
 
   protected updateRetazoEstado(retazo: Retazo, estado: RetazoEstado): void {
     this.retazoService.updateEstado(retazo.id, estado).subscribe({
-      next: () => this.reloadRetazos(),
+      next: () => {
+        this.loadRetazos(this.retazosPage());
+        this.loadRetazosDisponiblesCount();
+      },
       error: (err: Error) => this.errorMessage.set(err.message),
     });
   }
@@ -150,9 +155,12 @@ export class ProductoDetailComponent implements OnInit {
       next: (product) => {
         this.product.set(product);
         this.movementService.refreshStock(id).subscribe({
-          next: () => {
+          next: (stock) => {
+            this.stock.set(stock);
             this.isLoading.set(false);
-            this.reloadRetazos();
+            this.loadMovements(1);
+            this.loadRetazos(1);
+            this.loadRetazosDisponiblesCount();
           },
           error: () => this.isLoading.set(false),
         });
@@ -164,13 +172,55 @@ export class ProductoDetailComponent implements OnInit {
     });
   }
 
-  private reloadRetazos(): void {
+  private loadMovements(page: number): void {
     const product = this.product();
     if (!product) return;
 
-    const filter = this.retazoFilter();
-    this.retazoService.listByProduct(product.id, filter).subscribe({
-      next: (items) => this.retazos.set(items),
-    });
+    this.loadingMovements.set(true);
+    this.movementService
+      .fetchPage({ productId: product.id, page, pageSize: PAGE_SIZE })
+      .subscribe({
+        next: (res) => {
+          this.movements.set(res.items);
+          this.movementsTotal.set(res.total);
+          this.movementsPage.set(res.page);
+          this.loadingMovements.set(false);
+        },
+        error: () => this.loadingMovements.set(false),
+      });
+  }
+
+  private loadRetazos(page: number): void {
+    const product = this.product();
+    if (!product) return;
+
+    this.loadingRetazos.set(true);
+    this.retazoService
+      .fetchPage({
+        productId: product.id,
+        estado: this.retazoFilter(),
+        page,
+        pageSize: PAGE_SIZE,
+      })
+      .subscribe({
+        next: (res) => {
+          this.retazos.set(res.items);
+          this.retazosTotal.set(res.total);
+          this.retazosPage.set(res.page);
+          this.loadingRetazos.set(false);
+        },
+        error: () => this.loadingRetazos.set(false),
+      });
+  }
+
+  private loadRetazosDisponiblesCount(): void {
+    const product = this.product();
+    if (!product) return;
+
+    this.retazoService
+      .fetchPage({ productId: product.id, estado: 'disponible', page: 1, pageSize: 1 })
+      .subscribe({
+        next: (res) => this.retazosDisponiblesCount.set(res.total),
+      });
   }
 }

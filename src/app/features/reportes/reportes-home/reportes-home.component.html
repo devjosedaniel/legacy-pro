@@ -1,0 +1,111 @@
+<div class="reportes">
+  <header class="reportes__header">
+    <div>
+      <h2>Reportes</h2>
+      <p>Exporta el inventario actual o el cierre de un mes pasado (reconstruido desde movimientos).</p>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error">{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="alert alert--success">{{ successMessage() }}</div>
+  }
+
+  <section class="reportes__content">
+    <article class="report-card panel">
+      <div class="report-card__hero">
+        <div class="report-card__icon-wrap" aria-hidden="true">📋</div>
+        <div class="report-card__hero-text">
+          <div class="report-card__title-row">
+            <h3>Inventario por categoría</h3>
+            <span class="report-card__badge">PDF · A4 horizontal</span>
+          </div>
+          <p>
+            Productos activos con stock propio, consignación por proveedor, subtotales por categoría y
+            alertas de mínimo.
+          </p>
+        </div>
+      </div>
+
+      <div class="report-card__body">
+        <div class="report-card__section">
+          <span class="report-card__section-label">Período del reporte</span>
+          <div class="period-choices">
+            <button
+              type="button"
+              class="period-choice"
+              [class.period-choice--active]="periodMode() === 'actual'"
+              (click)="onPeriodModeChange('actual')"
+            >
+              <span class="period-choice__icon">⚡</span>
+              <span class="period-choice__text">
+                <strong>Hoy</strong>
+                <small>Tiempo real desde lotes</small>
+              </span>
+            </button>
+            <button
+              type="button"
+              class="period-choice"
+              [class.period-choice--active]="periodMode() === 'mes_especifico'"
+              (click)="onPeriodModeChange('mes_especifico')"
+            >
+              <span class="period-choice__icon">📅</span>
+              <span class="period-choice__text">
+                <strong>Otro mes</strong>
+                <small>Cierre al último día del mes</small>
+              </span>
+            </button>
+          </div>
+
+          @if (periodMode() === 'mes_especifico') {
+            <div class="field report-card__month">
+              <label for="mes">Selecciona el mes</label>
+              <input
+                id="mes"
+                type="month"
+                [max]="maxMonth()"
+                [value]="selectedMonth()"
+                (change)="onMonthChange($any($event.target).value)"
+              />
+              <span class="field__hint">
+                Se reconstruye desde movimientos hasta el fin de ese mes (fecha de ingreso o registro).
+              </span>
+            </div>
+          }
+        </div>
+
+        <ul class="report-card__features">
+          <li>Subtotales por categoría</li>
+          <li>Detalle de consignación</li>
+          <li>Fecha y usuario en el documento</li>
+        </ul>
+
+        <div class="report-card__actions">
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="isDownloading()"
+            (click)="downloadInventario()"
+          >
+            @if (isDownloading()) {
+              Generando PDF…
+            } @else {
+              Descargar PDF
+            }
+          </button>
+          <button
+            type="button"
+            class="btn btn--outline"
+            [disabled]="isDownloading()"
+            (click)="useMesAnterior()"
+            title="Descarga el cierre de {{ mesAnteriorLabel() }}"
+          >
+            Mes anterior · {{ mesAnteriorLabel() }}
+          </button>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>

@@ -22,9 +22,11 @@ export interface Movement {
   categorySlug: ProductCategorySlug;
   cantidad: number;
   stockTipo: StockTipo;
+  proveedorId?: string;
   proveedor?: string;
   numeroLote: string;
   fechaIngreso: string;
+  fechaExpiracion?: string;
   documentoRef?: string;
   motivo?: string;
   clienteTrabajo?: string;
@@ -37,7 +39,9 @@ export interface LoteStock {
   productId: string;
   numeroLote: string;
   fechaIngreso: string;
+  fechaExpiracion?: string;
   stockTipo: StockTipo;
+  proveedorId?: string;
   proveedor?: string;
   cantidad: number;
   loteId?: number;
@@ -64,6 +68,8 @@ export interface MovementFormData {
   numeroLote: string;
   loteId?: number;
   fechaIngreso?: string;
+  fechaExpiracion?: string;
+  proveedorId?: string;
   proveedor?: string;
   documentoRef?: string;
   motivo?: string;

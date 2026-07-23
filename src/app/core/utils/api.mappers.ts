@@ -99,6 +99,7 @@ export function mapLote(api: ApiLoteStock): LoteStock {
     productId: api.productId,
     numeroLote: api.numeroLote,
     fechaIngreso: api.fechaIngreso,
+    fechaExpiracion: api.fechaExpiracion,
     stockTipo: api.stockTipo,
     proveedor: api.proveedor,
     cantidad: api.cantidad,
@@ -123,9 +124,15 @@ export function mapMovimiento(api: ApiMovimiento): Movement {
     categorySlug: slug,
     cantidad: api.cantidad,
     stockTipo: api.stock_tipo as StockTipo,
-    proveedor: api.proveedor ?? undefined,
+    proveedor:
+      api.proveedor ??
+      api.proveedor_entidad?.nombre ??
+      (api as ApiMovimiento & { proveedorEntidad?: { nombre: string } }).proveedorEntidad?.nombre ??
+      undefined,
+    proveedorId: api.proveedor_id != null ? String(api.proveedor_id) : undefined,
     numeroLote: api.numero_lote,
     fechaIngreso: api.fecha_ingreso ?? api.created_at.split('T')[0],
+    fechaExpiracion: api.fecha_expiracion ?? undefined,
     documentoRef: api.documento_ref ?? undefined,
     motivo: api.motivo ?? undefined,
     clienteTrabajo: api.cliente_trabajo ?? undefined,

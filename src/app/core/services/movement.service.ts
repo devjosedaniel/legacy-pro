@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { catchError, map, Observable, of, tap, throwError } from 'rxjs';
+import { catchError, map, Observable, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiLoteStock, ApiMovimiento, ApiProducto, ApiRetazo, ApiStock } from '../models/api.model';
 import {
@@ -10,40 +10,81 @@ import {
   MovementType,
   ProductStock,
 } from '../models/movement.model';
+import { PaginatedResult } from '../models/pagination.model';
+import { ProductCategorySlug } from '../models/category.model';
 import { Retazo } from '../models/retazo.model';
 import { extractApiError, mapLote, mapMovimiento, mapRetazo, mapStock } from '../utils/api.mappers';
+
+export interface MovementPageFilters {
+  page?: number;
+  pageSize?: number;
+  productId?: string;
+  direccion?: 'subida' | 'bajada';
+  tipo?: MovementType;
+  categorySlug?: ProductCategorySlug;
+  q?: string;
+  fechaDesde?: string;
+  fechaHasta?: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class MovementService {
   private readonly http = inject(HttpClient);
-  private readonly movements = signal<Movement[]>([]);
   private readonly stockMap = signal<Record<string, ProductStock>>({});
-  private readonly loaded = signal(false);
 
-  readonly all = this.movements.asReadonly();
   readonly stockByProduct = this.stockMap.asReadonly();
 
-  load(): Observable<Movement[]> {
-    const params = new HttpParams().set('limite', '200');
+  fetchPage(filters: MovementPageFilters = {}): Observable<PaginatedResult<Movement>> {
+    const page = filters.page ?? 1;
+    const pageSize = filters.pageSize ?? 25;
+
+    let params = new HttpParams()
+      .set('pagina', String(page))
+      .set('limite', String(pageSize));
+
+    if (filters.productId) {
+      params = params.set('producto_id', filters.productId);
+    }
+    if (filters.direccion) {
+      params = params.set('direccion', filters.direccion);
+    }
+    if (filters.tipo) {
+      params = params.set('tipo', filters.tipo);
+    }
+    if (filters.categorySlug) {
+      params = params.set('categoria_slug', filters.categorySlug);
+    }
+    if (filters.q?.trim()) {
+      params = params.set('q', filters.q.trim());
+    }
+    if (filters.fechaDesde) {
+      params = params.set('fecha_desde', filters.fechaDesde);
+    }
+    if (filters.fechaHasta) {
+      params = params.set('fecha_hasta', filters.fechaHasta);
+    }
+
     return this.http
-      .get<{ ok: boolean; movimientos: ApiMovimiento[] }>(`${environment.apiUrl}/inv/movimientos`, {
-        params,
-      })
+      .get<{
+        ok: boolean;
+        movimientos: ApiMovimiento[];
+        cantidad: number;
+        pagina: number;
+        limite: number;
+      }>(`${environment.apiUrl}/inv/movimientos`, { params })
       .pipe(
-        map((res) => res.movimientos.map(mapMovimiento)),
-        tap((items) => {
-          this.movements.set(items);
-          this.loaded.set(true);
-        }),
+        map((res) => ({
+          items: res.movimientos.map(mapMovimiento),
+          total: res.cantidad,
+          page: res.pagina,
+          pageSize: res.limite,
+        })),
         catchError((error) => throwError(() => new Error(extractApiError(error)))),
       );
   }
 
-  ensureLoaded(): Observable<Movement[]> {
-    if (this.loaded()) {
-      return of(this.movements());
-    }
-    return this.load();
+  count(filters: Omit<MovementPageFilters, 'page' | 'pageSize'> = {}): Observable<number> {
+    return this.fetchPage({ ...filters, page: 1, pageSize: 1 }).pipe(map((res) => res.total));
   }
 
   syncStockFromApi(productos: ApiProducto[]): void {
@@ -128,6 +169,8 @@ export class MovementService {
       cantidad: data.cantidad,
       numero_lote: data.numeroLote.trim().toUpperCase(),
       fecha_ingreso: data.fechaIngreso,
+      fecha_expiracion: data.fechaExpiracion,
+      proveedor_id: data.proveedorId ? Number(data.proveedorId) : undefined,
       proveedor: data.proveedor,
       documento_ref: data.documentoRef,
       motivo: data.motivo,
@@ -155,23 +198,10 @@ export class MovementService {
           movement: mapMovimiento(res.movimiento),
           retazo: res.retazo ? mapRetazo(res.retazo) : undefined,
         })),
-        tap(({ movement }) => this.movements.update((list) => [movement, ...list])),
         tap(({ movement }) => {
           this.refreshStock(movement.productId).subscribe();
         }),
         catchError((error) => throwError(() => new Error(extractApiError(error)))),
       );
-  }
-
-  getByProduct(productId: string): Movement[] {
-    return this.movements()
-      .filter((m) => m.productId === productId)
-      .sort((a, b) => b.fechaRegistro.localeCompare(a.fechaRegistro));
-  }
-
-  getRecent(limit = 50): Movement[] {
-    return [...this.movements()]
-      .sort((a, b) => b.fechaRegistro.localeCompare(a.fechaRegistro))
-      .slice(0, limit);
   }
 }

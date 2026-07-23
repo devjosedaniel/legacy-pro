@@ -70,6 +70,13 @@ export const routes: Routes = [
             (m) => m.RetazosListComponent,
           ),
       },
+      {
+        path: 'reportes',
+        loadComponent: () =>
+          import('./features/reportes/reportes-home/reportes-home.component').then(
+            (m) => m.ReportesHomeComponent,
+          ),
+      },
     ],
   },
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },

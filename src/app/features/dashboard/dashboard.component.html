@@ -11,7 +11,7 @@
           <path d="M12 14h16v3H12v-3zm0 6h16v3H12v-3zm0 6h10v3H12v-3z" fill="currentColor" />
           <rect x="28" y="26" width="4" height="7" rx="1" fill="currentColor" />
         </svg>
-        <span>Inventario Pro</span>
+        <span>Legacy Pro</span>
       </div>
       <button class="dashboard__close-btn" (click)="closeSidebar()" aria-label="Cerrar menú">
         <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
@@ -25,26 +25,54 @@
     </div>
 
     <nav class="dashboard__nav">
-      @for (item of navItems; track item.route) {
-        @if (item.disabled) {
-          <span class="dashboard__nav-item dashboard__nav-item--disabled" [title]="'Próximamente'">
-            <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
-            {{ item.label }}
-            <span class="dashboard__badge">Pronto</span>
-          </span>
-        } @else {
-          <a
-            class="dashboard__nav-item"
-            [routerLink]="item.route"
-            routerLinkActive="dashboard__nav-item--active"
-            [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
-            (click)="closeSidebar()"
-          >
-            <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
-            {{ item.label }}
-          </a>
+      <a
+        class="dashboard__nav-item"
+        [routerLink]="homeNavItem.route"
+        routerLinkActive="dashboard__nav-item--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="closeSidebar()"
+      >
+        <span class="dashboard__nav-icon" [attr.data-icon]="homeNavItem.icon"></span>
+        {{ homeNavItem.label }}
+      </a>
+
+      <div class="dashboard__nav-group" [class.dashboard__nav-group--open]="inventarioMenuOpen()">
+        <button
+          type="button"
+          class="dashboard__nav-item dashboard__nav-item--parent"
+          [class.dashboard__nav-item--active]="isInventarioSectionActive()"
+          [attr.aria-expanded]="inventarioMenuOpen()"
+          (click)="toggleInventarioMenu()"
+        >
+          <span class="dashboard__nav-icon" data-icon="inventory"></span>
+          Inventario
+          <span class="dashboard__nav-chevron" aria-hidden="true"></span>
+        </button>
+
+        @if (inventarioMenuOpen()) {
+          <div class="dashboard__nav-sub">
+            @for (item of inventarioNavItems; track item.route) {
+              @if (item.disabled) {
+                <span class="dashboard__nav-item dashboard__nav-item--child dashboard__nav-item--disabled">
+                  <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
+                  {{ item.label }}
+                  <span class="dashboard__badge">Pronto</span>
+                </span>
+              } @else {
+                <a
+                  class="dashboard__nav-item dashboard__nav-item--child"
+                  [routerLink]="item.route"
+                  routerLinkActive="dashboard__nav-item--active"
+                  (click)="closeSidebar()"
+                >
+                  <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
+                  {{ item.label }}
+                </a>
+              }
+            }
+          </div>
         }
-      }
+      </div>
     </nav>
 
     <div class="dashboard__sidebar-footer">
@@ -113,7 +141,7 @@
   </div>
 
   <nav class="dashboard__bottom-nav">
-    @for (item of navItems.slice(0, 4); track item.route) {
+    @for (item of bottomNavItems; track item.route) {
       @if (item.disabled) {
         <span class="dashboard__bottom-item dashboard__bottom-item--disabled">
           <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>

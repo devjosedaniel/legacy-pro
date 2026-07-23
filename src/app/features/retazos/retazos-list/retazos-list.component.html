@@ -163,9 +163,9 @@
     <div class="retazos__search-row">
       <input
         type="search"
-        placeholder="Ej: RTZ-2026-000001"
+        placeholder="Filtrar por código (opcional)"
         [value]="search()"
-        (input)="onSearch($any($event.target).value)"
+        (input)="onSearchInput($any($event.target).value)"
         (keyup.enter)="buscar()"
       />
       <select [value]="estadoFilter()" (change)="onEstadoChange($any($event.target).value)">
@@ -175,7 +175,7 @@
         <option value="all">Todos</option>
       </select>
       <button type="button" class="btn btn--primary" (click)="buscar()" [disabled]="isLoading()">
-        {{ isLoading() ? 'Buscando...' : 'Buscar' }}
+        {{ isLoading() ? 'Cargando...' : 'Aplicar filtros' }}
       </button>
     </div>
   </section>
@@ -188,7 +188,11 @@
     <div class="alert alert--error">{{ errorMessage() }}</div>
   }
 
-  @if (searched() && !isLoading() && retazos().length === 0) {
+  @if (isLoading() && retazos().length === 0) {
+    <div class="retazos__empty panel">
+      <p>Cargando retazos...</p>
+    </div>
+  } @else if (searched() && !isLoading() && retazos().length === 0) {
     <div class="retazos__empty panel">
       <span>🏷️</span>
       <h3>Sin resultados</h3>
@@ -237,5 +241,13 @@
         </tbody>
       </table>
     </div>
+
+    <app-pagination
+      [page]="page()"
+      [pageSize]="pageSize"
+      [total]="total()"
+      [disabled]="isLoading()"
+      (pageChange)="onPageChange($event)"
+    />
   }
 </div>

@@ -20,10 +20,12 @@ import { CategoryService } from '../../../core/services/category.service';
 import { MarcaService } from '../../../core/services/marca.service';
 import { MovementService } from '../../../core/services/movement.service';
 import { ProductService } from '../../../core/services/product.service';
+import { ProveedorService } from '../../../core/services/proveedor.service';
+import { SearchSelectComponent } from '../../../shared/components/search-select/search-select.component';
 
 @Component({
   selector: 'app-movement-form',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, SearchSelectComponent],
   templateUrl: './movement-form.component.html',
   styleUrl: './movement-form.component.scss',
 })
@@ -33,6 +35,7 @@ export class MovementFormComponent implements OnInit {
   private readonly productService = inject(ProductService);
   private readonly calibreService = inject(CalibreService);
   private readonly marcaService = inject(MarcaService);
+  private readonly proveedorService = inject(ProveedorService);
   private readonly categoryService = inject(CategoryService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
@@ -74,14 +77,28 @@ export class MovementFormComponent implements OnInit {
     () => this.selectedProduct()?.categorySlug === 'planchas',
   );
 
-  protected readonly showProveedor = computed(() => {
+  protected readonly showProveedorSelect = computed(() => this.direccion() === 'subida');
+
+  protected readonly showProveedorReadonly = computed(() => {
     const tipo = this.form.controls.tipo.value;
-    return tipo ? requiresProveedor(tipo) : false;
+    return this.isBajada() && !!tipo && requiresProveedor(tipo);
   });
+
+  protected readonly proveedoresDisponibles = this.proveedorService.all;
+
+  protected readonly proveedorOptions = computed(() =>
+    this.proveedoresDisponibles().map((prov) => ({
+      value: prov.id,
+      label: prov.nombre,
+      hint: prov.identificador,
+    })),
+  );
 
   protected readonly showFechaIngreso = computed(
     () => this.direccion() === 'subida' && this.isPlanchas(),
   );
+
+  protected readonly showFechaExpiracion = computed(() => this.direccion() === 'subida');
 
   protected readonly showLoteSelect = computed(
     () => this.isBajada() && this.availableLotes().length > 0,
@@ -106,6 +123,8 @@ export class MovementFormComponent implements OnInit {
     numeroLote: ['', Validators.required],
     loteKey: [''],
     fechaIngreso: [new Date().toISOString().split('T')[0]],
+    fechaExpiracion: [''],
+    proveedorId: [''],
     proveedor: [''],
     documentoRef: [''],
     motivo: [''],
@@ -146,6 +165,7 @@ export class MovementFormComponent implements OnInit {
   ngOnInit(): void {
     this.marcaService.ensureLoaded('planchas').subscribe();
     this.calibreService.ensureLoaded().subscribe();
+    this.proveedorService.ensureLoaded().subscribe();
     this.categorySlug.set(this.form.controls.categorySlug.value as ProductCategorySlug);
 
     this.form.controls.categorySlug.valueChanges.subscribe((slug) => {
@@ -169,6 +189,9 @@ export class MovementFormComponent implements OnInit {
     this.form.controls.tipo.setValue(tipos[0]);
     this.form.controls.loteKey.reset('');
     this.form.controls.numeroLote.reset('');
+    this.form.controls.proveedorId.reset('');
+    this.form.controls.proveedor.reset('');
+    this.form.controls.fechaExpiracion.reset('');
     this.availableLotes.set([]);
     this.updateValidators();
     this.errorMessage.set(null);
@@ -235,6 +258,16 @@ export class MovementFormComponent implements OnInit {
 
     const raw = this.form.getRawValue();
 
+    if (
+      this.direccion() === 'subida' &&
+      raw.fechaExpiracion &&
+      raw.fechaIngreso &&
+      raw.fechaExpiracion < raw.fechaIngreso
+    ) {
+      this.errorMessage.set('La fecha de expiración no puede ser anterior a la fecha de ingreso.');
+      return;
+    }
+
     if (this.isBajada() && this.showLotePicker() && this.availableLotes().length > 0 && !this.selectedLote()) {
       this.errorMessage.set('Selecciona el lote que se dará de baja.');
       return;
@@ -254,6 +287,8 @@ export class MovementFormComponent implements OnInit {
       numeroLote: raw.numeroLote,
       loteId: selectedLote?.loteId,
       fechaIngreso: raw.fechaIngreso || undefined,
+      fechaExpiracion: raw.fechaExpiracion || undefined,
+      proveedorId: raw.proveedorId || undefined,
       proveedor: raw.proveedor || undefined,
       documentoRef: raw.documentoRef || undefined,
       motivo: raw.motivo || undefined,
@@ -320,13 +355,6 @@ export class MovementFormComponent implements OnInit {
 
     const product = this.productService.getById(productId);
     this.selectedProduct.set(product ?? null);
-
-    if (product?.plancha && this.direccion() === 'subida' && !this.form.controls.proveedor.value) {
-      const marca = product.plancha.marca;
-      if (requiresProveedor(this.form.controls.tipo.value)) {
-        this.form.controls.proveedor.setValue(marca);
-      }
-    }
 
     this.loadLotes(productId);
     this.updateValidators();
@@ -400,6 +428,7 @@ export class MovementFormComponent implements OnInit {
     const lote = this.form.controls.numeroLote;
     const loteKeyControl = this.form.controls.loteKey;
     const fecha = this.form.controls.fechaIngreso;
+    const proveedorId = this.form.controls.proveedorId;
     const proveedor = this.form.controls.proveedor;
     const cantidad = this.form.controls.cantidad;
 
@@ -422,7 +451,8 @@ export class MovementFormComponent implements OnInit {
     ]);
 
     fecha.setValidators(isSubida && isPlanchas ? [Validators.required] : []);
-    proveedor.setValidators(tipo && requiresProveedor(tipo) ? [Validators.required] : []);
+    proveedorId.setValidators(isSubida ? [Validators.required] : []);
+    proveedor.setValidators(isBajada && tipo && requiresProveedor(tipo) ? [Validators.required] : []);
 
     const retazoAncho = this.form.controls.retazoAncho;
     const retazoAlto = this.form.controls.retazoAlto;
@@ -439,6 +469,7 @@ export class MovementFormComponent implements OnInit {
     lote.updateValueAndValidity();
     loteKeyControl.updateValueAndValidity();
     fecha.updateValueAndValidity();
+    proveedorId.updateValueAndValidity();
     proveedor.updateValueAndValidity();
     cantidad.updateValueAndValidity();
     retazoAncho.updateValueAndValidity();

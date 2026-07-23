@@ -211,6 +211,14 @@
             <input id="fecha" type="date" formControlName="fechaIngreso" />
           </div>
         }
+
+        @if (showFechaExpiracion()) {
+          <div class="field">
+            <label for="fecha-expiracion">Fecha de expiración</label>
+            <input id="fecha-expiracion" type="date" formControlName="fechaExpiracion" />
+            <span class="field__hint">Opcional</span>
+          </div>
+        }
       </div>
 
       @if (direccion() === 'subida' && isPlanchas()) {
@@ -220,10 +228,27 @@
         </div>
       }
 
-      @if (showProveedor()) {
-        <div class="field" [class.field--error]="form.controls.proveedor.touched && form.controls.proveedor.invalid">
+      @if (showProveedorSelect()) {
+        <div class="field" [class.field--error]="form.controls.proveedorId.touched && form.controls.proveedorId.invalid">
           <label for="proveedor">Proveedor *</label>
-          <input id="proveedor" type="text" formControlName="proveedor" placeholder="Ej: KODAK, NYLOFLEX" />
+          <app-search-select
+            inputId="proveedor"
+            formControlName="proveedorId"
+            [options]="proveedorOptions()"
+            placeholder="Seleccionar proveedor"
+            searchPlaceholder="Buscar proveedor…"
+            emptyMessage="No hay proveedores con ese criterio"
+          />
+          @if (form.controls.proveedorId.touched && form.controls.proveedorId.invalid) {
+            <span class="field__error">Selecciona un proveedor</span>
+          }
+        </div>
+      }
+
+      @if (showProveedorReadonly() && form.controls.proveedor.value) {
+        <div class="field">
+          <label>Proveedor (del lote)</label>
+          <input type="text" [value]="form.controls.proveedor.value" readonly />
         </div>
       }
 

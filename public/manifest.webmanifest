@@ -1,7 +1,7 @@
 {
-  "name": "Inventario Pro",
-  "short_name": "Inventario",
-  "description": "Sistema de gestión de inventario profesional",
+  "name": "Legacy Pro",
+  "short_name": "Legacy Pro",
+  "description": "Legacy Pro — gestión de inventario",
   "display": "standalone",
   "orientation": "portrait-primary",
   "scope": "./",

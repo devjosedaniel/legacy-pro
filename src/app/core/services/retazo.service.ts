@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiRetazo } from '../models/api.model';
+import { PaginatedResult } from '../models/pagination.model';
 import { Retazo, RetazoCargaResult, RetazoCargaRow, RetazoEstado, RetazoFormData } from '../models/retazo.model';
 import { extractApiError, mapRetazo } from '../utils/api.mappers';
 
@@ -10,17 +11,22 @@ import { extractApiError, mapRetazo } from '../utils/api.mappers';
 export class RetazoService {
   private readonly http = inject(HttpClient);
 
-  listAll(filters?: {
+  fetchPage(filters?: {
+    page?: number;
+    pageSize?: number;
     estado?: RetazoEstado | 'all';
     codigo?: string;
     productId?: string;
-  }): Observable<Retazo[]> {
-    let params = new HttpParams();
+  }): Observable<PaginatedResult<Retazo>> {
+    const page = filters?.page ?? 1;
+    const pageSize = filters?.pageSize ?? 25;
 
-    if (filters?.estado && filters.estado !== 'all') {
+    let params = new HttpParams()
+      .set('pagina', String(page))
+      .set('limite', String(pageSize));
+
+    if (filters?.estado) {
       params = params.set('estado', filters.estado);
-    } else if (filters?.estado === 'all') {
-      params = params.set('estado', 'all');
     }
 
     if (filters?.codigo?.trim()) {
@@ -31,29 +37,46 @@ export class RetazoService {
       params = params.set('producto_id', filters.productId);
     }
 
+    const url = filters?.productId
+      ? `${environment.apiUrl}/inv/productos/${filters.productId}/retazos`
+      : `${environment.apiUrl}/inv/retazos`;
+
     return this.http
-      .get<{ ok: boolean; retazos: ApiRetazo[] }>(`${environment.apiUrl}/inv/retazos`, { params })
+      .get<{
+        ok: boolean;
+        retazos: ApiRetazo[];
+        cantidad: number;
+        pagina: number;
+        limite: number;
+      }>(url, { params })
       .pipe(
-        map((res) => res.retazos.map(mapRetazo)),
+        map((res) => ({
+          items: res.retazos.map(mapRetazo),
+          total: res.cantidad,
+          page: res.pagina,
+          pageSize: res.limite,
+        })),
         catchError((error) => throwError(() => new Error(extractApiError(error)))),
       );
   }
 
-  listByProduct(productId: string, estado?: RetazoEstado | 'all'): Observable<Retazo[]> {
-    let params = new HttpParams();
-    if (estado) {
-      params = params.set('estado', estado);
-    }
+  listAll(filters?: {
+    estado?: RetazoEstado | 'all';
+    codigo?: string;
+    productId?: string;
+    page?: number;
+    pageSize?: number;
+  }): Observable<Retazo[]> {
+    return this.fetchPage(filters).pipe(map((res) => res.items));
+  }
 
-    return this.http
-      .get<{ ok: boolean; retazos: ApiRetazo[] }>(
-        `${environment.apiUrl}/inv/productos/${productId}/retazos`,
-        { params },
-      )
-      .pipe(
-        map((res) => res.retazos.map(mapRetazo)),
-        catchError((error) => throwError(() => new Error(extractApiError(error)))),
-      );
+  listByProduct(
+    productId: string,
+    estado?: RetazoEstado | 'all',
+    page = 1,
+    pageSize = 25,
+  ): Observable<PaginatedResult<Retazo>> {
+    return this.fetchPage({ productId, estado, page, pageSize });
   }
 
   search(codigo: string): Observable<{ retazo?: Retazo; retazos: Retazo[] }> {

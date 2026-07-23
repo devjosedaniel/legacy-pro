@@ -1,0 +1,79 @@
+<div
+  class="search-select"
+  [class.search-select--open]="open()"
+  [class.search-select--disabled]="disabled()"
+>
+  <button
+    type="button"
+    class="search-select__trigger"
+    [id]="inputId() || null"
+    [disabled]="disabled()"
+    (click)="togglePanel()"
+    [attr.aria-expanded]="open()"
+    aria-haspopup="listbox"
+  >
+    @if (selectedOption(); as selected) {
+      <span class="search-select__value">{{ selected.label }}</span>
+    } @else {
+      <span class="search-select__placeholder">{{ placeholder() }}</span>
+    }
+
+    <span class="search-select__icons">
+      @if (selectedOption() && !disabled()) {
+        <span
+          class="search-select__clear"
+          role="button"
+          tabindex="-1"
+          aria-label="Limpiar selección"
+          (click)="clearSelection($event)"
+        >
+          ×
+        </span>
+      }
+      <svg class="search-select__chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+      </svg>
+    </span>
+  </button>
+
+  @if (open()) {
+    <div class="search-select__panel">
+      <div class="search-select__search-wrap">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+        </svg>
+        <input
+          #searchInput
+          type="search"
+          class="search-select__search"
+          [placeholder]="searchPlaceholder()"
+          [value]="query()"
+          (input)="onSearchInput($any($event.target).value)"
+          (click)="$event.stopPropagation()"
+        />
+      </div>
+
+      <ul class="search-select__list" role="listbox">
+        @if (filteredOptions().length === 0) {
+          <li class="search-select__empty">{{ emptyMessage() }}</li>
+        } @else {
+          @for (option of filteredOptions(); track option.value) {
+            <li>
+              <button
+                type="button"
+                class="search-select__option"
+                [class.search-select__option--selected]="option.value === value()"
+                (click)="selectOption(option)"
+              >
+                <span>{{ option.label }}</span>
+                @if (option.hint) {
+                  <em>{{ option.hint }}</em>
+                }
+              </button>
+            </li>
+          }
+        }
+      </ul>
+    </div>
+  }
+</div>

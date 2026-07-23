@@ -35,6 +35,7 @@ export interface ApiLoteStock {
   productId: string;
   numeroLote: string;
   fechaIngreso: string;
+  fechaExpiracion?: string;
   stockTipo: StockTipo;
   proveedor?: string;
   cantidad: number;
@@ -59,7 +60,10 @@ export interface ApiMovimiento {
   stock_tipo: StockTipo;
   numero_lote: string;
   fecha_ingreso: string | null;
+  fecha_expiracion?: string | null;
   proveedor: string | null;
+  proveedor_id?: number | null;
+  proveedor_entidad?: { id: number; nombre: string } | null;
   documento_ref: string | null;
   motivo: string | null;
   cliente_trabajo: string | null;
