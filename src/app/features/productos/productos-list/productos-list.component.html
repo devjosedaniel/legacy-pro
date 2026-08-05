@@ -97,7 +97,7 @@
             @if (showPlanchaColumns()) {
               <th>Marca</th>
               <th>Calibre</th>
-              <th>Medidas</th>
+              <th>Medidas (cm)</th>
             }
             <th>Stock</th>
             <th></th>
@@ -121,7 +121,7 @@
                 <td data-label="Medidas">
                   @if (product.plancha) {
                     <span class="productos__medidas">{{ formatMedidas(product) }}</span>
-                    <span class="productos__medidas-label">Ancho × Alto</span>
+                    <span class="productos__medidas-label">Ancho × Alto · cm</span>
                   } @else {
                     —
                   }

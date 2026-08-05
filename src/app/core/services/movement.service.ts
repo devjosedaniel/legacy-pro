@@ -9,6 +9,7 @@ import {
   MovementFormData,
   MovementType,
   ProductStock,
+  StockTipo,
 } from '../models/movement.model';
 import { PaginatedResult } from '../models/pagination.model';
 import { ProductCategorySlug } from '../models/category.model';
@@ -21,10 +22,17 @@ export interface MovementPageFilters {
   productId?: string;
   direccion?: 'subida' | 'bajada';
   tipo?: MovementType;
+  stockTipo?: StockTipo;
   categorySlug?: ProductCategorySlug;
   q?: string;
   fechaDesde?: string;
   fechaHasta?: string;
+}
+
+export interface ConsumoConsignacionResumen {
+  totalPlanchas: number;
+  totalMovimientos: number;
+  porProveedor: { proveedor: string; cantidad: number; movimientos: number }[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -53,6 +61,9 @@ export class MovementService {
     }
     if (filters.categorySlug) {
       params = params.set('categoria_slug', filters.categorySlug);
+    }
+    if (filters.stockTipo) {
+      params = params.set('stock_tipo', filters.stockTipo);
     }
     if (filters.q?.trim()) {
       params = params.set('q', filters.q.trim());
@@ -85,6 +96,39 @@ export class MovementService {
 
   count(filters: Omit<MovementPageFilters, 'page' | 'pageSize'> = {}): Observable<number> {
     return this.fetchPage({ ...filters, page: 1, pageSize: 1 }).pipe(map((res) => res.total));
+  }
+
+  fetchConsumoConsignacion(filters: {
+    productId?: string;
+    fechaDesde?: string;
+    fechaHasta?: string;
+  } = {}): Observable<ConsumoConsignacionResumen> {
+    let params = new HttpParams();
+    if (filters.productId) {
+      params = params.set('producto_id', filters.productId);
+    }
+    if (filters.fechaDesde) {
+      params = params.set('fecha_desde', filters.fechaDesde);
+    }
+    if (filters.fechaHasta) {
+      params = params.set('fecha_hasta', filters.fechaHasta);
+    }
+
+    return this.http
+      .get<{
+        ok: boolean;
+        total_planchas: number;
+        total_movimientos: number;
+        por_proveedor: { proveedor: string; cantidad: number; movimientos: number }[];
+      }>(`${environment.apiUrl}/inv/movimientos/consumo-consignacion`, { params })
+      .pipe(
+        map((res) => ({
+          totalPlanchas: res.total_planchas,
+          totalMovimientos: res.total_movimientos,
+          porProveedor: res.por_proveedor ?? [],
+        })),
+        catchError((error) => throwError(() => new Error(extractApiError(error)))),
+      );
   }
 
   syncStockFromApi(productos: ApiProducto[]): void {
@@ -159,10 +203,7 @@ export class MovementService {
     return lotes;
   }
 
-  registerMovement(
-    data: MovementFormData,
-    _usuario: string,
-  ): Observable<{ movement: Movement; retazo?: Retazo }> {
+  registerMovement(data: MovementFormData): Observable<{ movement: Movement; retazo?: Retazo }> {
     const body: Record<string, unknown> = {
       producto_id: Number(data.productId),
       tipo: data.tipo,

@@ -14,6 +14,9 @@ import { MovementService } from '../../../core/services/movement.service';
 import { ProductService } from '../../../core/services/product.service';
 import { RetazoService } from '../../../core/services/retazo.service';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { formatMedidasCm } from '../../../core/utils/dimensions.util';
+import { formatMovimientoStockOrigen } from '../../../core/utils/stock-tipo.util';
+import { ConsumoConsignacionResumen } from '../../../core/services/movement.service';
 
 const PAGE_SIZE = 15;
 
@@ -51,6 +54,8 @@ export class ProductoDetailComponent implements OnInit {
   protected readonly retazoFilter = signal<RetazoEstado | 'all'>('disponible');
   protected readonly isSavingRetazo = signal(false);
   protected readonly retazoSuccess = signal<string | null>(null);
+  protected readonly consumoConsignacion = signal<ConsumoConsignacionResumen | null>(null);
+  protected readonly formatStockOrigen = formatMovimientoStockOrigen;
 
   protected readonly retazoForm = this.fb.nonNullable.group({
     ancho: [null as number | null, [Validators.required, Validators.min(0.01)]],
@@ -72,7 +77,7 @@ export class ProductoDetailComponent implements OnInit {
   }
 
   protected formatMedidas(ancho: number, alto: number): string {
-    return `${ancho} × ${alto}`;
+    return formatMedidasCm(ancho, alto);
   }
 
   protected consignacionTotal(): number {
@@ -161,6 +166,7 @@ export class ProductoDetailComponent implements OnInit {
             this.loadMovements(1);
             this.loadRetazos(1);
             this.loadRetazosDisponiblesCount();
+            this.loadConsumoConsignacion(id);
           },
           error: () => this.isLoading.set(false),
         });
@@ -222,5 +228,12 @@ export class ProductoDetailComponent implements OnInit {
       .subscribe({
         next: (res) => this.retazosDisponiblesCount.set(res.total),
       });
+  }
+
+  private loadConsumoConsignacion(productId: string): void {
+    this.movementService.fetchConsumoConsignacion({ productId }).subscribe({
+      next: (res) => this.consumoConsignacion.set(res),
+      error: () => this.consumoConsignacion.set(null),
+    });
   }
 }

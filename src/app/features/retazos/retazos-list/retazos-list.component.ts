@@ -11,6 +11,7 @@ import {
 import { ProductService } from '../../../core/services/product.service';
 import { RetazoService } from '../../../core/services/retazo.service';
 import { parseRetazosCsv } from '../../../core/utils/retazo-csv.parser';
+import { formatMedidasCm } from '../../../core/utils/dimensions.util';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 const PAGE_SIZE = 25;
@@ -237,7 +238,7 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
   }
 
   protected formatMedidas(ancho: number, alto: number): string {
-    return `${ancho} × ${alto}`;
+    return formatMedidasCm(ancho, alto);
   }
 
   private processCsvText(text: string): void {

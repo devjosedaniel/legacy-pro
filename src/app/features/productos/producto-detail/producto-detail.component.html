@@ -41,6 +41,10 @@
           <strong class="stat__value">{{ p.stockMinimo }}</strong>
         </article>
         <article class="stat panel">
+          <span class="stat__label">Usadas en consignación</span>
+          <strong class="stat__value">{{ consumoConsignacion()?.totalPlanchas ?? 0 }}</strong>
+        </article>
+        <article class="stat panel">
           <span class="stat__label">Retazos disponibles</span>
           <strong class="stat__value">{{ retazosDisponiblesCount() }}</strong>
         </article>
@@ -95,15 +99,15 @@
       }
 
       <form [formGroup]="retazoForm" (ngSubmit)="submitRetazo()" class="producto-detail__retazo-form">
-        <p class="producto-detail__form-title">Registrar retazo manual</p>
+        <p class="producto-detail__form-title">Registrar retazo manual <span class="producto-detail__unit-hint">(medidas en cm)</span></p>
         <div class="producto-detail__form-row">
           <div class="field">
-            <label for="retazo-ancho">Ancho *</label>
-            <input id="retazo-ancho" type="number" formControlName="ancho" min="0.01" step="0.01" />
+            <label for="retazo-ancho">Ancho (cm) *</label>
+            <input id="retazo-ancho" type="number" formControlName="ancho" min="0.01" step="0.01" placeholder="cm" />
           </div>
           <div class="field">
-            <label for="retazo-alto">Alto *</label>
-            <input id="retazo-alto" type="number" formControlName="alto" min="0.01" step="0.01" />
+            <label for="retazo-alto">Alto (cm) *</label>
+            <input id="retazo-alto" type="number" formControlName="alto" min="0.01" step="0.01" placeholder="cm" />
           </div>
           <div class="field">
             <label for="retazo-notas">Notas</label>
@@ -124,7 +128,7 @@
           <thead>
             <tr>
               <th>Código</th>
-              <th>Medidas</th>
+              <th>Medidas (cm)</th>
               <th>Origen</th>
               <th>Estado</th>
               <th>Lote origen</th>
@@ -183,6 +187,7 @@
             <tr>
               <th>Número</th>
               <th>Tipo</th>
+              <th>Origen</th>
               <th>Lote</th>
               <th>Cantidad</th>
               <th>Usuario</th>
@@ -196,9 +201,10 @@
                 <td>
                   <span [attr.data-dir]="mov.direccion">{{ movementLabels[mov.tipo] }}</span>
                 </td>
+                <td>{{ formatStockOrigen(mov.stockTipo, mov.proveedor) }}</td>
                 <td>{{ mov.numeroLote }}</td>
                 <td>{{ mov.direccion === 'bajada' ? '-' : '+' }}{{ mov.cantidad }}</td>
-                <td>{{ mov.usuario }}</td>
+                <td>{{ mov.usuario || '—' }}</td>
                 <td>{{ formatDate(mov.fechaRegistro) }}</td>
               </tr>
             }

@@ -22,6 +22,7 @@ import { MovementService } from '../../../core/services/movement.service';
 import { ProductService } from '../../../core/services/product.service';
 import { ProveedorService } from '../../../core/services/proveedor.service';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select.component';
+import { formatMedidasCm } from '../../../core/utils/dimensions.util';
 
 @Component({
   selector: 'app-movement-form',
@@ -222,7 +223,7 @@ export class MovementFormComponent implements OnInit {
   protected getProductLabelShort(product: Product): string {
     if (product.plancha) {
       const m = product.plancha.medidas;
-      return `${m.ancho} × ${m.alto}`;
+      return formatMedidasCm(m.ancho, m.alto);
     }
     return product.nombre;
   }
@@ -230,7 +231,7 @@ export class MovementFormComponent implements OnInit {
   protected getProductLabel(product: Product): string {
     if (product.plancha) {
       const m = product.plancha.medidas;
-      return `${product.nombre} · ${product.plancha.marca} · ${product.plancha.calibre} · ${m.ancho}×${m.alto}`;
+      return `${product.nombre} · ${product.plancha.marca} · ${product.plancha.calibre} · ${formatMedidasCm(m.ancho, m.alto)}`;
     }
     return product.nombre;
   }
@@ -302,13 +303,11 @@ export class MovementFormComponent implements OnInit {
       data.retazoNotas = raw.retazoNotas || undefined;
     }
 
-    const usuario = this.auth.user()?.name ?? 'Usuario';
-
     this.isSaving.set(true);
     this.errorMessage.set(null);
     this.successMessage.set(null);
 
-    this.movementService.registerMovement(data, usuario).subscribe({
+    this.movementService.registerMovement(data).subscribe({
       next: ({ movement, retazo }) => {
         this.isSaving.set(false);
         let msg = `Movimiento ${movement.numero} registrado correctamente.`;

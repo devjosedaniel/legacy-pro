@@ -260,13 +260,14 @@
           </label>
 
           @if (form.controls.registrarRetazo.value) {
+            <p class="movement-form__retazo-hint field__hint">Medidas del sobrante en centímetros (cm).</p>
             <div class="field-row">
               <div class="field">
-                <label for="retazo-ancho">Ancho sobrante *</label>
+                <label for="retazo-ancho">Ancho sobrante (cm) *</label>
                 <input id="retazo-ancho" type="number" formControlName="retazoAncho" min="0.01" step="0.01" />
               </div>
               <div class="field">
-                <label for="retazo-alto">Alto sobrante *</label>
+                <label for="retazo-alto">Alto sobrante (cm) *</label>
                 <input id="retazo-alto" type="number" formControlName="retazoAlto" min="0.01" step="0.01" />
               </div>
               <div class="field">

@@ -112,8 +112,8 @@ export function mapMovimiento(api: ApiMovimiento): Movement {
   const creador = api.creado_por ?? (api as ApiMovimiento & { creadoPor?: ApiMovimiento['creado_por'] }).creadoPor;
   const usuario =
     creador?.nombre?.trim() ||
-    creador?.usuario ||
-    'Usuario';
+    creador?.usuario?.trim() ||
+    '';
 
   return {
     id: String(api.id),

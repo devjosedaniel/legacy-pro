@@ -9,10 +9,12 @@ import {
   Movement,
   MovementDirection,
   MovementType,
+  StockTipo,
 } from '../../../core/models/movement.model';
+import { ConsumoConsignacionResumen, MovementService } from '../../../core/services/movement.service';
 import { CategoryService } from '../../../core/services/category.service';
-import { MovementService } from '../../../core/services/movement.service';
 import { ProductService } from '../../../core/services/product.service';
+import { formatMovimientoStockOrigen } from '../../../core/utils/stock-tipo.util';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 const PAGE_SIZE = 25;
@@ -33,11 +35,13 @@ export class MovimientosListComponent implements OnInit {
   protected readonly movementLabels = MOVEMENT_LABELS;
   protected readonly categories = this.categoryService.getActive();
   protected readonly pageSize = PAGE_SIZE;
+  protected readonly formatStockOrigen = formatMovimientoStockOrigen;
 
   protected readonly search = signal('');
   protected readonly direccionFilter = signal<MovementDirection | 'all'>('all');
   protected readonly tipoFilter = signal<MovementType | 'all'>('all');
   protected readonly categoryFilter = signal<ProductCategorySlug | 'all'>('all');
+  protected readonly stockTipoFilter = signal<StockTipo | 'all'>('all');
 
   protected readonly movements = signal<Movement[]>([]);
   protected readonly total = signal(0);
@@ -46,6 +50,7 @@ export class MovimientosListComponent implements OnInit {
   protected readonly loadError = signal<string | null>(null);
   protected readonly totalSubidas = signal(0);
   protected readonly totalBajadas = signal(0);
+  protected readonly consumoConsignacion = signal<ConsumoConsignacionResumen | null>(null);
 
   ngOnInit(): void {
     this.reload$
@@ -53,6 +58,7 @@ export class MovimientosListComponent implements OnInit {
       .subscribe(() => this.loadPage(this.page()));
 
     this.loadSummaryCounts();
+    this.loadConsumoConsignacion();
     this.reload$.next();
   }
 
@@ -76,6 +82,20 @@ export class MovimientosListComponent implements OnInit {
 
   protected onCategoryChange(value: string): void {
     this.categoryFilter.set(value as ProductCategorySlug | 'all');
+    this.page.set(1);
+    this.reload$.next();
+  }
+
+  protected onStockTipoChange(value: string): void {
+    this.stockTipoFilter.set(value as StockTipo | 'all');
+    this.page.set(1);
+    this.reload$.next();
+  }
+
+  protected applyConsumoConsignacionFilter(): void {
+    this.direccionFilter.set('bajada');
+    this.tipoFilter.set('salida_uso');
+    this.stockTipoFilter.set('consignacion');
     this.page.set(1);
     this.reload$.next();
   }
@@ -108,8 +128,17 @@ export class MovimientosListComponent implements OnInit {
     this.direccionFilter.set('all');
     this.tipoFilter.set('all');
     this.categoryFilter.set('all');
+    this.stockTipoFilter.set('all');
     this.page.set(1);
     this.reload$.next();
+  }
+
+  protected isConsignacionFilterActive(): boolean {
+    return (
+      this.stockTipoFilter() === 'consignacion' &&
+      this.tipoFilter() === 'salida_uso' &&
+      this.direccionFilter() === 'bajada'
+    );
   }
 
   private loadPage(page: number): void {
@@ -119,6 +148,7 @@ export class MovimientosListComponent implements OnInit {
     const dir = this.direccionFilter();
     const tipo = this.tipoFilter();
     const cat = this.categoryFilter();
+    const stock = this.stockTipoFilter();
 
     this.movementService
       .fetchPage({
@@ -128,6 +158,7 @@ export class MovimientosListComponent implements OnInit {
         direccion: dir === 'all' ? undefined : dir,
         tipo: tipo === 'all' ? undefined : tipo,
         categorySlug: cat === 'all' ? undefined : cat,
+        stockTipo: stock === 'all' ? undefined : stock,
       })
       .subscribe({
         next: (res) => {
@@ -149,6 +180,13 @@ export class MovimientosListComponent implements OnInit {
     });
     this.movementService.count({ direccion: 'bajada' }).subscribe({
       next: (n) => this.totalBajadas.set(n),
+    });
+  }
+
+  private loadConsumoConsignacion(): void {
+    this.movementService.fetchConsumoConsignacion().subscribe({
+      next: (res) => this.consumoConsignacion.set(res),
+      error: () => this.consumoConsignacion.set(null),
     });
   }
 }

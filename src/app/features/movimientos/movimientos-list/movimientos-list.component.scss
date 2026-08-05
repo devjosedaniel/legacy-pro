@@ -27,6 +27,87 @@
 
 .movimientos__filters { padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
 
+.movimientos__consignacion {
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+  border-color: #bfdbfe;
+}
+
+.movimientos__consignacion-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.movimientos__consignacion-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.movimientos__consignacion-value {
+  font-size: 0.95rem;
+  color: var(--color-text);
+
+  strong {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #1d4ed8;
+  }
+}
+
+.movimientos__consignacion-meta {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.movimientos__consignacion-proveedores {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(191, 219, 254, 0.8);
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+
+    strong {
+      color: var(--color-text);
+      font-weight: 600;
+    }
+  }
+}
+
+.movimientos__filter-hint {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.75rem;
+}
+
+.movimientos__stock {
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.badge--propio {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
 .movimientos__search {
   position: relative;
   margin-bottom: 1rem;

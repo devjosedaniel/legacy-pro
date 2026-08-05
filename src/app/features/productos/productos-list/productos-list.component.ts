@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { formatMedidasCm } from '../../../core/utils/dimensions.util';
 import { ProductCategorySlug } from '../../../core/models/category.model';
 import { ProductStock } from '../../../core/models/movement.model';
 import { Product } from '../../../core/models/product.model';
@@ -152,7 +153,7 @@ export class ProductosListComponent {
   protected formatMedidas(product: Product): string {
     const m = product.plancha?.medidas;
     if (!m) return '—';
-    return `${this.formatNumber(m.ancho)} × ${this.formatNumber(m.alto)}`;
+    return formatMedidasCm(m.ancho, m.alto);
   }
 
   protected formatNumber(n: number): string {
