@@ -1,5 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { formatMedidasCm } from '../../../core/utils/dimensions.util';
 import { ProductCategorySlug } from '../../../core/models/category.model';
 import { ProductStock } from '../../../core/models/movement.model';
@@ -16,12 +16,15 @@ import { ProductService } from '../../../core/services/product.service';
   templateUrl: './productos-list.component.html',
   styleUrl: './productos-list.component.scss',
 })
-export class ProductosListComponent {
+export class ProductosListComponent implements OnInit {
   private readonly productService = inject(ProductService);
   private readonly movementService = inject(MovementService);
   private readonly calibreService = inject(CalibreService);
   private readonly marcaService = inject(MarcaService);
   private readonly categoryService = inject(CategoryService);
+  private readonly router = inject(Router);
+
+  protected readonly successMessage = signal<string | null>(null);
 
   protected readonly categories = this.categoryService.getActive();
 
@@ -102,6 +105,15 @@ export class ProductosListComponent {
     if (cat === 'all') return null;
     return this.categoryService.getBySlug(cat);
   });
+
+  ngOnInit(): void {
+    const message = (history.state as { successMessage?: string } | null)?.successMessage;
+    if (message) {
+      this.successMessage.set(message);
+      history.replaceState({ ...history.state, successMessage: undefined }, '');
+      setTimeout(() => this.successMessage.set(null), 5000);
+    }
+  }
 
   protected onSearch(value: string): void {
     this.search.set(value);

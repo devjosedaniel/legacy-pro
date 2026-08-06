@@ -163,8 +163,9 @@ export class ProductoFormComponent implements OnInit {
         if (this.isEdit()) {
           this.successMessage.set('Producto actualizado correctamente.');
         } else {
-          this.successMessage.set('Producto registrado. Registra el stock desde Movimientos.');
-          setTimeout(() => this.router.navigate(['/dashboard/productos']), 800);
+          this.router.navigate(['/dashboard/productos'], {
+            state: { successMessage: 'Producto guardado correctamente.' },
+          });
         }
       },
       error: (err: Error) => {
