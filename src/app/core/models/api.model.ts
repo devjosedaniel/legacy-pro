@@ -53,6 +53,8 @@ export interface ApiStock {
 export interface ApiMovimiento {
   id: number;
   numero: string;
+  grupo_id?: string | null;
+  ingreso_numero?: string | null;
   producto_id: number;
   tipo: MovementType;
   direccion: MovementDirection;
@@ -69,6 +71,10 @@ export interface ApiMovimiento {
   cliente_trabajo: string | null;
   notas: string | null;
   created_at: string;
+  estado?: boolean;
+  puede_anular?: boolean;
+  anulado_at?: string | null;
+  anulado_por?: { id: number; nombre: string | null; usuario: string } | null;
   producto?: ApiProducto;
   creado_por?: { id: number; nombre: string | null; usuario: string };
 }
@@ -105,6 +111,7 @@ export interface ApiRetazo {
   estado: string;
   notas: string | null;
   created_at: string;
+  updated_at?: string;
   producto?: ApiProducto;
   lote_origen?: { id: number; numero_lote: string };
   movimiento_origen?: { id: number; numero: string };

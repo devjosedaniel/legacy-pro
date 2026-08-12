@@ -1,5 +1,7 @@
 import { ProductCategorySlug } from './category.model';
 
+export type MovementEstadoFiltro = 'activos' | 'anulados';
+
 export type MovementDirection = 'subida' | 'bajada';
 
 export type MovementType =
@@ -16,6 +18,12 @@ export type StockTipo = 'propio' | 'consignacion';
 export interface Movement {
   id: string;
   numero: string;
+  grupoId?: string;
+  ingresoNumero?: string;
+  activo: boolean;
+  puedeAnular: boolean;
+  anuladoAt?: string;
+  anuladoPor?: string;
   direccion: MovementDirection;
   tipo: MovementType;
   productId: string;
@@ -58,6 +66,24 @@ export interface ProductStock {
   consignacion: ConsignacionStock[];
   total: number;
   lotes: LoteStock[];
+}
+
+export interface MovementLineFormData {
+  productId: string;
+  cantidad: number;
+  numeroLote: string;
+  fechaExpiracion?: string;
+}
+
+export interface BatchMovementFormData {
+  tipo: MovementType;
+  proveedorId: string;
+  fechaIngreso?: string;
+  fechaExpiracion?: string;
+  documentoRef?: string;
+  motivo?: string;
+  notas?: string;
+  lineas: MovementLineFormData[];
 }
 
 export interface MovementFormData {
@@ -133,4 +159,11 @@ export function requiresFechaIngreso(direccion: MovementDirection): boolean {
 
 export function loteKey(lote: Pick<LoteStock, 'numeroLote' | 'stockTipo' | 'proveedor'>): string {
   return `${lote.numeroLote}|${lote.stockTipo}|${lote.proveedor ?? ''}`;
+}
+
+/** Anulación real: inactivo en BD y con fecha de anulación registrada. */
+export function isMovimientoAnulado(
+  movement: Pick<Movement, 'activo' | 'anuladoAt'>,
+): boolean {
+  return !movement.activo && !!movement.anuladoAt;
 }

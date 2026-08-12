@@ -4,8 +4,10 @@ import { catchError, map, Observable, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiLoteStock, ApiMovimiento, ApiProducto, ApiRetazo, ApiStock } from '../models/api.model';
 import {
+  BatchMovementFormData,
   LoteStock,
   Movement,
+  MovementEstadoFiltro,
   MovementFormData,
   MovementType,
   ProductStock,
@@ -16,6 +18,10 @@ import { ProductCategorySlug } from '../models/category.model';
 import { Retazo } from '../models/retazo.model';
 import { extractApiError, mapLote, mapMovimiento, mapRetazo, mapStock } from '../utils/api.mappers';
 
+export interface MovementListMeta {
+  anulacionHorasLimite: number;
+}
+
 export interface MovementPageFilters {
   page?: number;
   pageSize?: number;
@@ -24,6 +30,7 @@ export interface MovementPageFilters {
   tipo?: MovementType;
   stockTipo?: StockTipo;
   categorySlug?: ProductCategorySlug;
+  estado?: MovementEstadoFiltro;
   q?: string;
   fechaDesde?: string;
   fechaHasta?: string;
@@ -42,7 +49,7 @@ export class MovementService {
 
   readonly stockByProduct = this.stockMap.asReadonly();
 
-  fetchPage(filters: MovementPageFilters = {}): Observable<PaginatedResult<Movement>> {
+  fetchPage(filters: MovementPageFilters = {}): Observable<PaginatedResult<Movement> & MovementListMeta> {
     const page = filters.page ?? 1;
     const pageSize = filters.pageSize ?? 25;
 
@@ -65,6 +72,9 @@ export class MovementService {
     if (filters.stockTipo) {
       params = params.set('stock_tipo', filters.stockTipo);
     }
+    if (filters.estado) {
+      params = params.set('estado', filters.estado);
+    }
     if (filters.q?.trim()) {
       params = params.set('q', filters.q.trim());
     }
@@ -82,6 +92,7 @@ export class MovementService {
         cantidad: number;
         pagina: number;
         limite: number;
+        anulacion_horas_limite?: number;
       }>(`${environment.apiUrl}/inv/movimientos`, { params })
       .pipe(
         map((res) => ({
@@ -89,6 +100,7 @@ export class MovementService {
           total: res.cantidad,
           page: res.pagina,
           pageSize: res.limite,
+          anulacionHorasLimite: res.anulacion_horas_limite ?? 72,
         })),
         catchError((error) => throwError(() => new Error(extractApiError(error)))),
       );
@@ -96,6 +108,17 @@ export class MovementService {
 
   count(filters: Omit<MovementPageFilters, 'page' | 'pageSize'> = {}): Observable<number> {
     return this.fetchPage({ ...filters, page: 1, pageSize: 1 }).pipe(map((res) => res.total));
+  }
+
+  fetchConfig(): Observable<MovementListMeta> {
+    return this.http
+      .get<{ ok: boolean; anulacion_horas_limite: number }>(
+        `${environment.apiUrl}/inv/movimientos/config`,
+      )
+      .pipe(
+        map((res) => ({ anulacionHorasLimite: res.anulacion_horas_limite ?? 72 })),
+        catchError((error) => throwError(() => new Error(extractApiError(error)))),
+      );
   }
 
   fetchConsumoConsignacion(filters: {
@@ -242,6 +265,73 @@ export class MovementService {
         tap(({ movement }) => {
           this.refreshStock(movement.productId).subscribe();
         }),
+        catchError((error) => throwError(() => new Error(extractApiError(error)))),
+      );
+  }
+
+  registerBatchMovement(data: BatchMovementFormData): Observable<{
+    ingresoNumero: string;
+    grupoId: string;
+    movements: Movement[];
+  }> {
+    const body = {
+      tipo: data.tipo,
+      proveedor_id: Number(data.proveedorId),
+      fecha_ingreso: data.fechaIngreso,
+      fecha_expiracion: data.fechaExpiracion,
+      documento_ref: data.documentoRef,
+      motivo: data.motivo,
+      notas: data.notas,
+      lineas: data.lineas.map((linea) => ({
+        producto_id: Number(linea.productId),
+        cantidad: linea.cantidad,
+        numero_lote: linea.numeroLote.trim().toUpperCase(),
+        fecha_expiracion: linea.fechaExpiracion,
+      })),
+    };
+
+    return this.http
+      .post<{
+        ok: boolean;
+        ingreso_numero: string;
+        grupo_id: string;
+        movimientos: ApiMovimiento[];
+      }>(`${environment.apiUrl}/inv/movimientos/lote`, body)
+      .pipe(
+        map((res) => ({
+          ingresoNumero: res.ingreso_numero,
+          grupoId: res.grupo_id,
+          movements: res.movimientos.map(mapMovimiento),
+        })),
+        tap(({ movements }) => {
+          for (const movement of movements) {
+            this.refreshStock(movement.productId).subscribe();
+          }
+        }),
+        catchError((error) => throwError(() => new Error(extractApiError(error)))),
+      );
+  }
+
+  anularMovement(movementId: string): Observable<void> {
+    return this.http
+      .post<{ ok: boolean; mensaje: string }>(
+        `${environment.apiUrl}/inv/movimientos/${movementId}/anular`,
+        {},
+      )
+      .pipe(
+        map(() => undefined),
+        catchError((error) => throwError(() => new Error(extractApiError(error)))),
+      );
+  }
+
+  anularGrupo(grupoId: string): Observable<void> {
+    return this.http
+      .post<{ ok: boolean; mensaje: string }>(
+        `${environment.apiUrl}/inv/movimientos/grupo/${encodeURIComponent(grupoId)}/anular`,
+        {},
+      )
+      .pipe(
+        map(() => undefined),
         catchError((error) => throwError(() => new Error(extractApiError(error)))),
       );
   }

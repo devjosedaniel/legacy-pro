@@ -1,8 +1,9 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ProductCategorySlug } from '../../../core/models/category.model';
 import {
+  BatchMovementFormData,
   LoteStock,
   MOVEMENT_LABELS,
   MovementDirection,
@@ -14,7 +15,6 @@ import {
   loteKey,
 } from '../../../core/models/movement.model';
 import { Product } from '../../../core/models/product.model';
-import { AuthService } from '../../../core/services/auth.service';
 import { CalibreService } from '../../../core/services/calibre.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { MarcaService } from '../../../core/services/marca.service';
@@ -38,7 +38,6 @@ export class MovementFormComponent implements OnInit {
   private readonly marcaService = inject(MarcaService);
   private readonly proveedorService = inject(ProveedorService);
   private readonly categoryService = inject(CategoryService);
-  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   protected readonly categories = this.categoryService.getActive();
@@ -53,6 +52,7 @@ export class MovementFormComponent implements OnInit {
   protected readonly selectedProduct = signal<Product | null>(null);
 
   protected readonly isBajada = computed(() => this.direccion() === 'bajada');
+  protected readonly isSubida = computed(() => this.direccion() === 'subida');
 
   protected readonly showLotePicker = computed(
     () => this.isBajada() && !!this.form.controls.productId.value,
@@ -95,9 +95,10 @@ export class MovementFormComponent implements OnInit {
     })),
   );
 
-  protected readonly showFechaIngreso = computed(
-    () => this.direccion() === 'subida' && this.isPlanchas(),
-  );
+  protected readonly showFechaIngreso = computed(() => {
+    if (this.isBajada()) return false;
+    return this.lineasHavePlanchas();
+  });
 
   protected readonly showFechaExpiracion = computed(() => this.direccion() === 'subida');
 
@@ -119,9 +120,9 @@ export class MovementFormComponent implements OnInit {
   protected readonly form = this.fb.nonNullable.group({
     tipo: ['entrada_compra' as MovementType, Validators.required],
     categorySlug: ['planchas' as ProductCategorySlug, Validators.required],
-    productId: ['', Validators.required],
+    productId: [''],
     cantidad: [1, [Validators.required, Validators.min(1)]],
-    numeroLote: ['', Validators.required],
+    numeroLote: [''],
     loteKey: [''],
     fechaIngreso: [new Date().toISOString().split('T')[0]],
     fechaExpiracion: [''],
@@ -135,6 +136,7 @@ export class MovementFormComponent implements OnInit {
     retazoAncho: [null as number | null],
     retazoAlto: [null as number | null],
     retazoNotas: [''],
+    lineas: this.fb.array([this.createLineaGroup()]),
   });
 
   protected readonly categorySlug = signal<ProductCategorySlug>('planchas');
@@ -163,6 +165,10 @@ export class MovementFormComponent implements OnInit {
 
   protected readonly filteredCount = computed(() => this.filteredProducts().length);
 
+  protected get lineas(): FormArray {
+    return this.form.controls.lineas;
+  }
+
   ngOnInit(): void {
     this.marcaService.ensureLoaded('planchas').subscribe();
     this.calibreService.ensureLoaded().subscribe();
@@ -173,9 +179,11 @@ export class MovementFormComponent implements OnInit {
       this.categorySlug.set(slug as ProductCategorySlug);
       this.marcaService.ensureLoaded(slug as ProductCategorySlug).subscribe();
       this.clearProductFilters();
-      this.form.controls.productId.reset('');
-      this.selectedProduct.set(null);
-      this.availableLotes.set([]);
+      if (this.isBajada()) {
+        this.form.controls.productId.reset('');
+        this.selectedProduct.set(null);
+        this.availableLotes.set([]);
+      }
     });
     this.form.controls.tipo.valueChanges.subscribe(() => this.onTipoChange());
     this.form.controls.registrarRetazo.valueChanges.subscribe(() => this.updateValidators());
@@ -194,6 +202,11 @@ export class MovementFormComponent implements OnInit {
     this.form.controls.proveedor.reset('');
     this.form.controls.fechaExpiracion.reset('');
     this.availableLotes.set([]);
+
+    if (dir === 'subida' && this.lineas.length === 0) {
+      this.addLinea();
+    }
+
     this.updateValidators();
     this.errorMessage.set(null);
 
@@ -201,6 +214,27 @@ export class MovementFormComponent implements OnInit {
     if (productId && dir === 'bajada') {
       this.loadLotes(productId);
     }
+  }
+
+  protected addLinea(): void {
+    this.lineas.push(this.createLineaGroup());
+    this.updateValidators();
+  }
+
+  protected removeLinea(index: number): void {
+    if (this.lineas.length <= 1) return;
+    this.lineas.removeAt(index);
+    this.updateValidators();
+  }
+
+  protected onLineProductChange(): void {
+    this.updateValidators();
+  }
+
+  protected isLinePlanchas(index: number): boolean {
+    const productId = this.lineas.at(index).get('productId')?.value;
+    if (!productId) return this.categorySlug() === 'planchas';
+    return this.productService.getById(productId)?.categorySlug === 'planchas';
   }
 
   protected onMarcaFilterChange(value: string): void {
@@ -259,17 +293,86 @@ export class MovementFormComponent implements OnInit {
 
     const raw = this.form.getRawValue();
 
-    if (
-      this.direccion() === 'subida' &&
-      raw.fechaExpiracion &&
-      raw.fechaIngreso &&
-      raw.fechaExpiracion < raw.fechaIngreso
-    ) {
+    if (this.isSubida()) {
+      this.submitSubida(raw);
+      return;
+    }
+
+    this.submitBajada(raw);
+  }
+
+  private submitSubida(raw: ReturnType<typeof this.form.getRawValue>): void {
+    if (raw.fechaExpiracion && raw.fechaIngreso && raw.fechaExpiracion < raw.fechaIngreso) {
       this.errorMessage.set('La fecha de expiración no puede ser anterior a la fecha de ingreso.');
       return;
     }
 
-    if (this.isBajada() && this.showLotePicker() && this.availableLotes().length > 0 && !this.selectedLote()) {
+    const lineas = raw.lineas.filter((l) => l.productId);
+    if (lineas.length === 0) {
+      this.errorMessage.set('Agrega al menos un producto al ingreso.');
+      return;
+    }
+
+    for (let i = 0; i < lineas.length; i++) {
+      const linea = lineas[i];
+      const product = this.productService.getById(linea.productId);
+      const esPlancha = product?.categorySlug === 'planchas';
+
+      if (esPlancha && !linea.numeroLote.trim()) {
+        this.errorMessage.set(`La línea ${i + 1} requiere número de lote (plancha).`);
+        return;
+      }
+
+      const exp = linea.fechaExpiracion || raw.fechaExpiracion;
+      if (exp && raw.fechaIngreso && exp < raw.fechaIngreso) {
+        this.errorMessage.set(`La fecha de expiración de la línea ${i + 1} es inválida.`);
+        return;
+      }
+    }
+
+    if (this.lineasHavePlanchas() && !raw.fechaIngreso) {
+      this.errorMessage.set('La fecha de ingreso es requerida cuando hay planchas.');
+      return;
+    }
+
+    const data: BatchMovementFormData = {
+      tipo: raw.tipo,
+      proveedorId: raw.proveedorId,
+      fechaIngreso: raw.fechaIngreso || undefined,
+      fechaExpiracion: raw.fechaExpiracion || undefined,
+      documentoRef: raw.documentoRef || undefined,
+      motivo: raw.motivo || undefined,
+      notas: raw.notas || undefined,
+      lineas: lineas.map((l) => ({
+        productId: l.productId,
+        cantidad: l.cantidad,
+        numeroLote: l.numeroLote.trim() || 'S/N',
+        fechaExpiracion: l.fechaExpiracion || undefined,
+      })),
+    };
+
+    this.isSaving.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+
+    this.movementService.registerBatchMovement(data).subscribe({
+      next: ({ ingresoNumero, movements }) => {
+        this.isSaving.set(false);
+        this.successMessage.set(
+          `Ingreso ${ingresoNumero} registrado con ${movements.length} producto${movements.length !== 1 ? 's' : ''}.`,
+        );
+        this.productService.refresh().subscribe();
+        setTimeout(() => this.router.navigate(['/dashboard/movimientos']), 900);
+      },
+      error: (err: Error) => {
+        this.isSaving.set(false);
+        this.errorMessage.set(err.message ?? 'Error al registrar ingreso.');
+      },
+    });
+  }
+
+  private submitBajada(raw: ReturnType<typeof this.form.getRawValue>): void {
+    if (this.showLotePicker() && this.availableLotes().length > 0 && !this.selectedLote()) {
       this.errorMessage.set('Selecciona el lote que se dará de baja.');
       return;
     }
@@ -281,15 +384,12 @@ export class MovementFormComponent implements OnInit {
     }
 
     const data: MovementFormData = {
-      direccion: this.direccion(),
+      direccion: 'bajada',
       tipo: raw.tipo,
       productId: raw.productId,
       cantidad: raw.cantidad,
-      numeroLote: raw.numeroLote,
+      numeroLote: raw.numeroLote || selectedLote?.numeroLote || 'S/N',
       loteId: selectedLote?.loteId,
-      fechaIngreso: raw.fechaIngreso || undefined,
-      fechaExpiracion: raw.fechaExpiracion || undefined,
-      proveedorId: raw.proveedorId || undefined,
       proveedor: raw.proveedor || undefined,
       documentoRef: raw.documentoRef || undefined,
       motivo: raw.motivo || undefined,
@@ -325,7 +425,25 @@ export class MovementFormComponent implements OnInit {
     });
   }
 
+  private createLineaGroup() {
+    return this.fb.nonNullable.group({
+      productId: ['', Validators.required],
+      cantidad: [1, [Validators.required, Validators.min(1)]],
+      numeroLote: [''],
+      fechaExpiracion: [''],
+    });
+  }
+
+  private lineasHavePlanchas(): boolean {
+    for (let i = 0; i < this.lineas.length; i++) {
+      if (this.isLinePlanchas(i)) return true;
+    }
+    return false;
+  }
+
   private syncProductSelection(): void {
+    if (this.isSubida()) return;
+
     const currentId = this.form.controls.productId.value;
     if (!currentId) return;
 
@@ -424,6 +542,7 @@ export class MovementFormComponent implements OnInit {
     const isPlanchas = this.selectedProduct()?.categorySlug === 'planchas';
     const hasLotes = this.availableLotes().length > 0;
 
+    const productId = this.form.controls.productId;
     const lote = this.form.controls.numeroLote;
     const loteKeyControl = this.form.controls.loteKey;
     const fecha = this.form.controls.fechaIngreso;
@@ -431,27 +550,51 @@ export class MovementFormComponent implements OnInit {
     const proveedor = this.form.controls.proveedor;
     const cantidad = this.form.controls.cantidad;
 
-    if (isBajada && hasLotes) {
-      loteKeyControl.setValidators([Validators.required]);
+    if (isSubida) {
+      productId.clearValidators();
+      cantidad.clearValidators();
       lote.clearValidators();
-    } else if (isSubida && isPlanchas) {
-      lote.setValidators([Validators.required]);
       loteKeyControl.clearValidators();
     } else {
-      lote.clearValidators();
-      loteKeyControl.clearValidators();
+      productId.setValidators([Validators.required]);
+
+      if (hasLotes) {
+        loteKeyControl.setValidators([Validators.required]);
+        lote.clearValidators();
+      } else if (isPlanchas) {
+        lote.setValidators([Validators.required]);
+        loteKeyControl.clearValidators();
+      } else {
+        lote.clearValidators();
+        loteKeyControl.clearValidators();
+      }
+
+      const maxCantidad = this.selectedLote()?.cantidad;
+      cantidad.setValidators([
+        Validators.required,
+        Validators.min(1),
+        ...(maxCantidad ? [Validators.max(maxCantidad)] : []),
+      ]);
     }
 
-    const maxCantidad = this.selectedLote()?.cantidad;
-    cantidad.setValidators([
-      Validators.required,
-      Validators.min(1),
-      ...(maxCantidad ? [Validators.max(maxCantidad)] : []),
-    ]);
-
-    fecha.setValidators(isSubida && isPlanchas ? [Validators.required] : []);
+    fecha.setValidators(isSubida && this.lineasHavePlanchas() ? [Validators.required] : isBajada && isPlanchas ? [Validators.required] : []);
     proveedorId.setValidators(isSubida ? [Validators.required] : []);
     proveedor.setValidators(isBajada && tipo && requiresProveedor(tipo) ? [Validators.required] : []);
+
+    for (let i = 0; i < this.lineas.length; i++) {
+      const linea = this.lineas.at(i);
+      const numeroLoteLinea = linea.get('numeroLote');
+      const productIdLinea = linea.get('productId');
+      productIdLinea?.setValidators([Validators.required]);
+      productIdLinea?.updateValueAndValidity({ emitEvent: false });
+
+      if (isSubida && this.isLinePlanchas(i)) {
+        numeroLoteLinea?.setValidators([Validators.required]);
+      } else {
+        numeroLoteLinea?.clearValidators();
+      }
+      numeroLoteLinea?.updateValueAndValidity({ emitEvent: false });
+    }
 
     const retazoAncho = this.form.controls.retazoAncho;
     const retazoAlto = this.form.controls.retazoAlto;
@@ -465,6 +608,7 @@ export class MovementFormComponent implements OnInit {
       retazoAlto.clearValidators();
     }
 
+    productId.updateValueAndValidity();
     lote.updateValueAndValidity();
     loteKeyControl.updateValueAndValidity();
     fecha.updateValueAndValidity();

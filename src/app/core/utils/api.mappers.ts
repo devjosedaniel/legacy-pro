@@ -110,14 +110,29 @@ export function mapLote(api: ApiLoteStock): LoteStock {
 export function mapMovimiento(api: ApiMovimiento): Movement {
   const slug = (api.producto?.categoria?.slug ?? 'planchas') as ProductCategorySlug;
   const creador = api.creado_por ?? (api as ApiMovimiento & { creadoPor?: ApiMovimiento['creado_por'] }).creadoPor;
+  const anulador =
+    api.anulado_por ??
+    (api as ApiMovimiento & { anuladoPor?: ApiMovimiento['anulado_por'] }).anuladoPor;
   const usuario =
     creador?.nombre?.trim() ||
     creador?.usuario?.trim() ||
     '';
+  const anuladoPor =
+    anulador?.nombre?.trim() ||
+    anulador?.usuario?.trim() ||
+    undefined;
+
+  const inactivo = api.estado === false;
 
   return {
     id: String(api.id),
     numero: api.numero,
+    grupoId: api.grupo_id ?? undefined,
+    ingresoNumero: api.ingreso_numero ?? undefined,
+    activo: !inactivo,
+    puedeAnular: !inactivo && (api.puede_anular ?? true),
+    anuladoAt: api.anulado_at ?? undefined,
+    anuladoPor,
     direccion: api.direccion,
     tipo: api.tipo as MovementType,
     productId: String(api.producto_id),
@@ -131,7 +146,7 @@ export function mapMovimiento(api: ApiMovimiento): Movement {
       undefined,
     proveedorId: api.proveedor_id != null ? String(api.proveedor_id) : undefined,
     numeroLote: api.numero_lote,
-    fechaIngreso: api.fecha_ingreso ?? api.created_at.split('T')[0],
+    fechaIngreso: (api.fecha_ingreso ?? api.created_at).split('T')[0],
     fechaExpiracion: api.fecha_expiracion ?? undefined,
     documentoRef: api.documento_ref ?? undefined,
     motivo: api.motivo ?? undefined,

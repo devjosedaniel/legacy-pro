@@ -13,7 +13,24 @@ export class ReporteService {
     if (mes) {
       url += `?mes=${encodeURIComponent(mes)}`;
     }
+    return this.fetchPdfBlob(url);
+  }
 
+  downloadIngresoKardexPdf(grupoId: string): Observable<Blob> {
+    const url = `${environment.apiUrl}/inv/reportes/ingreso/${encodeURIComponent(grupoId)}/pdf`;
+    return this.fetchPdfBlob(url);
+  }
+
+  saveBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  private fetchPdfBlob(url: string): Observable<Blob> {
     return this.http
       .get(url, {
         responseType: 'blob',
@@ -33,14 +50,5 @@ export class ReporteService {
         }),
         catchError((error) => throwError(() => new Error(extractApiError(error)))),
       );
-  }
-
-  saveBlob(blob: Blob, filename: string): void {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
   }
 }

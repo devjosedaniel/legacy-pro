@@ -8,7 +8,13 @@
     </a>
     <div>
       <h2>Nuevo movimiento</h2>
-      <p>Registra entradas, salidas y movimientos de consignación.</p>
+      <p>
+        @if (isSubida()) {
+          Registra un ingreso del proveedor con uno o varios productos.
+        } @else {
+          Registra salidas y movimientos de consignación.
+        }
+      </p>
     </div>
   </header>
 
@@ -31,7 +37,7 @@
         >
           <span class="movement-form__dir-icon">↑</span>
           Subida
-          <em>Entrada al inventario</em>
+          <em>Ingreso de proveedor</em>
         </button>
         <button
           type="button"
@@ -47,7 +53,7 @@
     </section>
 
     <section class="movement-form__section">
-      <h3>Tipo y producto</h3>
+      <h3>{{ isSubida() ? 'Datos del ingreso' : 'Tipo y producto' }}</h3>
 
       <div class="field-row">
         <div class="field">
@@ -59,174 +65,17 @@
           </select>
         </div>
 
-        <div class="field">
-          <label for="category">Categoría *</label>
-          <select id="category" formControlName="categorySlug">
-            @for (cat of categories; track cat.id) {
-              <option [value]="cat.slug">{{ cat.icon }} {{ cat.name }}</option>
-            }
-          </select>
-        </div>
-      </div>
-
-      @if (showPlanchaFilters()) {
-        <div class="movement-form__product-filters">
-          <p class="movement-form__filters-label">Filtrar producto</p>
-          <div class="movement-form__filters-row">
-            <div class="field field--inline">
-              <label for="filtro-marca">Marca</label>
-              <select
-                id="filtro-marca"
-                [value]="marcaFilter()"
-                (change)="onMarcaFilterChange($any($event.target).value)"
-              >
-                <option value="">Todas las marcas</option>
-                @for (marca of marcasDisponibles(); track marca.id) {
-                  <option [value]="marca.id">{{ marca.nombre }}</option>
-                }
-              </select>
-            </div>
-
-            <div class="field field--inline">
-              <label for="filtro-calibre">Calibre</label>
-              <select
-                id="filtro-calibre"
-                [value]="calibreFilter()"
-                (change)="onCalibreFilterChange($any($event.target).value)"
-              >
-                <option value="">Todos los calibres</option>
-                @for (cal of calibresDisponibles(); track cal.id) {
-                  <option [value]="cal.id">{{ cal.nombre }}</option>
-                }
-              </select>
-            </div>
-
-            @if (marcaFilter() || calibreFilter()) {
-              <button type="button" class="btn btn--outline btn--sm" (click)="clearProductFilters()">
-                Limpiar
-              </button>
-            }
-          </div>
-          <span class="movement-form__filters-count">
-            {{ filteredCount() }} producto{{ filteredCount() !== 1 ? 's' : '' }} encontrado{{ filteredCount() !== 1 ? 's' : '' }}
-          </span>
-        </div>
-      }
-
-      <div class="field" [class.field--error]="form.controls.productId.touched && form.controls.productId.invalid">
-        <label for="product">Producto *</label>
-        <select id="product" formControlName="productId">
-          <option value="" disabled>
-            @if (filteredCount() === 0) {
-              No hay productos con estos filtros
-            } @else {
-              Seleccionar producto ({{ filteredCount() }} disponibles)
-            }
-          </option>
-          @for (p of filteredProducts(); track p.id) {
-            <option [value]="p.id">
-              @if (p.plancha) {
-                {{ p.nombre }} · {{ getProductLabelShort(p) }}
-              } @else {
-                {{ getProductLabel(p) }}
-              }
-            </option>
-          }
-        </select>
-      </div>
-
-      @if (selectedProduct(); as product) {
-        <div class="movement-form__product-info">
-          <span>{{ product.sku }}</span>
-          @if (product.plancha) {
-            <span>{{ product.plancha.marca }} · Calibre {{ product.plancha.calibre }}</span>
-          }
-          @if (isBajada() && productStock(); as stock) {
-            <span>Stock: {{ stock.total }} uds · {{ stock.propio }} propio</span>
-          }
-        </div>
-      }
-
-      @if (showLotePicker()) {
-        <div class="movement-form__lotes">
-          <p class="movement-form__lotes-title">Lotes en stock — selecciona cuál dar de baja</p>
-
-          @if (loadingLotes()) {
-            <p class="movement-form__lotes-empty">Cargando lotes...</p>
-          } @else if (availableLotes().length === 0) {
-            <p class="movement-form__lotes-empty">Este producto no tiene lotes con stock disponible.</p>
-          } @else {
-            <div class="movement-form__lotes-grid">
-              @for (lote of availableLotes(); track getLoteKey(lote)) {
-                <label
-                  class="movement-form__lote-card"
-                  [class.movement-form__lote-card--selected]="form.controls.loteKey.value === getLoteKey(lote)"
-                >
-                  <input
-                    type="radio"
-                    formControlName="loteKey"
-                    [value]="getLoteKey(lote)"
-                  />
-                  <div class="movement-form__lote-card-body">
-                    <strong>{{ lote.numeroLote }}</strong>
-                    <span>{{ formatStockTipo(lote.stockTipo) }}</span>
-                    @if (lote.proveedor) {
-                      <span>{{ lote.proveedor }}</span>
-                    }
-                    <em>{{ lote.cantidad }} uds · {{ lote.fechaIngreso }}</em>
-                  </div>
-                </label>
-              }
-            </div>
-            @if (form.controls.loteKey.touched && form.controls.loteKey.invalid) {
-              <span class="field__error">Selecciona un lote</span>
-            }
-          }
-        </div>
-      }
-    </section>
-
-    <section class="movement-form__section">
-      <h3>Cantidad y lote</h3>
-
-      <div class="field-row">
-        <div class="field" [class.field--error]="form.controls.cantidad.touched && form.controls.cantidad.invalid">
-          <label for="cantidad">Cantidad *</label>
-          <input
-            id="cantidad"
-            type="number"
-            formControlName="cantidad"
-            min="1"
-            [max]="selectedLote()?.cantidad ?? null"
-            step="1"
-          />
-          @if (selectedLote()) {
-            <span class="field__hint">Máximo en este lote: {{ selectedLote()!.cantidad }} uds</span>
-          }
-        </div>
-
-        @if (showFechaIngreso()) {
-          <div class="field" [class.field--error]="form.controls.fechaIngreso.touched && form.controls.fechaIngreso.invalid">
-            <label for="fecha">Fecha de ingreso *</label>
-            <input id="fecha" type="date" formControlName="fechaIngreso" />
-          </div>
-        }
-
-        @if (showFechaExpiracion()) {
+        @if (isBajada()) {
           <div class="field">
-            <label for="fecha-expiracion">Fecha de expiración</label>
-            <input id="fecha-expiracion" type="date" formControlName="fechaExpiracion" />
-            <span class="field__hint">Opcional</span>
+            <label for="category">Categoría *</label>
+            <select id="category" formControlName="categorySlug">
+              @for (cat of categories; track cat.id) {
+                <option [value]="cat.slug">{{ cat.icon }} {{ cat.name }}</option>
+              }
+            </select>
           </div>
         }
       </div>
-
-      @if (direccion() === 'subida' && isPlanchas()) {
-        <div class="field" [class.field--error]="form.controls.numeroLote.touched && form.controls.numeroLote.invalid">
-          <label for="lote">Número de lote *</label>
-          <input id="lote" type="text" formControlName="numeroLote" placeholder="Ej: L-2026-0342" />
-        </div>
-      }
 
       @if (showProveedorSelect()) {
         <div class="field" [class.field--error]="form.controls.proveedorId.touched && form.controls.proveedorId.invalid">
@@ -245,38 +94,321 @@
         </div>
       }
 
-      @if (showProveedorReadonly() && form.controls.proveedor.value) {
-        <div class="field">
-          <label>Proveedor (del lote)</label>
-          <input type="text" [value]="form.controls.proveedor.value" readonly />
-        </div>
-      }
+      <div class="field-row">
+        @if (showFechaIngreso()) {
+          <div class="field" [class.field--error]="form.controls.fechaIngreso.touched && form.controls.fechaIngreso.invalid">
+            <label for="fecha">Fecha de ingreso *</label>
+            <input id="fecha" type="date" formControlName="fechaIngreso" />
+          </div>
+        }
 
-      @if (showRetazoSection()) {
-        <div class="movement-form__retazo panel-inner">
-          <label class="movement-form__retazo-toggle">
-            <input type="checkbox" formControlName="registrarRetazo" />
-            Registrar sobrante como retazo (etiqueta RTZ)
-          </label>
+        @if (showFechaExpiracion()) {
+          <div class="field">
+            <label for="fecha-expiracion">Fecha de expiración (general)</label>
+            <input id="fecha-expiracion" type="date" formControlName="fechaExpiracion" />
+            <span class="field__hint">Opcional · aplica si la línea no tiene una propia</span>
+          </div>
+        }
+      </div>
 
-          @if (form.controls.registrarRetazo.value) {
-            <p class="movement-form__retazo-hint field__hint">Medidas del sobrante en centímetros (cm).</p>
-            <div class="field-row">
-              <div class="field">
-                <label for="retazo-ancho">Ancho sobrante (cm) *</label>
-                <input id="retazo-ancho" type="number" formControlName="retazoAncho" min="0.01" step="0.01" />
+      @if (isSubida()) {
+        <div class="movement-form__batch">
+          <div class="movement-form__batch-header">
+            <p class="movement-form__batch-title">Productos del ingreso</p>
+            <button type="button" class="btn btn--outline btn--sm" (click)="addLinea()">
+              + Agregar producto
+            </button>
+          </div>
+
+          <div class="field-row movement-form__batch-filters">
+            <div class="field field--inline">
+              <label for="category">Filtrar por categoría</label>
+              <select id="category" formControlName="categorySlug">
+                @for (cat of categories; track cat.id) {
+                  <option [value]="cat.slug">{{ cat.icon }} {{ cat.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          @if (showPlanchaFilters()) {
+            <div class="movement-form__product-filters">
+              <div class="movement-form__filters-row">
+                <div class="field field--inline">
+                  <label for="filtro-marca">Marca</label>
+                  <select
+                    id="filtro-marca"
+                    [value]="marcaFilter()"
+                    (change)="onMarcaFilterChange($any($event.target).value)"
+                  >
+                    <option value="">Todas las marcas</option>
+                    @for (marca of marcasDisponibles(); track marca.id) {
+                      <option [value]="marca.id">{{ marca.nombre }}</option>
+                    }
+                  </select>
+                </div>
+
+                <div class="field field--inline">
+                  <label for="filtro-calibre">Calibre</label>
+                  <select
+                    id="filtro-calibre"
+                    [value]="calibreFilter()"
+                    (change)="onCalibreFilterChange($any($event.target).value)"
+                  >
+                    <option value="">Todos los calibres</option>
+                    @for (cal of calibresDisponibles(); track cal.id) {
+                      <option [value]="cal.id">{{ cal.nombre }}</option>
+                    }
+                  </select>
+                </div>
+
+                @if (marcaFilter() || calibreFilter()) {
+                  <button type="button" class="btn btn--outline btn--sm" (click)="clearProductFilters()">
+                    Limpiar
+                  </button>
+                }
               </div>
-              <div class="field">
-                <label for="retazo-alto">Alto sobrante (cm) *</label>
-                <input id="retazo-alto" type="number" formControlName="retazoAlto" min="0.01" step="0.01" />
-              </div>
-              <div class="field">
-                <label for="retazo-notas-mov">Notas retazo</label>
-                <input id="retazo-notas-mov" type="text" formControlName="retazoNotas" />
-              </div>
+              <span class="movement-form__filters-count">
+                {{ filteredCount() }} producto{{ filteredCount() !== 1 ? 's' : '' }} en filtro
+              </span>
             </div>
           }
+
+          <div class="movement-form__lines" formArrayName="lineas">
+            @for (linea of lineas.controls; track $index; let i = $index) {
+              <div class="movement-form__line panel-inner" [formGroupName]="i">
+                <div class="movement-form__line-header">
+                  <strong>Producto {{ i + 1 }}</strong>
+                  @if (lineas.length > 1) {
+                    <button type="button" class="btn btn--outline btn--sm movement-form__line-remove" (click)="removeLinea(i)">
+                      Quitar
+                    </button>
+                  }
+                </div>
+
+                <div class="field" [class.field--error]="linea.get('productId')?.touched && linea.get('productId')?.invalid">
+                  <label [for]="'product-' + i">Producto *</label>
+                  <select [id]="'product-' + i" formControlName="productId" (change)="onLineProductChange()">
+                    <option value="" disabled>
+                      @if (filteredCount() === 0) {
+                        No hay productos con estos filtros
+                      } @else {
+                        Seleccionar producto
+                      }
+                    </option>
+                    @for (p of filteredProducts(); track p.id) {
+                      <option [value]="p.id">
+                        @if (p.plancha) {
+                          {{ p.nombre }} · {{ getProductLabelShort(p) }}
+                        } @else {
+                          {{ getProductLabel(p) }}
+                        }
+                      </option>
+                    }
+                  </select>
+                </div>
+
+                <div class="field-row">
+                  <div class="field" [class.field--error]="linea.get('cantidad')?.touched && linea.get('cantidad')?.invalid">
+                    <label [for]="'cantidad-' + i">Cantidad *</label>
+                    <input [id]="'cantidad-' + i" type="number" formControlName="cantidad" min="1" step="1" />
+                  </div>
+
+                  <div class="field" [class.field--error]="linea.get('numeroLote')?.touched && linea.get('numeroLote')?.invalid">
+                    <label [for]="'lote-' + i">
+                      Número de lote @if (isLinePlanchas(i)) { * }
+                    </label>
+                    <input
+                      [id]="'lote-' + i"
+                      type="text"
+                      formControlName="numeroLote"
+                      [placeholder]="isLinePlanchas(i) ? 'Ej: L-2026-0342' : 'Opcional'"
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label [for]="'exp-' + i">Expiración</label>
+                    <input [id]="'exp-' + i" type="date" formControlName="fechaExpiracion" />
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
         </div>
+      } @else {
+        @if (showPlanchaFilters()) {
+          <div class="movement-form__product-filters">
+            <p class="movement-form__filters-label">Filtrar producto</p>
+            <div class="movement-form__filters-row">
+              <div class="field field--inline">
+                <label for="filtro-marca">Marca</label>
+                <select
+                  id="filtro-marca"
+                  [value]="marcaFilter()"
+                  (change)="onMarcaFilterChange($any($event.target).value)"
+                >
+                  <option value="">Todas las marcas</option>
+                  @for (marca of marcasDisponibles(); track marca.id) {
+                    <option [value]="marca.id">{{ marca.nombre }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="field field--inline">
+                <label for="filtro-calibre">Calibre</label>
+                <select
+                  id="filtro-calibre"
+                  [value]="calibreFilter()"
+                  (change)="onCalibreFilterChange($any($event.target).value)"
+                >
+                  <option value="">Todos los calibres</option>
+                  @for (cal of calibresDisponibles(); track cal.id) {
+                    <option [value]="cal.id">{{ cal.nombre }}</option>
+                  }
+                </select>
+              </div>
+
+              @if (marcaFilter() || calibreFilter()) {
+                <button type="button" class="btn btn--outline btn--sm" (click)="clearProductFilters()">
+                  Limpiar
+                </button>
+              }
+            </div>
+            <span class="movement-form__filters-count">
+              {{ filteredCount() }} producto{{ filteredCount() !== 1 ? 's' : '' }} encontrado{{ filteredCount() !== 1 ? 's' : '' }}
+            </span>
+          </div>
+        }
+
+        <div class="field" [class.field--error]="form.controls.productId.touched && form.controls.productId.invalid">
+          <label for="product">Producto *</label>
+          <select id="product" formControlName="productId">
+            <option value="" disabled>
+              @if (filteredCount() === 0) {
+                No hay productos con estos filtros
+              } @else {
+                Seleccionar producto ({{ filteredCount() }} disponibles)
+              }
+            </option>
+            @for (p of filteredProducts(); track p.id) {
+              <option [value]="p.id">
+                @if (p.plancha) {
+                  {{ p.nombre }} · {{ getProductLabelShort(p) }}
+                } @else {
+                  {{ getProductLabel(p) }}
+                }
+              </option>
+            }
+          </select>
+        </div>
+
+        @if (selectedProduct(); as product) {
+          <div class="movement-form__product-info">
+            <span>{{ product.sku }}</span>
+            @if (product.plancha) {
+              <span>{{ product.plancha.marca }} · Calibre {{ product.plancha.calibre }}</span>
+            }
+            @if (productStock(); as stock) {
+              <span>Stock: {{ stock.total }} uds · {{ stock.propio }} propio</span>
+            }
+          </div>
+        }
+
+        @if (showLotePicker()) {
+          <div class="movement-form__lotes">
+            <p class="movement-form__lotes-title">Lotes en stock — selecciona cuál dar de baja</p>
+
+            @if (loadingLotes()) {
+              <p class="movement-form__lotes-empty">Cargando lotes...</p>
+            } @else if (availableLotes().length === 0) {
+              <p class="movement-form__lotes-empty">Este producto no tiene lotes con stock disponible.</p>
+            } @else {
+              <div class="movement-form__lotes-grid">
+                @for (lote of availableLotes(); track getLoteKey(lote)) {
+                  <label
+                    class="movement-form__lote-card"
+                    [class.movement-form__lote-card--selected]="form.controls.loteKey.value === getLoteKey(lote)"
+                  >
+                    <input
+                      type="radio"
+                      formControlName="loteKey"
+                      [value]="getLoteKey(lote)"
+                    />
+                    <div class="movement-form__lote-card-body">
+                      <strong>{{ lote.numeroLote }}</strong>
+                      <span>{{ formatStockTipo(lote.stockTipo) }}</span>
+                      @if (lote.proveedor) {
+                        <span>{{ lote.proveedor }}</span>
+                      }
+                      <em>{{ lote.cantidad }} uds · {{ lote.fechaIngreso }}</em>
+                    </div>
+                  </label>
+                }
+              </div>
+              @if (form.controls.loteKey.touched && form.controls.loteKey.invalid) {
+                <span class="field__error">Selecciona un lote</span>
+              }
+            }
+          </div>
+        }
+
+        <div class="field-row">
+          <div class="field" [class.field--error]="form.controls.cantidad.touched && form.controls.cantidad.invalid">
+            <label for="cantidad">Cantidad *</label>
+            <input
+              id="cantidad"
+              type="number"
+              formControlName="cantidad"
+              min="1"
+              [max]="selectedLote()?.cantidad ?? null"
+              step="1"
+            />
+            @if (selectedLote()) {
+              <span class="field__hint">Máximo en este lote: {{ selectedLote()!.cantidad }} uds</span>
+            }
+          </div>
+        </div>
+
+        @if (isPlanchas()) {
+          <div class="field" [class.field--error]="form.controls.numeroLote.touched && form.controls.numeroLote.invalid">
+            <label for="lote">Número de lote *</label>
+            <input id="lote" type="text" formControlName="numeroLote" placeholder="Ej: L-2026-0342" />
+          </div>
+        }
+
+        @if (showProveedorReadonly() && form.controls.proveedor.value) {
+          <div class="field">
+            <label>Proveedor (del lote)</label>
+            <input type="text" [value]="form.controls.proveedor.value" readonly />
+          </div>
+        }
+
+        @if (showRetazoSection()) {
+          <div class="movement-form__retazo panel-inner">
+            <label class="movement-form__retazo-toggle">
+              <input type="checkbox" formControlName="registrarRetazo" />
+              Registrar sobrante como retazo (etiqueta RTZ)
+            </label>
+
+            @if (form.controls.registrarRetazo.value) {
+              <p class="movement-form__retazo-hint field__hint">Medidas del sobrante en centímetros (cm).</p>
+              <div class="field-row">
+                <div class="field">
+                  <label for="retazo-ancho">Ancho sobrante (cm) *</label>
+                  <input id="retazo-ancho" type="number" formControlName="retazoAncho" min="0.01" step="0.01" />
+                </div>
+                <div class="field">
+                  <label for="retazo-alto">Alto sobrante (cm) *</label>
+                  <input id="retazo-alto" type="number" formControlName="retazoAlto" min="0.01" step="0.01" />
+                </div>
+                <div class="field">
+                  <label for="retazo-notas-mov">Notas retazo</label>
+                  <input id="retazo-notas-mov" type="text" formControlName="retazoNotas" />
+                </div>
+              </div>
+            }
+          </div>
+        }
       }
     </section>
 
@@ -311,7 +443,13 @@
     <footer class="movement-form__footer">
       <a routerLink="/dashboard/movimientos" class="btn btn--outline">Cancelar</a>
       <button type="submit" class="btn btn--primary" [disabled]="isSaving()">
-        @if (isSaving()) { Registrando... } @else { Registrar movimiento }
+        @if (isSaving()) {
+          Registrando...
+        } @else if (isSubida()) {
+          Registrar ingreso
+        } @else {
+          Registrar movimiento
+        }
       </button>
     </footer>
   </form>

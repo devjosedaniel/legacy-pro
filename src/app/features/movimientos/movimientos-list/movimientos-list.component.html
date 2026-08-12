@@ -18,7 +18,28 @@
 
   </header>
 
+  <div class="movimientos__estado-tabs">
+    <button
+      type="button"
+      class="movimientos__estado-tab"
+      [class.movimientos__estado-tab--active]="!isAnuladosView()"
+      (click)="onEstadoFilterChange('activos')"
+    >
+      Activos
+    </button>
+    <button
+      type="button"
+      class="movimientos__estado-tab"
+      [class.movimientos__estado-tab--active]="isAnuladosView()"
+      (click)="onEstadoFilterChange('anulados')"
+    >
+      Anulados
+    </button>
+  </div>
 
+  @if (!isAnuladosView() && plazoAnulacionLabel()) {
+    <p class="movimientos__plazo-hint">{{ plazoAnulacionLabel() }}</p>
+  }
 
   @if (consumoConsignacion(); as consumo) {
 
@@ -204,6 +225,18 @@
 
   }
 
+  @if (actionError()) {
+
+    <div class="alert alert--error">{{ actionError() }}</div>
+
+  }
+
+  @if (actionMessage()) {
+
+    <div class="alert alert--success">{{ actionMessage() }}</div>
+
+  }
+
 
 
   @if (isLoading()) {
@@ -214,15 +247,21 @@
 
     </div>
 
-  } @else if (movements().length === 0) {
+  } @else if (visibleMovements().length === 0) {
 
     <div class="movimientos__empty panel">
 
       <span>🔄</span>
 
-      <h3>Sin movimientos</h3>
+      <h3>{{ isAnuladosView() ? 'Sin movimientos anulados' : 'Sin movimientos' }}</h3>
 
-      <p>No hay resultados con estos filtros.</p>
+      <p>
+        @if (isAnuladosView()) {
+          No hay anulaciones registradas con estos filtros.
+        } @else {
+          No hay resultados con estos filtros.
+        }
+      </p>
 
       <a routerLink="/dashboard/movimientos/nuevo" class="btn btn--primary">+ Nuevo movimiento</a>
 
@@ -268,19 +307,42 @@
 
             <th>Usuario</th>
 
+            @if (isAnuladosView()) {
+              <th>Anulación</th>
+            } @else {
+              <th></th>
+            }
+
           </tr>
 
         </thead>
 
         <tbody>
 
-          @for (m of movements(); track m.id) {
+          @for (m of visibleMovements(); track m.id; let i = $index) {
 
-            <tr>
+            <tr
+              [class.movimientos__row--ingreso]="!!m.grupoId && !isAnuladoReal(m)"
+              [class.movimientos__row--anulado]="isAnuladoReal(m)"
+            >
 
               <td class="movimientos__num" data-label="Número">
 
-                <strong>{{ m.numero }}</strong>
+                @if (m.ingresoNumero && showIngresoLabel(m, i)) {
+
+                  <strong class="movimientos__ingreso">{{ m.ingresoNumero }}</strong>
+
+                  <span class="movimientos__mov-num">{{ m.numero }}</span>
+
+                } @else if (!m.ingresoNumero) {
+
+                  <strong>{{ m.numero }}</strong>
+
+                } @else {
+
+                  <span class="movimientos__mov-num">{{ m.numero }}</span>
+
+                }
 
                 @if (m.documentoRef) {
 
@@ -347,17 +409,13 @@
               </td>
 
               <td data-label="Lote">
-
                 <strong>{{ m.numeroLote }}</strong>
-
-                <span>{{ m.fechaIngreso }}</span>
-
-                @if (m.fechaExpiracion) {
-
-                  <span class="movimientos__expiracion">Exp: {{ m.fechaExpiracion }}</span>
-
+                @if (m.fechaIngreso) {
+                  <span class="movimientos__lote-fecha">Ing: {{ formatDate(m.fechaIngreso) }}</span>
                 }
-
+                @if (m.fechaExpiracion) {
+                  <span class="movimientos__expiracion">Exp: {{ formatDate(m.fechaExpiracion) }}</span>
+                }
               </td>
 
               <td data-label="Cant.">
@@ -380,8 +438,74 @@
 
               <td data-label="Usuario">{{ m.usuario || '—' }}</td>
 
+              <td class="movimientos__actions" [attr.data-label]="isAnuladoReal(m) ? 'Anulación' : 'Acciones'">
+                @if (isAnuladoReal(m)) {
+                  <div class="movimientos__anulacion-info">
+                    <span class="movimientos__anulado-badge">Anulado</span>
+                    @if (m.anuladoPor) {
+                      <span>por {{ m.anuladoPor }}</span>
+                    }
+                    @if (m.anuladoAt) {
+                      <span>{{ formatDate(m.anuladoAt) }} · {{ formatTime(m.anuladoAt) }}</span>
+                    }
+                  </div>
+                  @if (m.grupoId && showIngresoLabel(m, i)) {
+                    <button
+                      type="button"
+                      class="btn btn--outline btn--sm movimientos__btn-pdf"
+                      [disabled]="downloadingGrupoId() === m.grupoId"
+                      (click)="downloadIngresoPdf(m)"
+                    >
+                      @if (downloadingGrupoId() === m.grupoId) { PDF… } @else { Kardex PDF }
+                    </button>
+                  }
+                } @else {
+                  @if (m.grupoId && showIngresoLabel(m, i)) {
+                    <button
+                      type="button"
+                      class="btn btn--outline btn--sm movimientos__btn-pdf"
+                      [disabled]="downloadingGrupoId() === m.grupoId"
+                      (click)="downloadIngresoPdf(m)"
+                    >
+                      @if (downloadingGrupoId() === m.grupoId) { PDF… } @else { Kardex PDF }
+                    </button>
+                  }
+                  @if (canAnular(m)) {
+                  @if (m.grupoId && showIngresoLabel(m, i)) {
+                    <button
+                      type="button"
+                      class="btn btn--outline btn--sm movimientos__btn-anular"
+                      [disabled]="annullingGrupoId() === m.grupoId || annullingId() === m.id"
+                      (click)="confirmAnularIngreso(m)"
+                    >
+                      @if (annullingGrupoId() === m.grupoId) { Anulando… } @else { Anular ingreso }
+                    </button>
+                  }
+                  @if (m.grupoId) {
+                    <button
+                      type="button"
+                      class="btn btn--outline btn--sm movimientos__btn-anular-linea"
+                      [disabled]="annullingId() === m.id || annullingGrupoId() === m.grupoId"
+                      (click)="confirmAnular(m)"
+                    >
+                      @if (annullingId() === m.id) { Anulando… } @else { Anular línea }
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn btn--outline btn--sm movimientos__btn-anular"
+                      [disabled]="annullingId() === m.id"
+                      (click)="confirmAnular(m)"
+                    >
+                      @if (annullingId() === m.id) { Anulando… } @else { Anular }
+                    </button>
+                  }
+                  } @else if (m.activo) {
+                  <span class="movimientos__plazo-vencido">Plazo vencido</span>
+                  }
+                }
+              </td>
             </tr>
-
           }
 
         </tbody>
@@ -407,6 +531,19 @@
     />
 
   }
+
+  <app-confirm-dialog
+    [open]="confirmOpen()"
+    [title]="confirmTitle()"
+    [message]="confirmMessage()"
+    [highlight]="confirmHighlight()"
+    [confirmLabel]="confirmLabel()"
+    cancelLabel="Cancelar"
+    variant="danger"
+    [loading]="confirmLoading()"
+    (confirmed)="onConfirmDialogConfirmed()"
+    (cancelled)="onConfirmDialogCancelled()"
+  />
 
 </div>
 
