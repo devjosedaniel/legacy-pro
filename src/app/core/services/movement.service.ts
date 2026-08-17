@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { catchError, map, Observable, tap, throwError } from 'rxjs';
+import { catchError, forkJoin, map, Observable, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiLoteStock, ApiMovimiento, ApiProducto, ApiRetazo, ApiStock } from '../models/api.model';
 import {
@@ -17,6 +17,7 @@ import { PaginatedResult } from '../models/pagination.model';
 import { ProductCategorySlug } from '../models/category.model';
 import { Retazo } from '../models/retazo.model';
 import { extractApiError, mapLote, mapMovimiento, mapRetazo, mapStock } from '../utils/api.mappers';
+import { CachedLoader, CachedLoaderMap } from '../utils/cached-load.util';
 
 export interface MovementListMeta {
   anulacionHorasLimite: number;
@@ -46,6 +47,9 @@ export interface ConsumoConsignacionResumen {
 export class MovementService {
   private readonly http = inject(HttpClient);
   private readonly stockMap = signal<Record<string, ProductStock>>({});
+  private readonly configLoader = new CachedLoader<MovementListMeta>();
+  private readonly stockRefreshLoader = new CachedLoaderMap<string, ProductStock>();
+  private readonly consumoLoader = new CachedLoaderMap<string, ConsumoConsignacionResumen>();
 
   readonly stockByProduct = this.stockMap.asReadonly();
 
@@ -110,15 +114,46 @@ export class MovementService {
     return this.fetchPage({ ...filters, page: 1, pageSize: 1 }).pipe(map((res) => res.total));
   }
 
+  fetchSummaryCounts(): Observable<{ subidas: number; bajadas: number }> {
+    return forkJoin({
+      subidas: this.count({ direccion: 'subida', estado: 'activos' }),
+      bajadas: this.count({ direccion: 'bajada', estado: 'activos' }),
+    });
+  }
+
+  fetchDashboardStats(today: string): Observable<{
+    hoy: number;
+    entradas: number;
+    salidas: number;
+    recientes: PaginatedResult<Movement> & MovementListMeta;
+  }> {
+    return forkJoin({
+      hoy: this.count({ fechaDesde: today, fechaHasta: today }),
+      entradas: this.count({
+        fechaDesde: today,
+        fechaHasta: today,
+        direccion: 'subida',
+      }),
+      salidas: this.count({
+        fechaDesde: today,
+        fechaHasta: today,
+        direccion: 'bajada',
+      }),
+      recientes: this.fetchPage({ page: 1, pageSize: 8 }),
+    });
+  }
+
   fetchConfig(): Observable<MovementListMeta> {
-    return this.http
-      .get<{ ok: boolean; anulacion_horas_limite: number }>(
-        `${environment.apiUrl}/inv/movimientos/config`,
-      )
-      .pipe(
-        map((res) => ({ anulacionHorasLimite: res.anulacion_horas_limite ?? 72 })),
-        catchError((error) => throwError(() => new Error(extractApiError(error)))),
-      );
+    return this.configLoader.load(() =>
+      this.http
+        .get<{ ok: boolean; anulacion_horas_limite: number }>(
+          `${environment.apiUrl}/inv/movimientos/config`,
+        )
+        .pipe(
+          map((res) => ({ anulacionHorasLimite: res.anulacion_horas_limite ?? 72 })),
+          catchError((error) => throwError(() => new Error(extractApiError(error)))),
+        ),
+    );
   }
 
   fetchConsumoConsignacion(filters: {
@@ -126,32 +161,40 @@ export class MovementService {
     fechaDesde?: string;
     fechaHasta?: string;
   } = {}): Observable<ConsumoConsignacionResumen> {
-    let params = new HttpParams();
-    if (filters.productId) {
-      params = params.set('producto_id', filters.productId);
-    }
-    if (filters.fechaDesde) {
-      params = params.set('fecha_desde', filters.fechaDesde);
-    }
-    if (filters.fechaHasta) {
-      params = params.set('fecha_hasta', filters.fechaHasta);
-    }
+    const cacheKey = JSON.stringify(filters);
 
-    return this.http
-      .get<{
-        ok: boolean;
-        total_planchas: number;
-        total_movimientos: number;
-        por_proveedor: { proveedor: string; cantidad: number; movimientos: number }[];
-      }>(`${environment.apiUrl}/inv/movimientos/consumo-consignacion`, { params })
-      .pipe(
-        map((res) => ({
-          totalPlanchas: res.total_planchas,
-          totalMovimientos: res.total_movimientos,
-          porProveedor: res.por_proveedor ?? [],
-        })),
-        catchError((error) => throwError(() => new Error(extractApiError(error)))),
-      );
+    return this.consumoLoader.load(cacheKey, () => {
+      let params = new HttpParams();
+      if (filters.productId) {
+        params = params.set('producto_id', filters.productId);
+      }
+      if (filters.fechaDesde) {
+        params = params.set('fecha_desde', filters.fechaDesde);
+      }
+      if (filters.fechaHasta) {
+        params = params.set('fecha_hasta', filters.fechaHasta);
+      }
+
+      return this.http
+        .get<{
+          ok: boolean;
+          total_planchas: number;
+          total_movimientos: number;
+          por_proveedor: { proveedor: string; cantidad: number; movimientos: number }[];
+        }>(`${environment.apiUrl}/inv/movimientos/consumo-consignacion`, { params })
+        .pipe(
+          map((res) => ({
+            totalPlanchas: res.total_planchas,
+            totalMovimientos: res.total_movimientos,
+            porProveedor: res.por_proveedor ?? [],
+          })),
+          catchError((error) => throwError(() => new Error(extractApiError(error)))),
+        );
+    });
+  }
+
+  invalidateConsumoConsignacionCache(): void {
+    this.consumoLoader.invalidate();
   }
 
   syncStockFromApi(productos: ApiProducto[]): void {
@@ -164,14 +207,19 @@ export class MovementService {
     this.stockMap.set(map);
   }
 
-  refreshStock(productId: string): Observable<ProductStock> {
-    return this.http
-      .get<{ ok: boolean; stock: ApiStock }>(`${environment.apiUrl}/inv/stock/${productId}`)
-      .pipe(
-        map((res) => mapStock(res.stock)),
-        tap((stock) => this.stockMap.update((current) => ({ ...current, [productId]: stock }))),
-        catchError((error) => throwError(() => new Error(extractApiError(error)))),
-      );
+  refreshStock(productId: string, force = false): Observable<ProductStock> {
+    return this.stockRefreshLoader.load(
+      productId,
+      () =>
+        this.http
+          .get<{ ok: boolean; stock: ApiStock }>(`${environment.apiUrl}/inv/stock/${productId}`)
+          .pipe(
+            map((res) => mapStock(res.stock)),
+            tap((stock) => this.stockMap.update((current) => ({ ...current, [productId]: stock }))),
+            catchError((error) => throwError(() => new Error(extractApiError(error)))),
+          ),
+      force,
+    );
   }
 
   fetchLotes(productId: string, tipo?: MovementType): Observable<LoteStock[]> {
@@ -263,7 +311,8 @@ export class MovementService {
           retazo: res.retazo ? mapRetazo(res.retazo) : undefined,
         })),
         tap(({ movement }) => {
-          this.refreshStock(movement.productId).subscribe();
+          this.refreshStock(movement.productId, true).subscribe();
+          this.invalidateConsumoConsignacionCache();
         }),
         catchError((error) => throwError(() => new Error(extractApiError(error)))),
       );
@@ -304,9 +353,11 @@ export class MovementService {
           movements: res.movimientos.map(mapMovimiento),
         })),
         tap(({ movements }) => {
-          for (const movement of movements) {
-            this.refreshStock(movement.productId).subscribe();
+          const productIds = new Set(movements.map((m) => m.productId));
+          for (const productId of productIds) {
+            this.refreshStock(productId, true).subscribe();
           }
+          this.invalidateConsumoConsignacionCache();
         }),
         catchError((error) => throwError(() => new Error(extractApiError(error)))),
       );

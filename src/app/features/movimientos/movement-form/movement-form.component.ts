@@ -1,6 +1,8 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { Subject, switchMap, catchError, of, finalize, distinctUntilChanged } from 'rxjs';
 import { ProductCategorySlug } from '../../../core/models/category.model';
 import {
   BatchMovementFormData,
@@ -15,6 +17,7 @@ import {
   loteKey,
 } from '../../../core/models/movement.model';
 import { Product } from '../../../core/models/product.model';
+import { InventarioDataService } from '../../../core/services/inventario-data.service';
 import { CalibreService } from '../../../core/services/calibre.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { MarcaService } from '../../../core/services/marca.service';
@@ -32,8 +35,10 @@ import { formatMedidasCm } from '../../../core/utils/dimensions.util';
 })
 export class MovementFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly movementService = inject(MovementService);
   private readonly productService = inject(ProductService);
+  private readonly dataService = inject(InventarioDataService);
   private readonly calibreService = inject(CalibreService);
   private readonly marcaService = inject(MarcaService);
   private readonly proveedorService = inject(ProveedorService);
@@ -50,19 +55,17 @@ export class MovementFormComponent implements OnInit {
   protected readonly availableLotes = signal<LoteStock[]>([]);
   protected readonly loadingLotes = signal(false);
   protected readonly selectedProduct = signal<Product | null>(null);
+  protected readonly selectedLote = signal<LoteStock | null>(null);
+
+  private readonly loadLotesRequest$ = new Subject<{ productId: string; tipo: MovementType }>();
+  private readonly silentValidity = { emitEvent: false };
 
   protected readonly isBajada = computed(() => this.direccion() === 'bajada');
   protected readonly isSubida = computed(() => this.direccion() === 'subida');
 
   protected readonly showLotePicker = computed(
-    () => this.isBajada() && !!this.form.controls.productId.value,
+    () => this.isBajada() && this.isPlanchas() && !!this.form.controls.productId.value,
   );
-
-  protected readonly selectedLote = computed(() => {
-    const key = this.form.controls.loteKey.value;
-    if (!key) return null;
-    return this.availableLotes().find((l) => loteKey(l) === key) ?? null;
-  });
 
   protected readonly productStock = computed(() => {
     const product = this.selectedProduct();
@@ -170,50 +173,69 @@ export class MovementFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.marcaService.ensureLoaded('planchas').subscribe();
-    this.calibreService.ensureLoaded().subscribe();
+    this.dataService.ensureLoaded().subscribe();
     this.proveedorService.ensureLoaded().subscribe();
     this.categorySlug.set(this.form.controls.categorySlug.value as ProductCategorySlug);
+    this.setupLoadLotesPipeline();
 
-    this.form.controls.categorySlug.valueChanges.subscribe((slug) => {
-      this.categorySlug.set(slug as ProductCategorySlug);
-      this.marcaService.ensureLoaded(slug as ProductCategorySlug).subscribe();
-      this.clearProductFilters();
-      if (this.isBajada()) {
-        this.form.controls.productId.reset('');
-        this.selectedProduct.set(null);
-        this.availableLotes.set([]);
-      }
-    });
-    this.form.controls.tipo.valueChanges.subscribe(() => this.onTipoChange());
-    this.form.controls.registrarRetazo.valueChanges.subscribe(() => this.updateValidators());
-    this.form.controls.productId.valueChanges.subscribe((id) => this.onProductChange(id));
-    this.form.controls.loteKey.valueChanges.subscribe((key) => this.onLoteKeyChange(key));
+    this.form.controls.categorySlug.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((slug) => {
+        this.categorySlug.set(slug as ProductCategorySlug);
+        this.marcaService.ensureLoaded(slug as ProductCategorySlug).subscribe();
+        this.clearProductFilters();
+        if (this.isBajada()) {
+          this.form.controls.productId.reset('', this.silentValidity);
+          this.selectedProduct.set(null);
+          this.selectedLote.set(null);
+          this.availableLotes.set([]);
+        }
+      });
+
+    this.form.controls.tipo.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.onTipoChange());
+
+    this.form.controls.registrarRetazo.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.updateValidators());
+
+    this.form.controls.productId.valueChanges
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((id) => this.onProductChange(id));
+
+    this.form.controls.loteKey.valueChanges
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((key) => this.onLoteKeyChange(key));
+
+    this.syncLineasState();
     this.updateValidators();
   }
 
   protected setDireccion(dir: MovementDirection): void {
     this.direccion.set(dir);
     const tipos = dir === 'subida' ? TIPOS_SUBIDA : TIPOS_BAJADA;
-    this.form.controls.tipo.setValue(tipos[0]);
-    this.form.controls.loteKey.reset('');
-    this.form.controls.numeroLote.reset('');
-    this.form.controls.proveedorId.reset('');
-    this.form.controls.proveedor.reset('');
-    this.form.controls.fechaExpiracion.reset('');
+    this.form.controls.tipo.setValue(tipos[0], this.silentValidity);
+    this.form.controls.loteKey.reset('', this.silentValidity);
+    this.form.controls.numeroLote.reset('', this.silentValidity);
+    this.form.controls.proveedorId.reset('', this.silentValidity);
+    this.form.controls.proveedor.reset('', this.silentValidity);
+    this.form.controls.fechaExpiracion.reset('', this.silentValidity);
+    this.selectedLote.set(null);
     this.availableLotes.set([]);
 
     if (dir === 'subida' && this.lineas.length === 0) {
       this.addLinea();
     }
 
-    this.updateValidators();
     this.errorMessage.set(null);
 
     const productId = this.form.controls.productId.value;
     if (productId && dir === 'bajada') {
-      this.loadLotes(productId);
+      this.queueLoadLotes(productId);
     }
+
+    this.updateValidators();
   }
 
   protected addLinea(): void {
@@ -284,13 +306,17 @@ export class MovementFormComponent implements OnInit {
   }
 
   protected onSubmit(): void {
+    this.syncSelectedLoteFromForm();
     this.updateValidators();
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.errorMessage.set(this.describeFormErrors());
+      this.scrollToAlerts();
       return;
     }
 
+    this.errorMessage.set(null);
     const raw = this.form.getRawValue();
 
     if (this.isSubida()) {
@@ -361,7 +387,6 @@ export class MovementFormComponent implements OnInit {
         this.successMessage.set(
           `Ingreso ${ingresoNumero} registrado con ${movements.length} producto${movements.length !== 1 ? 's' : ''}.`,
         );
-        this.productService.refresh().subscribe();
         setTimeout(() => this.router.navigate(['/dashboard/movimientos']), 900);
       },
       error: (err: Error) => {
@@ -372,14 +397,33 @@ export class MovementFormComponent implements OnInit {
   }
 
   private submitBajada(raw: ReturnType<typeof this.form.getRawValue>): void {
-    if (this.showLotePicker() && this.availableLotes().length > 0 && !this.selectedLote()) {
-      this.errorMessage.set('Selecciona el lote que se dará de baja.');
-      return;
+    const product = this.selectedProduct();
+    const esPlancha = product?.categorySlug === 'planchas';
+    const selectedLote = this.resolveSelectedLote();
+
+    if (esPlancha) {
+      if (this.loadingLotes()) {
+        this.errorMessage.set('Espera a que carguen los lotes disponibles.');
+        this.scrollToAlerts();
+        return;
+      }
+
+      if (this.availableLotes().length === 0) {
+        this.errorMessage.set('Este producto no tiene lotes con stock disponible para dar de baja.');
+        this.scrollToAlerts();
+        return;
+      }
+
+      if (!selectedLote) {
+        this.errorMessage.set('Selecciona el lote que se dará de baja.');
+        this.scrollToAlerts();
+        return;
+      }
     }
 
-    const selectedLote = this.selectedLote();
     if (selectedLote && raw.cantidad > selectedLote.cantidad) {
       this.errorMessage.set(`La cantidad supera el stock del lote (${selectedLote.cantidad} uds).`);
+      this.scrollToAlerts();
       return;
     }
 
@@ -415,7 +459,6 @@ export class MovementFormComponent implements OnInit {
           msg += ` Retazo ${retazo.codigo} creado.`;
         }
         this.successMessage.set(msg);
-        this.productService.refresh().subscribe();
         setTimeout(() => this.router.navigate(['/dashboard/movimientos']), 900);
       },
       error: (err: Error) => {
@@ -449,8 +492,9 @@ export class MovementFormComponent implements OnInit {
 
     const stillValid = this.filteredProducts().some((p) => p.id === currentId);
     if (!stillValid) {
-      this.form.controls.productId.reset('');
+      this.form.controls.productId.reset('', this.silentValidity);
       this.selectedProduct.set(null);
+      this.selectedLote.set(null);
       this.availableLotes.set([]);
     }
   }
@@ -458,7 +502,7 @@ export class MovementFormComponent implements OnInit {
   private onTipoChange(): void {
     const productId = this.form.controls.productId.value;
     if (productId) {
-      this.loadLotes(productId);
+      this.queueLoadLotes(productId);
     }
     this.updateValidators();
   }
@@ -466,76 +510,93 @@ export class MovementFormComponent implements OnInit {
   private onProductChange(productId: string): void {
     if (!productId) {
       this.selectedProduct.set(null);
+      this.selectedLote.set(null);
       this.availableLotes.set([]);
+      this.updateValidators();
       return;
     }
 
     const product = this.productService.getById(productId);
     this.selectedProduct.set(product ?? null);
-
-    this.loadLotes(productId);
+    this.queueLoadLotes(productId);
+    this.movementService.refreshStock(productId).subscribe();
     this.updateValidators();
   }
 
   private onLoteKeyChange(key: string): void {
-    if (this.direccion() !== 'bajada' || !key) return;
+    if (this.direccion() !== 'bajada' || !key) {
+      this.selectedLote.set(null);
+      return;
+    }
 
-    const lote = this.availableLotes().find((l) => loteKey(l) === key);
+    const lote = this.availableLotes().find((l) => loteKey(l) === key) ?? null;
+    this.selectedLote.set(lote);
     if (lote) {
-      this.form.controls.numeroLote.setValue(lote.numeroLote, { emitEvent: false });
-      if (lote.proveedor) {
-        this.form.controls.proveedor.setValue(lote.proveedor);
-      } else if (!requiresProveedor(this.form.controls.tipo.value)) {
-        this.form.controls.proveedor.reset('');
-      }
+      this.applySelectedLote(lote);
       this.updateValidators();
     }
   }
 
-  private loadLotes(productId: string): void {
+  private setupLoadLotesPipeline(): void {
+    this.loadLotesRequest$
+      .pipe(
+        switchMap(({ productId, tipo }) => {
+          if (this.direccion() !== 'bajada') {
+            return of([] as LoteStock[]);
+          }
+
+          this.loadingLotes.set(true);
+          this.form.controls.loteKey.reset('', this.silentValidity);
+          this.form.controls.numeroLote.reset('', this.silentValidity);
+          this.selectedLote.set(null);
+
+          return this.movementService.fetchLotes(productId, tipo).pipe(
+            catchError(() => of([] as LoteStock[])),
+            finalize(() => this.loadingLotes.set(false)),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((lotes) => {
+        this.availableLotes.set(lotes);
+
+        if (lotes.length === 1) {
+          const lote = lotes[0];
+          this.selectedLote.set(lote);
+          this.form.controls.loteKey.setValue(loteKey(lote), this.silentValidity);
+          this.applySelectedLote(lote);
+        }
+
+        this.updateValidators();
+      });
+  }
+
+  private queueLoadLotes(productId: string): void {
     if (this.direccion() !== 'bajada') {
       this.availableLotes.set([]);
-      this.loadingLotes.set(false);
+      this.selectedLote.set(null);
       return;
     }
 
-    const tipo = this.form.controls.tipo.value;
-    this.loadingLotes.set(true);
-    this.form.controls.loteKey.reset('');
-    this.form.controls.numeroLote.reset('');
-
-    this.movementService.refreshStock(productId).subscribe({
-      next: () => {
-        this.movementService.fetchLotes(productId, tipo).subscribe({
-          next: (lotes) => {
-            this.availableLotes.set(lotes);
-            this.loadingLotes.set(false);
-
-            if (lotes.length === 1) {
-              const l = lotes[0];
-              this.form.controls.loteKey.setValue(loteKey(l));
-              this.form.controls.numeroLote.setValue(l.numeroLote);
-              if (l.proveedor) {
-                this.form.controls.proveedor.setValue(l.proveedor);
-              }
-            }
-
-            this.updateValidators();
-          },
-          error: () => {
-            this.availableLotes.set([]);
-            this.loadingLotes.set(false);
-          },
-        });
-      },
-      error: () => {
-        this.availableLotes.set([]);
-        this.loadingLotes.set(false);
-      },
+    this.loadLotesRequest$.next({
+      productId,
+      tipo: this.form.controls.tipo.value,
     });
   }
 
+  private applySelectedLote(lote: LoteStock): void {
+    this.form.controls.numeroLote.setValue(lote.numeroLote, this.silentValidity);
+
+    if (lote.proveedor) {
+      this.form.controls.proveedor.setValue(lote.proveedor, this.silentValidity);
+    } else if (!requiresProveedor(this.form.controls.tipo.value)) {
+      this.form.controls.proveedor.reset('', this.silentValidity);
+    }
+  }
+
   private updateValidators(): void {
+    this.syncLineasState();
+
     const tipo = this.form.controls.tipo.value;
     const isSubida = this.direccion() === 'subida';
     const isBajada = this.direccion() === 'bajada';
@@ -558,26 +619,18 @@ export class MovementFormComponent implements OnInit {
     } else {
       productId.setValidators([Validators.required]);
 
-      if (hasLotes) {
-        loteKeyControl.setValidators([Validators.required]);
+      if (isPlanchas) {
+        loteKeyControl.setValidators(hasLotes ? [Validators.required] : []);
         lote.clearValidators();
-      } else if (isPlanchas) {
-        lote.setValidators([Validators.required]);
-        loteKeyControl.clearValidators();
       } else {
         lote.clearValidators();
         loteKeyControl.clearValidators();
       }
 
-      const maxCantidad = this.selectedLote()?.cantidad;
-      cantidad.setValidators([
-        Validators.required,
-        Validators.min(1),
-        ...(maxCantidad ? [Validators.max(maxCantidad)] : []),
-      ]);
+      cantidad.setValidators([Validators.required, Validators.min(1)]);
     }
 
-    fecha.setValidators(isSubida && this.lineasHavePlanchas() ? [Validators.required] : isBajada && isPlanchas ? [Validators.required] : []);
+    fecha.setValidators(isSubida && this.lineasHavePlanchas() ? [Validators.required] : []);
     proveedorId.setValidators(isSubida ? [Validators.required] : []);
     proveedor.setValidators(isBajada && tipo && requiresProveedor(tipo) ? [Validators.required] : []);
 
@@ -585,14 +638,25 @@ export class MovementFormComponent implements OnInit {
       const linea = this.lineas.at(i);
       const numeroLoteLinea = linea.get('numeroLote');
       const productIdLinea = linea.get('productId');
-      productIdLinea?.setValidators([Validators.required]);
-      productIdLinea?.updateValueAndValidity({ emitEvent: false });
+      const cantidadLinea = linea.get('cantidad');
 
-      if (isSubida && this.isLinePlanchas(i)) {
-        numeroLoteLinea?.setValidators([Validators.required]);
+      if (isSubida) {
+        productIdLinea?.setValidators([Validators.required]);
+        cantidadLinea?.setValidators([Validators.required, Validators.min(1)]);
+
+        if (this.isLinePlanchas(i)) {
+          numeroLoteLinea?.setValidators([Validators.required]);
+        } else {
+          numeroLoteLinea?.clearValidators();
+        }
       } else {
+        productIdLinea?.clearValidators();
+        cantidadLinea?.clearValidators();
         numeroLoteLinea?.clearValidators();
       }
+
+      productIdLinea?.updateValueAndValidity({ emitEvent: false });
+      cantidadLinea?.updateValueAndValidity({ emitEvent: false });
       numeroLoteLinea?.updateValueAndValidity({ emitEvent: false });
     }
 
@@ -608,14 +672,80 @@ export class MovementFormComponent implements OnInit {
       retazoAlto.clearValidators();
     }
 
-    productId.updateValueAndValidity();
-    lote.updateValueAndValidity();
-    loteKeyControl.updateValueAndValidity();
-    fecha.updateValueAndValidity();
-    proveedorId.updateValueAndValidity();
-    proveedor.updateValueAndValidity();
-    cantidad.updateValueAndValidity();
-    retazoAncho.updateValueAndValidity();
-    retazoAlto.updateValueAndValidity();
+    productId.updateValueAndValidity(this.silentValidity);
+    lote.updateValueAndValidity(this.silentValidity);
+    loteKeyControl.updateValueAndValidity(this.silentValidity);
+    fecha.updateValueAndValidity(this.silentValidity);
+    proveedorId.updateValueAndValidity(this.silentValidity);
+    proveedor.updateValueAndValidity(this.silentValidity);
+    cantidad.updateValueAndValidity(this.silentValidity);
+    retazoAncho.updateValueAndValidity(this.silentValidity);
+    retazoAlto.updateValueAndValidity(this.silentValidity);
+    this.form.updateValueAndValidity(this.silentValidity);
+  }
+
+  private resolveSelectedLote(): LoteStock | null {
+    const current = this.selectedLote();
+    if (current) {
+      return current;
+    }
+
+    const key = this.form.controls.loteKey.value;
+    if (!key) {
+      return null;
+    }
+
+    return this.availableLotes().find((l) => loteKey(l) === key) ?? null;
+  }
+
+  private syncSelectedLoteFromForm(): void {
+    const lote = this.resolveSelectedLote();
+    this.selectedLote.set(lote);
+
+    if (lote) {
+      this.applySelectedLote(lote);
+    }
+  }
+
+  private syncLineasState(): void {
+    if (this.direccion() === 'bajada') {
+      if (this.lineas.enabled) {
+        this.lineas.disable(this.silentValidity);
+      }
+      return;
+    }
+
+    if (this.lineas.disabled) {
+      this.lineas.enable(this.silentValidity);
+    }
+  }
+
+  private describeFormErrors(): string {
+    if (this.isBajada()) {
+      if (this.form.controls.loteKey.invalid) {
+        return 'Selecciona el lote que se dará de baja.';
+      }
+
+      if (this.form.controls.productId.invalid) {
+        return 'Selecciona un producto.';
+      }
+
+      const selectedLote = this.resolveSelectedLote();
+      const cantidad = Number(this.form.controls.cantidad.value);
+      if (selectedLote && cantidad > selectedLote.cantidad) {
+        return `La cantidad supera el stock del lote (${selectedLote.cantidad} uds).`;
+      }
+    }
+
+    return 'Revisa los campos obligatorios marcados en el formulario.';
+  }
+
+  private scrollToAlerts(): void {
+    queueMicrotask(() => {
+      document.querySelector('.movement-form .alert')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    });
   }
 }

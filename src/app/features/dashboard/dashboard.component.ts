@@ -68,7 +68,7 @@ export class DashboardComponent implements OnInit {
         this.syncPageHeader(nav.urlAfterRedirects);
       });
 
-    this.dataService.loadAll().subscribe({
+    this.dataService.ensureLoaded().subscribe({
       next: () => {
         this.isLoadingData.set(false);
         this.loadError.set(null);

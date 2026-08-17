@@ -366,15 +366,17 @@
             @if (selectedLote()) {
               <span class="field__hint">Máximo en este lote: {{ selectedLote()!.cantidad }} uds</span>
             }
+            @if (
+              form.controls.cantidad.touched &&
+              selectedLote() &&
+              form.controls.cantidad.value > selectedLote()!.cantidad
+            ) {
+              <span class="field__error">
+                La cantidad no puede superar {{ selectedLote()!.cantidad }} uds
+              </span>
+            }
           </div>
         </div>
-
-        @if (isPlanchas()) {
-          <div class="field" [class.field--error]="form.controls.numeroLote.touched && form.controls.numeroLote.invalid">
-            <label for="lote">Número de lote *</label>
-            <input id="lote" type="text" formControlName="numeroLote" placeholder="Ej: L-2026-0342" />
-          </div>
-        }
 
         @if (showProveedorReadonly() && form.controls.proveedor.value) {
           <div class="field">
@@ -441,6 +443,9 @@
     </section>
 
     <footer class="movement-form__footer">
+      @if (errorMessage()) {
+        <div class="alert alert--error movement-form__footer-error" role="alert">{{ errorMessage() }}</div>
+      }
       <a routerLink="/dashboard/movimientos" class="btn btn--outline">Cancelar</a>
       <button type="submit" class="btn btn--primary" [disabled]="isSaving()">
         @if (isSaving()) {

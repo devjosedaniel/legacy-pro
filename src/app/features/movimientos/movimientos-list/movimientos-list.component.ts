@@ -89,7 +89,6 @@ export class MovimientosListComponent implements OnInit {
 
     this.loadSummaryCounts();
     this.loadConsumoConsignacion();
-    this.loadConfig();
     this.reload$.next();
   }
 
@@ -290,7 +289,8 @@ export class MovimientosListComponent implements OnInit {
         this.annullingId.set(null);
         this.closeConfirm();
         this.actionMessage.set(`Movimiento ${movement.numero} anulado.`);
-        this.productService.refresh().subscribe();
+        this.movementService.refreshStock(movement.productId, true).subscribe();
+        this.movementService.invalidateConsumoConsignacionCache();
         this.loadSummaryCounts();
         this.reload$.next();
       },
@@ -317,6 +317,7 @@ export class MovimientosListComponent implements OnInit {
         this.closeConfirm();
         this.actionMessage.set(`Ingreso ${label} anulado.`);
         this.productService.refresh().subscribe();
+        this.movementService.invalidateConsumoConsignacionCache();
         this.loadSummaryCounts();
         this.reload$.next();
       },
@@ -364,25 +365,22 @@ export class MovimientosListComponent implements OnInit {
   }
 
   private loadSummaryCounts(): void {
-    this.movementService.count({ direccion: 'subida', estado: 'activos' }).subscribe({
-      next: (n) => this.totalSubidas.set(n),
-    });
-    this.movementService.count({ direccion: 'bajada', estado: 'activos' }).subscribe({
-      next: (n) => this.totalBajadas.set(n),
+    this.movementService.fetchSummaryCounts().subscribe({
+      next: ({ subidas, bajadas }) => {
+        this.totalSubidas.set(subidas);
+        this.totalBajadas.set(bajadas);
+      },
     });
   }
 
-  private loadConsumoConsignacion(): void {
+  private loadConsumoConsignacion(force = false): void {
+    if (force) {
+      this.movementService.invalidateConsumoConsignacionCache();
+    }
+
     this.movementService.fetchConsumoConsignacion().subscribe({
       next: (res) => this.consumoConsignacion.set(res),
       error: () => this.consumoConsignacion.set(null),
-    });
-  }
-
-  private loadConfig(): void {
-    this.movementService.fetchConfig().subscribe({
-      next: (res) => this.anulacionHorasLimite.set(res.anulacionHorasLimite),
-      error: () => this.anulacionHorasLimite.set(72),
     });
   }
 

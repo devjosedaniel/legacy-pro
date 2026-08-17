@@ -6,6 +6,7 @@ import { ApiProducto } from '../models/api.model';
 import { ProductCategorySlug } from '../models/category.model';
 import { ProductoFormData, Product } from '../models/product.model';
 import { extractApiError, mapProducto } from '../utils/api.mappers';
+import { CachedLoader } from '../utils/cached-load.util';
 import { MovementService } from './movement.service';
 
 @Injectable({ providedIn: 'root' })
@@ -14,6 +15,7 @@ export class ProductService {
   private readonly movementService = inject(MovementService);
   private readonly products = signal<Product[]>([]);
   private readonly loaded = signal(false);
+  private readonly catalogLoader = new CachedLoader<Product[]>();
 
   readonly all = this.products.asReadonly();
 
@@ -22,7 +24,7 @@ export class ProductService {
   );
 
   load(): Observable<Product[]> {
-    return this.fetchProducts();
+    return this.fetchProducts(true);
   }
 
   ensureLoaded(): Observable<Product[]> {
@@ -33,7 +35,7 @@ export class ProductService {
   }
 
   refresh(): Observable<Product[]> {
-    return this.fetchProducts();
+    return this.fetchProducts(true);
   }
 
   getById(id: string): Product | undefined {
@@ -152,21 +154,26 @@ export class ProductService {
       .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { numeric: true }));
   }
 
-  private fetchProducts(): Observable<Product[]> {
-    const params = new HttpParams().set('con_stock', '1');
+  private fetchProducts(force = false): Observable<Product[]> {
+    return this.catalogLoader.load(
+      () => {
+        const params = new HttpParams().set('con_stock', '1');
 
-    return this.http
-      .get<{ ok: boolean; productos: ApiProducto[] }>(`${environment.apiUrl}/inv/productos`, {
-        params,
-      })
-      .pipe(
-        tap((res) => this.movementService.syncStockFromApi(res.productos)),
-        map((res) => res.productos.map(mapProducto)),
-        tap((items) => {
-          this.products.set(items);
-          this.loaded.set(true);
-        }),
-        catchError((error) => throwError(() => new Error(extractApiError(error)))),
-      );
+        return this.http
+          .get<{ ok: boolean; productos: ApiProducto[] }>(`${environment.apiUrl}/inv/productos`, {
+            params,
+          })
+          .pipe(
+            tap((res) => this.movementService.syncStockFromApi(res.productos)),
+            map((res) => res.productos.map(mapProducto)),
+            tap((items) => {
+              this.products.set(items);
+              this.loaded.set(true);
+            }),
+            catchError((error) => throwError(() => new Error(extractApiError(error)))),
+          );
+      },
+      force,
+    );
   }
 }

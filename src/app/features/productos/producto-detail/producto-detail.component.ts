@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { catchError, forkJoin, of } from 'rxjs';
 import { MOVEMENT_LABELS, Movement } from '../../../core/models/movement.model';
 import { Product } from '../../../core/models/product.model';
 import {
@@ -159,14 +160,41 @@ export class ProductoDetailComponent implements OnInit {
     this.productService.fetchById(id).subscribe({
       next: (product) => {
         this.product.set(product);
-        this.movementService.refreshStock(id).subscribe({
-          next: (stock) => {
+        this.loadingMovements.set(true);
+        this.loadingRetazos.set(true);
+
+        forkJoin({
+          stock: this.movementService.refreshStock(id),
+          movements: this.movementService.fetchPage({ productId: id, page: 1, pageSize: PAGE_SIZE }),
+          retazos: this.retazoService.fetchPage({
+            productId: id,
+            estado: this.retazoFilter(),
+            page: 1,
+            pageSize: PAGE_SIZE,
+          }),
+          retazosDisp: this.retazoService.fetchPage({
+            productId: id,
+            estado: 'disponible',
+            page: 1,
+            pageSize: 1,
+          }),
+          consumo: this.movementService
+            .fetchConsumoConsignacion({ productId: id })
+            .pipe(catchError(() => of(null))),
+        }).subscribe({
+          next: ({ stock, movements, retazos, retazosDisp, consumo }) => {
             this.stock.set(stock);
+            this.movements.set(movements.items);
+            this.movementsTotal.set(movements.total);
+            this.movementsPage.set(movements.page);
+            this.loadingMovements.set(false);
+            this.retazos.set(retazos.items);
+            this.retazosTotal.set(retazos.total);
+            this.retazosPage.set(retazos.page);
+            this.loadingRetazos.set(false);
+            this.retazosDisponiblesCount.set(retazosDisp.total);
+            this.consumoConsignacion.set(consumo);
             this.isLoading.set(false);
-            this.loadMovements(1);
-            this.loadRetazos(1);
-            this.loadRetazosDisponiblesCount();
-            this.loadConsumoConsignacion(id);
           },
           error: () => this.isLoading.set(false),
         });

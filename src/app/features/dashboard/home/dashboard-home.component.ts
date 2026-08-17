@@ -1,6 +1,5 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
 import { Movement } from '../../../core/models/movement.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { CategoryService } from '../../../core/services/category.service';
@@ -161,20 +160,7 @@ export class DashboardHomeComponent implements OnInit {
 
   ngOnInit(): void {
     const today = this.todayKey;
-    forkJoin({
-      hoy: this.movementService.count({ fechaDesde: today, fechaHasta: today }),
-      entradas: this.movementService.count({
-        fechaDesde: today,
-        fechaHasta: today,
-        direccion: 'subida',
-      }),
-      salidas: this.movementService.count({
-        fechaDesde: today,
-        fechaHasta: today,
-        direccion: 'bajada',
-      }),
-      recientes: this.movementService.fetchPage({ page: 1, pageSize: 8 }),
-    }).subscribe({
+    this.movementService.fetchDashboardStats(today).subscribe({
       next: ({ hoy, entradas, salidas, recientes }) => {
         this.movimientosHoy.set(hoy);
         this.entradasHoy.set(entradas);
