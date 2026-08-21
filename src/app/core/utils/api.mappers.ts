@@ -7,7 +7,7 @@ import {
   StockTipo,
 } from '../models/movement.model';
 import { Product } from '../models/product.model';
-import { Retazo } from '../models/retazo.model';
+import { Retazo, RetazoHistorialItem } from '../models/retazo.model';
 import { User } from '../models/user.model';
 import {
   ApiCategoria,
@@ -15,6 +15,7 @@ import {
   ApiMovimiento,
   ApiProducto,
   ApiRetazo,
+  ApiRetazoHistorialEvento,
   ApiStock,
   ApiUsuario,
 } from '../models/api.model';
@@ -66,12 +67,27 @@ export function mapProducto(api: ApiProducto): Product {
 }
 
 export function mapRetazo(api: ApiRetazo): Retazo {
+  const movimiento = api.movimiento_origen;
+  const creador = api.creado_por ?? (api as ApiRetazo & { creadoPor?: ApiRetazo['creado_por'] }).creadoPor;
+
   return {
     id: String(api.id),
     productId: String(api.producto_id),
     productoNombre: api.producto?.nombre,
     categorySlug: api.producto?.categoria?.slug,
     movimientoOrigenId: api.movimiento_origen_id ? String(api.movimiento_origen_id) : undefined,
+    movimientoOrigen: movimiento
+      ? {
+          numero: movimiento.numero,
+          tipo: movimiento.tipo,
+          direccion: movimiento.direccion,
+          cantidad: movimiento.cantidad,
+          stockTipo: movimiento.stock_tipo,
+          proveedor: movimiento.proveedor ?? undefined,
+          numeroLote: movimiento.numero_lote,
+          fechaRegistro: movimiento.created_at,
+        }
+      : undefined,
     loteOrigenId: api.lote_origen_id ? String(api.lote_origen_id) : undefined,
     codigo: api.codigo,
     ancho: Number(api.ancho),
@@ -81,7 +97,36 @@ export function mapRetazo(api: ApiRetazo): Retazo {
     notas: api.notas ?? undefined,
     createdAt: api.created_at,
     loteNumero: api.lote_origen?.numero_lote,
+    movimientoOrigenNumero: movimiento?.numero,
+    creadoPorNombre: formatApiUsuarioNombre(creador),
   };
+}
+
+export function mapRetazoHistorial(api: ApiRetazoHistorialEvento): RetazoHistorialItem {
+  return {
+    id: `${api.retazo_id}-${api.evento}-${api.fecha}`,
+    retazoId: String(api.retazo_id),
+    codigo: api.codigo,
+    productId: String(api.producto_id),
+    productoNombre: api.producto?.nombre,
+    ancho: Number(api.ancho),
+    alto: Number(api.alto),
+    origen: api.origen as Retazo['origen'],
+    evento: api.evento,
+    direccion: api.direccion,
+    fecha: api.fecha,
+    movimientoOrigenId: api.movimiento_origen?.id ? String(api.movimiento_origen.id) : undefined,
+    movimientoOrigenNumero: api.movimiento_origen?.numero,
+    loteNumero: api.lote_origen?.numero_lote,
+    usuario: formatApiUsuarioNombre(api.usuario ?? undefined),
+  };
+}
+
+function formatApiUsuarioNombre(
+  usuario?: { nombre: string | null; usuario: string } | null,
+): string | undefined {
+  if (!usuario) return undefined;
+  return usuario.nombre?.trim() || usuario.usuario?.trim() || undefined;
 }
 
 export function mapStock(api: ApiStock): ProductStock {
@@ -154,6 +199,13 @@ export function mapMovimiento(api: ApiMovimiento): Movement {
     notas: api.notas ?? undefined,
     usuario,
     fechaRegistro: api.created_at,
+    retazosOrigen: api.retazos_origen?.map((retazo) => ({
+      id: String(retazo.id),
+      codigo: retazo.codigo,
+      ancho: Number(retazo.ancho),
+      alto: Number(retazo.alto),
+      estado: retazo.estado,
+    })),
   };
 }
 

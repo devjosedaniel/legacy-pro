@@ -41,6 +41,13 @@ export interface Movement {
   notas?: string;
   usuario: string;
   fechaRegistro: string;
+  retazosOrigen?: {
+    id: string;
+    codigo: string;
+    ancho: number;
+    alto: number;
+    estado: string;
+  }[];
 }
 
 export interface LoteStock {

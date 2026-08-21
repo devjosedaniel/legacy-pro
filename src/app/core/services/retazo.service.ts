@@ -2,10 +2,10 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ApiRetazo } from '../models/api.model';
+import { ApiRetazo, ApiRetazoHistorialEvento } from '../models/api.model';
 import { PaginatedResult } from '../models/pagination.model';
-import { Retazo, RetazoCargaResult, RetazoCargaRow, RetazoEstado, RetazoFormData } from '../models/retazo.model';
-import { extractApiError, mapRetazo } from '../utils/api.mappers';
+import { Retazo, RetazoCargaResult, RetazoCargaRow, RetazoEstado, RetazoFormData, RetazoHistorialEvento, RetazoHistorialItem } from '../models/retazo.model';
+import { extractApiError, mapRetazo, mapRetazoHistorial } from '../utils/api.mappers';
 
 @Injectable({ providedIn: 'root' })
 export class RetazoService {
@@ -17,6 +17,7 @@ export class RetazoService {
     estado?: RetazoEstado | 'all';
     codigo?: string;
     productId?: string;
+    conMovimientoOrigen?: boolean;
   }): Observable<PaginatedResult<Retazo>> {
     const page = filters?.page ?? 1;
     const pageSize = filters?.pageSize ?? 25;
@@ -37,6 +38,10 @@ export class RetazoService {
       params = params.set('producto_id', filters.productId);
     }
 
+    if (filters?.conMovimientoOrigen) {
+      params = params.set('con_movimiento_origen', '1');
+    }
+
     const url = filters?.productId
       ? `${environment.apiUrl}/inv/productos/${filters.productId}/retazos`
       : `${environment.apiUrl}/inv/retazos`;
@@ -52,6 +57,49 @@ export class RetazoService {
       .pipe(
         map((res) => ({
           items: res.retazos.map(mapRetazo),
+          total: res.cantidad,
+          page: res.pagina,
+          pageSize: res.limite,
+        })),
+        catchError((error) => throwError(() => new Error(extractApiError(error)))),
+      );
+  }
+
+  fetchHistorial(filters?: {
+    page?: number;
+    pageSize?: number;
+    evento?: RetazoHistorialEvento | 'all';
+    codigo?: string;
+    productId?: string;
+  }): Observable<PaginatedResult<RetazoHistorialItem>> {
+    const page = filters?.page ?? 1;
+    const pageSize = filters?.pageSize ?? 25;
+
+    let params = new HttpParams()
+      .set('pagina', String(page))
+      .set('limite', String(pageSize));
+
+    if (filters?.evento && filters.evento !== 'all') {
+      params = params.set('evento', filters.evento);
+    }
+    if (filters?.codigo?.trim()) {
+      params = params.set('codigo', filters.codigo.trim());
+    }
+    if (filters?.productId) {
+      params = params.set('producto_id', filters.productId);
+    }
+
+    return this.http
+      .get<{
+        ok: boolean;
+        eventos: ApiRetazoHistorialEvento[];
+        cantidad: number;
+        pagina: number;
+        limite: number;
+      }>(`${environment.apiUrl}/inv/retazos/historial`, { params })
+      .pipe(
+        map((res) => ({
+          items: res.eventos.map(mapRetazoHistorial),
           total: res.cantidad,
           page: res.pagina,
           pageSize: res.limite,

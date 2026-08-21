@@ -204,6 +204,11 @@
   align-items: flex-end;
 }
 
+.movimientos__filter-product {
+  flex: 1.4;
+  min-width: min(100%, 14rem);
+}
+
 .movimientos__table-wrap { overflow-x: auto; }
 
 .movimientos__table {

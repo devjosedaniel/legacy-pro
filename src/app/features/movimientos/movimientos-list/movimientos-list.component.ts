@@ -1,6 +1,7 @@
 import { KeyValuePipe } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { debounceTime, Subject } from 'rxjs';
 import { ProductCategorySlug } from '../../../core/models/category.model';
@@ -20,6 +21,10 @@ import { ProductService } from '../../../core/services/product.service';
 import { formatMovimientoStockOrigen } from '../../../core/utils/stock-tipo.util';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import {
+  SearchSelectComponent,
+  SearchSelectOption,
+} from '../../../shared/components/search-select/search-select.component';
 
 const PAGE_SIZE = 25;
 
@@ -33,7 +38,7 @@ interface PendingConfirmAction {
 
 @Component({
   selector: 'app-movimientos-list',
-  imports: [RouterLink, KeyValuePipe, PaginationComponent, ConfirmDialogComponent],
+  imports: [RouterLink, KeyValuePipe, ReactiveFormsModule, PaginationComponent, ConfirmDialogComponent, SearchSelectComponent],
   templateUrl: './movimientos-list.component.html',
   styleUrl: './movimientos-list.component.scss',
 })
@@ -44,6 +49,7 @@ export class MovimientosListComponent implements OnInit {
   private readonly categoryService = inject(CategoryService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly reload$ = new Subject<void>();
+  protected readonly productFilterControl = new FormControl('', { nonNullable: true });
 
   protected readonly movementLabels = MOVEMENT_LABELS;
   protected readonly categories = this.categoryService.getActive();
@@ -82,7 +88,30 @@ export class MovimientosListComponent implements OnInit {
   protected readonly totalBajadas = signal(0);
   protected readonly consumoConsignacion = signal<ConsumoConsignacionResumen | null>(null);
 
+  protected readonly productFilterOptions = computed((): SearchSelectOption[] => {
+    const category = this.categoryFilter();
+    return this.productService
+      .all()
+      .filter((product) => product.activo && (category === 'all' || product.categorySlug === category))
+      .slice()
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+      .map((product) => ({
+        value: product.id,
+        label: product.nombre,
+        hint: product.sku || undefined,
+      }));
+  });
+
   ngOnInit(): void {
+    this.productService.ensureLoaded().subscribe();
+
+    this.productFilterControl.valueChanges
+      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.page.set(1);
+        this.reload$.next();
+      });
+
     this.reload$
       .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.loadPage(this.page()));
@@ -140,6 +169,7 @@ export class MovimientosListComponent implements OnInit {
 
   protected onCategoryChange(value: string): void {
     this.categoryFilter.set(value as ProductCategorySlug | 'all');
+    this.syncProductFilterWithCategory();
     this.page.set(1);
     this.reload$.next();
   }
@@ -183,6 +213,7 @@ export class MovimientosListComponent implements OnInit {
 
   protected clearFilters(): void {
     this.search.set('');
+    this.productFilterControl.setValue('', { emitEvent: false });
     this.direccionFilter.set('all');
     this.tipoFilter.set('all');
     this.categoryFilter.set('all');
@@ -337,12 +368,14 @@ export class MovimientosListComponent implements OnInit {
     const tipo = this.tipoFilter();
     const cat = this.categoryFilter();
     const stock = this.stockTipoFilter();
+    const productId = this.productFilterControl.value.trim();
 
     this.movementService
       .fetchPage({
         page,
         pageSize: PAGE_SIZE,
         q: this.search() || undefined,
+        productId: productId || undefined,
         direccion: dir === 'all' ? undefined : dir,
         tipo: tipo === 'all' ? undefined : tipo,
         categorySlug: cat === 'all' ? undefined : cat,
@@ -392,5 +425,18 @@ export class MovimientosListComponent implements OnInit {
       return items.filter((m) => isMovimientoAnulado(m));
     }
     return items.filter((m) => m.activo);
+  }
+
+  private syncProductFilterWithCategory(): void {
+    const productId = this.productFilterControl.value;
+    if (!productId) return;
+
+    const category = this.categoryFilter();
+    if (category === 'all') return;
+
+    const product = this.productService.getById(productId);
+    if (product && product.categorySlug !== category) {
+      this.productFilterControl.setValue('', { emitEvent: false });
+    }
   }
 }

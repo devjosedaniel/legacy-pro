@@ -35,6 +35,7 @@ export interface MovementPageFilters {
   q?: string;
   fechaDesde?: string;
   fechaHasta?: string;
+  conRetazo?: boolean;
 }
 
 export interface ConsumoConsignacionResumen {
@@ -87,6 +88,9 @@ export class MovementService {
     }
     if (filters.fechaHasta) {
       params = params.set('fecha_hasta', filters.fechaHasta);
+    }
+    if (filters.conRetazo) {
+      params = params.set('con_retazo', '1');
     }
 
     return this.http

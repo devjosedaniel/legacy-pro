@@ -77,6 +77,7 @@ export interface ApiMovimiento {
   anulado_por?: { id: number; nombre: string | null; usuario: string } | null;
   producto?: ApiProducto;
   creado_por?: { id: number; nombre: string | null; usuario: string };
+  retazos_origen?: ApiRetazo[];
 }
 
 export interface ApiUsuario {
@@ -114,5 +115,32 @@ export interface ApiRetazo {
   updated_at?: string;
   producto?: ApiProducto;
   lote_origen?: { id: number; numero_lote: string };
-  movimiento_origen?: { id: number; numero: string };
+  creado_por?: { id: number; nombre: string | null; usuario: string };
+  movimiento_origen?: {
+    id: number;
+    numero: string;
+    tipo?: MovementType;
+    direccion?: MovementDirection;
+    cantidad?: number;
+    stock_tipo?: StockTipo;
+    proveedor?: string | null;
+    numero_lote?: string;
+    created_at?: string;
+  };
+}
+
+export interface ApiRetazoHistorialEvento {
+  retazo_id: number;
+  codigo: string;
+  producto_id: number;
+  producto?: ApiProducto;
+  ancho: number;
+  alto: number;
+  origen: string;
+  evento: 'creacion' | 'consumo';
+  direccion: MovementDirection;
+  fecha: string;
+  usuario?: { id: number; nombre: string | null; usuario: string } | null;
+  movimiento_origen?: { id: number; numero: string } | null;
+  lote_origen?: { id: number; numero_lote: string } | null;
 }

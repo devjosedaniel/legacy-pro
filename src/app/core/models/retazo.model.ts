@@ -1,5 +1,17 @@
+import { MovementDirection, MovementType, StockTipo } from './movement.model';
+
 export type RetazoEstado = 'disponible' | 'consumido' | 'inactivo';
 export type RetazoOrigen = 'bajada' | 'reporte_externo' | 'carga_inicial';
+
+export interface RetazoMovimientoOrigen {  numero: string;
+  tipo?: MovementType;
+  direccion?: MovementDirection;
+  cantidad?: number;
+  stockTipo?: StockTipo;
+  proveedor?: string;
+  numeroLote?: string;
+  fechaRegistro?: string;
+}
 
 export interface Retazo {
   id: string;
@@ -7,6 +19,7 @@ export interface Retazo {
   productoNombre?: string;
   categorySlug?: string;
   movimientoOrigenId?: string;
+  movimientoOrigen?: RetazoMovimientoOrigen;
   loteOrigenId?: string;
   codigo: string;
   ancho: number;
@@ -16,6 +29,8 @@ export interface Retazo {
   notas?: string;
   createdAt: string;
   loteNumero?: string;
+  movimientoOrigenNumero?: string;
+  creadoPorNombre?: string;
 }
 
 export interface RetazoFormData {
@@ -55,3 +70,28 @@ export interface RetazoCargaResult {
   totalErrores: number;
   mensaje: string;
 }
+
+export type RetazoHistorialEvento = 'creacion' | 'consumo';
+
+export interface RetazoHistorialItem {
+  id: string;
+  retazoId: string;
+  codigo: string;
+  productId: string;
+  productoNombre?: string;
+  ancho: number;
+  alto: number;
+  origen: RetazoOrigen;
+  evento: RetazoHistorialEvento;
+  direccion: MovementDirection;
+  fecha: string;
+  movimientoOrigenId?: string;
+  movimientoOrigenNumero?: string;
+  loteNumero?: string;
+  usuario?: string;
+}
+
+export const RETAZO_HISTORIAL_EVENTO_LABELS: Record<RetazoHistorialEvento, string> = {
+  creacion: 'Creación',
+  consumo: 'Consumo',
+};

@@ -13,7 +13,7 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 
   h2 {
     font-size: 1.5rem;
@@ -24,6 +24,74 @@
   p {
     font-size: 0.875rem;
     color: var(--color-text-muted);
+  }
+}
+
+.retazos__tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.retazos__tab {
+  padding: 0.625rem 1rem;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+
+  &--active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+  }
+}
+
+.retazos__movements {
+  padding: 1.25rem;
+}
+
+.retazos__movements-intro {
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.retazos__historial-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  select {
+    padding: 0.625rem 0.875rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    background: var(--color-bg);
+  }
+}
+
+.retazos__evento {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &--creacion {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  &--consumo {
+    background: #fee2e2;
+    color: #991b1b;
   }
 }
 
@@ -233,5 +301,20 @@
 }
 
 .retazos__actions { white-space: nowrap; }
+
+.retazos__dir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+
+  &--subida { background: #d1fae5; color: var(--color-success); }
+  &--bajada { background: #fee2e2; color: var(--color-danger); }
+}
+
+.retazos__tipo { font-size: 0.8rem; }
 
 .alert { margin-bottom: 1rem; }

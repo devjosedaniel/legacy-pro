@@ -2,19 +2,27 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
+  MovementDirection,
+} from '../../../core/models/movement.model';
+import {
   RETAZO_ESTADO_LABELS,
+  RETAZO_HISTORIAL_EVENTO_LABELS,
   RETAZO_ORIGEN_LABELS,
   Retazo,
   RetazoCargaRow,
   RetazoEstado,
+  RetazoHistorialEvento,
+  RetazoHistorialItem,
 } from '../../../core/models/retazo.model';
 import { ProductService } from '../../../core/services/product.service';
 import { RetazoService } from '../../../core/services/retazo.service';
 import { parseRetazosCsv } from '../../../core/utils/retazo-csv.parser';
-import { formatMedidasCm } from '../../../core/utils/dimensions.util';
+import { formatDimensionCm } from '../../../core/utils/dimensions.util';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 const PAGE_SIZE = 25;
+
+type RetazosViewTab = 'retazos' | 'movimientos';
 
 @Component({
   selector: 'app-retazos-list',
@@ -29,6 +37,9 @@ export class RetazosListComponent implements OnInit {
 
   protected readonly retazoEstadoLabels = RETAZO_ESTADO_LABELS;
   protected readonly retazoOrigenLabels = RETAZO_ORIGEN_LABELS;
+  protected readonly historialEventoLabels = RETAZO_HISTORIAL_EVENTO_LABELS;
+
+  protected readonly viewTab = signal<RetazosViewTab>('retazos');
 
   protected readonly search = signal('');
   protected readonly estadoFilter = signal<RetazoEstado | 'all'>('disponible');
@@ -49,6 +60,13 @@ export class RetazosListComponent implements OnInit {
   protected readonly isSavingManual = signal(false);
   protected readonly manualSuccess = signal<string | null>(null);
   protected readonly productsLoaded = signal(false);
+
+  protected readonly historial = signal<RetazoHistorialItem[]>([]);
+  protected readonly historialTotal = signal(0);
+  protected readonly historialPage = signal(1);
+  protected readonly historialEventoFilter = signal<RetazoHistorialEvento | 'all'>('all');
+  protected readonly loadingHistorial = signal(false);
+  protected readonly historialLoaded = signal(false);
 
   protected readonly productos = computed(() =>
     this.productService
@@ -96,6 +114,40 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
     this.loadPage(next);
   }
 
+  protected onHistorialPageChange(next: number): void {
+    this.loadHistorialPage(next);
+  }
+
+  protected switchTab(tab: RetazosViewTab): void {
+    this.viewTab.set(tab);
+    if (tab === 'movimientos' && !this.historialLoaded()) {
+      this.loadHistorialPage(1);
+    }
+  }
+
+  protected onHistorialEventoChange(value: string): void {
+    this.historialEventoFilter.set(value as RetazoHistorialEvento | 'all');
+    this.loadHistorialPage(1);
+  }
+
+  protected formatDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+
+  protected formatDimension(value: number): string {
+    return formatDimensionCm(value);
+  }
+
+  protected direccionLabel(direccion?: MovementDirection): string {
+    if (direccion === 'subida') return 'Subida — ingreso de retazo';
+    if (direccion === 'bajada') return 'Bajada — consumo de retazo';
+    return '—';
+  }
+
   private loadPage(page: number): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
@@ -118,6 +170,32 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
         },
         error: (err: Error) => {
           this.isLoading.set(false);
+          this.errorMessage.set(err.message);
+        },
+      });
+  }
+
+  protected loadHistorialPage(page: number): void {
+    this.loadingHistorial.set(true);
+    this.errorMessage.set(null);
+
+    this.retazoService
+      .fetchHistorial({
+        page,
+        pageSize: PAGE_SIZE,
+        evento: this.historialEventoFilter(),
+        codigo: this.search().trim() || undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          this.historial.set(res.items);
+          this.historialTotal.set(res.total);
+          this.historialPage.set(res.page);
+          this.loadingHistorial.set(false);
+          this.historialLoaded.set(true);
+        },
+        error: (err: Error) => {
+          this.loadingHistorial.set(false);
           this.errorMessage.set(err.message);
         },
       });
@@ -232,13 +310,14 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
 
   protected updateEstado(retazo: Retazo, estado: RetazoEstado): void {
     this.retazoService.updateEstado(retazo.id, estado).subscribe({
-      next: () => this.loadPage(this.page()),
+      next: () => {
+        this.loadPage(this.page());
+        if (this.historialLoaded()) {
+          this.loadHistorialPage(this.historialPage());
+        }
+      },
       error: (err: Error) => this.errorMessage.set(err.message),
     });
-  }
-
-  protected formatMedidas(ancho: number, alto: number): string {
-    return formatMedidasCm(ancho, alto);
   }
 
   private processCsvText(text: string): void {

@@ -6,6 +6,26 @@
     </div>
   </header>
 
+  <div class="retazos__tabs">
+    <button
+      type="button"
+      class="retazos__tab"
+      [class.retazos__tab--active]="viewTab() === 'retazos'"
+      (click)="switchTab('retazos')"
+    >
+      Inventario
+    </button>
+    <button
+      type="button"
+      class="retazos__tab"
+      [class.retazos__tab--active]="viewTab() === 'movimientos'"
+      (click)="switchTab('movimientos')"
+    >
+      Movimientos de retazos
+    </button>
+  </div>
+
+  @if (viewTab() === 'retazos') {
   <section class="retazos__manual panel">
     <div class="retazos__manual-header">
       <span class="retazos__manual-icon" aria-hidden="true">➕</span>
@@ -207,9 +227,13 @@
           <tr>
             <th>Código</th>
             <th>Producto</th>
-            <th>Medidas (cm)</th>
+            <th>Ancho (cm)</th>
+            <th>Alto (cm)</th>
             <th>Origen</th>
+            <th>Movimiento</th>
+            <th>Dir.</th>
             <th>Estado</th>
+            <th>Registrado por</th>
             <th>Lote</th>
             <th></th>
           </tr>
@@ -225,9 +249,26 @@
                   —
                 }
               </td>
-              <td>{{ formatMedidas(retazo.ancho, retazo.alto) }}</td>
+              <td>{{ formatDimension(retazo.ancho) }}</td>
+              <td>{{ formatDimension(retazo.alto) }}</td>
               <td>{{ retazoOrigenLabels[retazo.origen] }}</td>
+              <td>
+                @if (retazo.movimientoOrigenNumero) {
+                  <strong>{{ retazo.movimientoOrigenNumero }}</strong>
+                } @else {
+                  —
+                }
+              </td>
+              <td>
+                <span
+                  class="retazos__dir retazos__dir--subida"
+                  title="Subida — ingreso de retazo"
+                >
+                  ↑
+                </span>
+              </td>
               <td>{{ retazoEstadoLabels[retazo.estado] }}</td>
+              <td>{{ retazo.creadoPorNombre ?? '—' }}</td>
               <td>{{ retazo.loteNumero ?? '—' }}</td>
               <td class="retazos__actions">
                 @if (retazo.estado === 'disponible') {
@@ -249,5 +290,117 @@
       [disabled]="isLoading()"
       (pageChange)="onPageChange($event)"
     />
+  }
+  } @else {
+    <section class="retazos__movements panel">
+      <p class="retazos__movements-intro">
+        Historial de retazos: <strong>↑ Creación</strong> (ingreso al inventario) y
+        <strong>↓ Consumo</strong> (cuando se marca como usado).
+      </p>
+
+      <div class="retazos__historial-filters">
+        <select
+          [value]="historialEventoFilter()"
+          (change)="onHistorialEventoChange($any($event.target).value)"
+        >
+          <option value="all">Todos los eventos</option>
+          <option value="creacion">Solo creaciones (↑)</option>
+          <option value="consumo">Solo consumos (↓)</option>
+        </select>
+        <button type="button" class="btn btn--outline btn--sm" (click)="loadHistorialPage(1)">
+          Actualizar
+        </button>
+      </div>
+
+      @if (errorMessage()) {
+        <div class="alert alert--error">{{ errorMessage() }}</div>
+      }
+
+      @if (loadingHistorial() && historial().length === 0) {
+        <div class="retazos__empty">
+          <p>Cargando historial...</p>
+        </div>
+      } @else if (historialLoaded() && !loadingHistorial() && historial().length === 0) {
+        <div class="retazos__empty">
+          <span>📋</span>
+          <h3>Sin movimientos de retazos</h3>
+          <p>Aún no hay retazos creados ni consumidos registrados.</p>
+        </div>
+      } @else if (historial().length > 0) {
+        <div class="retazos__table-wrap">
+          <table class="retazos__table">
+            <thead>
+              <tr>
+                <th>Dir.</th>
+                <th>Evento</th>
+                <th>Código RTZ</th>
+                <th>Producto</th>
+                <th>Ancho (cm)</th>
+                <th>Alto (cm)</th>
+                <th>Origen retazo</th>
+                <th>Mov. plancha</th>
+                <th>Lote</th>
+                <th>Usuario</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of historial(); track item.id) {
+                <tr>
+                  <td>
+                    <span
+                      class="retazos__dir"
+                      [class.retazos__dir--subida]="item.direccion === 'subida'"
+                      [class.retazos__dir--bajada]="item.direccion === 'bajada'"
+                      [title]="direccionLabel(item.direccion)"
+                    >
+                      {{ item.direccion === 'subida' ? '↑' : '↓' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      class="retazos__evento"
+                      [class.retazos__evento--creacion]="item.evento === 'creacion'"
+                      [class.retazos__evento--consumo]="item.evento === 'consumo'"
+                    >
+                      {{ historialEventoLabels[item.evento] }}
+                    </span>
+                  </td>
+                  <td><strong>{{ item.codigo }}</strong></td>
+                  <td>
+                    @if (item.productoNombre) {
+                      <a [routerLink]="['/dashboard/productos', item.productId]">{{ item.productoNombre }}</a>
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td>{{ formatDimension(item.ancho) }}</td>
+                  <td>{{ formatDimension(item.alto) }}</td>
+                  <td>{{ retazoOrigenLabels[item.origen] }}</td>
+                  <td>
+                    @if (item.movimientoOrigenNumero) {
+                      <strong>{{ item.movimientoOrigenNumero }}</strong>
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td>{{ item.loteNumero ?? '—' }}</td>
+                  <td>{{ item.usuario ?? '—' }}</td>
+                  <td>{{ formatDate(item.fecha) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <app-pagination
+          [page]="historialPage()"
+          [pageSize]="pageSize"
+          [total]="historialTotal()"
+          [disabled]="loadingHistorial()"
+          (pageChange)="onHistorialPageChange($event)"
+        />
+      }
+    </section>
   }
 </div>
