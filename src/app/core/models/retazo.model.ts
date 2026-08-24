@@ -1,7 +1,7 @@
 import { MovementDirection, MovementType, StockTipo } from './movement.model';
 
 export type RetazoEstado = 'disponible' | 'consumido' | 'inactivo';
-export type RetazoOrigen = 'bajada' | 'reporte_externo' | 'carga_inicial';
+export type RetazoOrigen = 'bajada' | 'reporte_externo' | 'carga_inicial' | 'grupo_cierre';
 
 export interface RetazoMovimientoOrigen {  numero: string;
   tipo?: MovementType;
@@ -53,6 +53,7 @@ export const RETAZO_ORIGEN_LABELS: Record<RetazoOrigen, string> = {
   bajada: 'Bajada de plancha',
   reporte_externo: 'Reporte manual',
   carga_inicial: 'Carga inicial',
+  grupo_cierre: 'Sobrante de grupo',
 };
 
 export interface RetazoCargaRow {

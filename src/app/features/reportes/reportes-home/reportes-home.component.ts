@@ -1,11 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ReporteService } from '../../../core/services/reporte.service';
 
 type PeriodMode = 'actual' | 'mes_anterior' | 'mes_especifico';
 
 @Component({
   selector: 'app-reportes-home',
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './reportes-home.component.html',
   styleUrl: './reportes-home.component.scss',
 })

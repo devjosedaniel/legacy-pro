@@ -1,0 +1,184 @@
+@use '../../../shared/styles/forms';
+
+:host {
+  display: block;
+}
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.retazos-report__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+
+  h2 {
+    margin: 0 0 0.25rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    max-width: 40rem;
+    line-height: 1.5;
+  }
+}
+
+.retazos-report__back {
+  width: 100%;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-primary);
+  }
+}
+
+.retazos-report__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-left: auto;
+}
+
+.retazos-report__loading,
+.retazos-report__empty {
+  padding: 1.25rem;
+  color: var(--color-text-muted);
+}
+
+.retazos-report__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.85rem;
+  padding: 1rem 1.15rem;
+  margin-bottom: 1rem;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  strong {
+    font-size: 1rem;
+  }
+}
+
+.retazos-report__meta-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.retazos-report__calibre {
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.retazos-report__calibre-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  padding: 0.85rem 1.1rem;
+  background: linear-gradient(90deg, #ecfdf5, #f8fafc);
+  border-bottom: 1px solid var(--color-border);
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f766e;
+  }
+
+  span {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+  }
+}
+
+.retazos-report__producto {
+  padding: 0.85rem 1.1rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.retazos-report__producto-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  margin-bottom: 0.65rem;
+
+  strong {
+    font-size: 0.92rem;
+  }
+
+  span {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+  }
+}
+
+.retazos-report__sku {
+  margin-left: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th,
+  td {
+    padding: 0.55rem 0.65rem;
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.alert--success {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  font-size: 0.875rem;
+}

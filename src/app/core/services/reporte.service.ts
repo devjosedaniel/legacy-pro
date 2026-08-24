@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { RetazosDisponiblesReporte } from '../models/reporte.model';
 import { extractApiError } from '../utils/api.mappers';
 
 @Injectable({ providedIn: 'root' })
@@ -19,6 +20,74 @@ export class ReporteService {
   downloadIngresoKardexPdf(grupoId: string): Observable<Blob> {
     const url = `${environment.apiUrl}/inv/reportes/ingreso/${encodeURIComponent(grupoId)}/pdf`;
     return this.fetchPdfBlob(url);
+  }
+
+  fetchRetazosDisponibles(): Observable<RetazosDisponiblesReporte> {
+    return this.http
+      .get<{
+        ok: boolean;
+        generado_por: string;
+        generado_el: string;
+        total_retazos: number;
+        grupos: Array<{
+          calibre_id: number;
+          calibre_nombre: string;
+          cantidad: number;
+          area_total_cm2: number;
+          productos: Array<{
+            producto_id: number;
+            producto_nombre: string;
+            producto_sku: string;
+            cantidad: number;
+            area_total_cm2: number;
+            retazos: Array<{
+              id: number;
+              codigo: string;
+              ancho: number;
+              alto: number;
+              medidas: string;
+              area_cm2: number;
+              origen: string;
+              origen_label: string;
+            }>;
+          }>;
+        }>;
+      }>(`${environment.apiUrl}/inv/reportes/retazos/disponibles`)
+      .pipe(
+        map((res) => ({
+          generadoPor: res.generado_por,
+          generadoEl: res.generado_el,
+          totalRetazos: res.total_retazos,
+          grupos: res.grupos.map((grupo) => ({
+            calibreId: grupo.calibre_id,
+            calibreNombre: grupo.calibre_nombre,
+            cantidad: grupo.cantidad,
+            areaTotalCm2: grupo.area_total_cm2,
+            productos: grupo.productos.map((producto) => ({
+              productoId: producto.producto_id,
+              productoNombre: producto.producto_nombre,
+              productoSku: producto.producto_sku,
+              cantidad: producto.cantidad,
+              areaTotalCm2: producto.area_total_cm2,
+              retazos: producto.retazos.map((retazo) => ({
+                id: retazo.id,
+                codigo: retazo.codigo,
+                ancho: retazo.ancho,
+                alto: retazo.alto,
+                medidas: retazo.medidas,
+                areaCm2: retazo.area_cm2,
+                origen: retazo.origen,
+                origenLabel: retazo.origen_label,
+              })),
+            })),
+          })),
+        })),
+        catchError((error) => throwError(() => new Error(extractApiError(error)))),
+      );
+  }
+
+  downloadRetazosDisponiblesPdf(): Observable<Blob> {
+    return this.fetchPdfBlob(`${environment.apiUrl}/inv/reportes/retazos/disponibles/pdf`);
   }
 
   saveBlob(blob: Blob, filename: string): void {

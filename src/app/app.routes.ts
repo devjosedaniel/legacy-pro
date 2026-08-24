@@ -78,6 +78,13 @@ export const routes: Routes = [
             (m) => m.ReportesHomeComponent,
           ),
       },
+      {
+        path: 'reportes/retazos-disponibles',
+        loadComponent: () =>
+          import('./features/reportes/retazos-disponibles-report/retazos-disponibles-report.component').then(
+            (m) => m.RetazosDisponiblesReportComponent,
+          ),
+      },
     ],
   },
   { path: '', redirectTo: 'dashboard/inventario', pathMatch: 'full' },

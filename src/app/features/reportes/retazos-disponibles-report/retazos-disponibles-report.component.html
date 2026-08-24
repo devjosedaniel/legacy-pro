@@ -1,0 +1,108 @@
+<div class="retazos-report">
+  <header class="retazos-report__header">
+    <a routerLink="/dashboard/reportes" class="retazos-report__back">← Reportes</a>
+    <div>
+      <h2>Retazos disponibles</h2>
+      <p>Todos los retazos en estado disponible, agrupados por calibre y producto (plancha).</p>
+    </div>
+    <div class="retazos-report__actions">
+      <button type="button" class="btn btn--outline" [disabled]="loading()" (click)="reload()">
+        Actualizar
+      </button>
+      <button
+        type="button"
+        class="btn btn--primary"
+        [disabled]="loading() || downloadingPdf() || !reporte()"
+        (click)="downloadPdf()"
+      >
+        @if (downloadingPdf()) {
+          Generando PDF…
+        } @else {
+          Descargar PDF
+        }
+      </button>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error">{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="alert alert--success">{{ successMessage() }}</div>
+  }
+
+  @if (loading()) {
+    <p class="retazos-report__loading">Cargando reporte…</p>
+  } @else if (reporte(); as data) {
+    <div class="retazos-report__meta panel">
+      <div>
+        <span class="retazos-report__meta-label">Total retazos</span>
+        <strong>{{ data.totalRetazos }}</strong>
+      </div>
+      <div>
+        <span class="retazos-report__meta-label">Calibres</span>
+        <strong>{{ data.grupos.length }}</strong>
+      </div>
+      <div>
+        <span class="retazos-report__meta-label">Generado</span>
+        <strong>{{ data.generadoEl }}</strong>
+      </div>
+      <div>
+        <span class="retazos-report__meta-label">Por</span>
+        <strong>{{ data.generadoPor }}</strong>
+      </div>
+    </div>
+
+    @if (data.totalRetazos === 0) {
+      <div class="retazos-report__empty panel">
+        <p>No hay retazos disponibles en inventario.</p>
+      </div>
+    } @else {
+      @for (grupo of data.grupos; track grupo.calibreId) {
+        <section class="retazos-report__calibre panel">
+          <header class="retazos-report__calibre-head">
+            <h3>Calibre {{ grupo.calibreNombre }}</h3>
+            <span>{{ grupo.cantidad }} retazo(s) · {{ formatArea(grupo.areaTotalCm2) }}</span>
+          </header>
+
+          @for (producto of grupo.productos; track producto.productoId) {
+            <div class="retazos-report__producto">
+              <header class="retazos-report__producto-head">
+                <div>
+                  <strong>{{ producto.productoNombre }}</strong>
+                  @if (producto.productoSku) {
+                    <span class="retazos-report__sku">{{ producto.productoSku }}</span>
+                  }
+                </div>
+                <span>{{ producto.cantidad }} u. · {{ formatArea(producto.areaTotalCm2) }}</span>
+              </header>
+
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Código</th>
+                      <th>Medidas (cm)</th>
+                      <th>Área</th>
+                      <th>Origen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (retazo of producto.retazos; track retazo.id) {
+                      <tr>
+                        <td><strong>{{ retazo.codigo }}</strong></td>
+                        <td>{{ retazo.medidas }}</td>
+                        <td>{{ formatArea(retazo.areaCm2) }}</td>
+                        <td>{{ retazo.origenLabel }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+        </section>
+      }
+    }
+  }
+</div>

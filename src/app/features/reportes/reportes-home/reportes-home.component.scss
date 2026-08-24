@@ -30,6 +30,9 @@
 
 .reportes__content {
   max-width: 40rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .report-card {
@@ -201,6 +204,15 @@
   }
 }
 
+.report-card__hero--retazos {
+  background: linear-gradient(135deg, #ecfdf5 0%, #f8fafc 55%, var(--color-surface) 100%);
+}
+
+.report-card__badge--teal {
+  background: rgba(13, 148, 136, 0.12);
+  color: #0f766e;
+}
+
 .report-card__actions {
   display: flex;
   flex-wrap: wrap;
@@ -209,6 +221,10 @@
 
   .btn--primary {
     min-width: 9rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 

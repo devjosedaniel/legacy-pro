@@ -141,6 +141,10 @@ export class DashboardComponent implements OnInit {
       this.pageHeader.set({ module: 'Inventario', title: 'Retazos' });
       return;
     }
+    if (path.startsWith('/dashboard/reportes/retazos-disponibles')) {
+      this.pageHeader.set({ module: 'Inventario', title: 'Retazos disponibles' });
+      return;
+    }
     if (path.startsWith('/dashboard/reportes')) {
       this.pageHeader.set({ module: 'Inventario', title: 'Reportes' });
       return;
