@@ -199,6 +199,10 @@ export function mapMovimiento(api: ApiMovimiento): Movement {
     notas: api.notas ?? undefined,
     usuario,
     fechaRegistro: api.created_at,
+    stockTotalDespues: api.stock_total_despues ?? undefined,
+    stockPropioDespues: api.stock_propio_despues ?? undefined,
+    stockConsignacionDespues: api.stock_consignacion_despues ?? undefined,
+    materialKardex: api.material_kardex ?? undefined,
     retazosOrigen: api.retazos_origen?.map((retazo) => ({
       id: String(retazo.id),
       codigo: retazo.codigo,

@@ -54,6 +54,7 @@
     <section class="panel producto-detail__section">
       <h3>Lotes en stock</h3>
       @if (stock()?.lotes?.length) {
+        <div class="detail-table-wrap">
         <table class="detail-table">
           <thead>
             <tr>
@@ -68,16 +69,17 @@
           <tbody>
             @for (lote of stock()!.lotes; track lote.loteId ?? lote.numeroLote) {
               <tr>
-                <td><strong>{{ lote.numeroLote }}</strong></td>
-                <td>{{ lote.stockTipo === 'propio' ? 'Propio' : 'Consignación' }}</td>
-                <td>{{ lote.proveedor ?? '—' }}</td>
-                <td>{{ lote.cantidad }}</td>
-                <td>{{ lote.fechaIngreso }}</td>
-                <td>{{ lote.fechaExpiracion ?? '—' }}</td>
+                <td data-label="Lote"><strong>{{ lote.numeroLote }}</strong></td>
+                <td data-label="Tipo">{{ lote.stockTipo === 'propio' ? 'Propio' : 'Consignación' }}</td>
+                <td data-label="Proveedor">{{ lote.proveedor ?? '—' }}</td>
+                <td data-label="Cantidad">{{ lote.cantidad }}</td>
+                <td data-label="Ingreso">{{ lote.fechaIngreso }}</td>
+                <td data-label="Expiración">{{ lote.fechaExpiracion ?? '—' }}</td>
               </tr>
             }
           </tbody>
         </table>
+        </div>
       } @else {
         <p class="producto-detail__empty">Sin lotes con stock.</p>
       }
@@ -124,6 +126,7 @@
       } @else if (retazos().length === 0) {
         <p class="producto-detail__empty">No hay retazos con este filtro.</p>
       } @else {
+        <div class="detail-table-wrap">
         <table class="detail-table">
           <thead>
             <tr>
@@ -138,16 +141,16 @@
           <tbody>
             @for (retazo of retazos(); track retazo.id) {
               <tr>
-                <td><strong>{{ retazo.codigo }}</strong></td>
-                <td>{{ formatMedidas(retazo.ancho, retazo.alto) }}</td>
-                <td>{{ retazoOrigenLabels[retazo.origen] }}</td>
-                <td>
+                <td data-label="Código"><strong>{{ retazo.codigo }}</strong></td>
+                <td data-label="Medidas">{{ formatMedidas(retazo.ancho, retazo.alto) }}</td>
+                <td data-label="Origen">{{ retazoOrigenLabels[retazo.origen] }}</td>
+                <td data-label="Estado">
                   <span class="badge" [attr.data-estado]="retazo.estado">
                     {{ retazoEstadoLabels[retazo.estado] }}
                   </span>
                 </td>
-                <td>{{ retazo.loteNumero ?? '—' }}</td>
-                <td class="producto-detail__actions">
+                <td data-label="Lote origen">{{ retazo.loteNumero ?? '—' }}</td>
+                <td class="producto-detail__actions" data-label="">
                   @if (retazo.estado === 'disponible') {
                     <button type="button" class="btn btn--outline btn--sm" (click)="updateRetazoEstado(retazo, 'consumido')">
                       Consumir
@@ -161,6 +164,7 @@
             }
           </tbody>
         </table>
+        </div>
         <app-pagination
           [page]="retazosPage()"
           [pageSize]="pageSize"
@@ -182,14 +186,17 @@
       } @else if (movements().length === 0) {
         <p class="producto-detail__empty">Sin movimientos registrados.</p>
       } @else {
+        <div class="detail-table-wrap">
         <table class="detail-table">
           <thead>
             <tr>
               <th>Número</th>
+              <th>Material</th>
               <th>Tipo</th>
               <th>Origen</th>
-              <th>Lote</th>
+              <th>Lote / Retazo</th>
               <th>Cantidad</th>
+              <th>Stock actual</th>
               <th>Usuario</th>
               <th>Fecha</th>
             </tr>
@@ -197,19 +204,27 @@
           <tbody>
             @for (mov of movements(); track mov.id) {
               <tr>
-                <td><strong>{{ mov.numero }}</strong></td>
-                <td>
+                <td data-label="Número"><strong>{{ mov.numero }}</strong></td>
+                <td data-label="Material">
+                  <span
+                    class="material-badge"
+                    [attr.data-material]="resolveMovimientoMaterial(mov)"
+                  >{{ formatMovimientoMaterial(mov) }}</span>
+                </td>
+                <td data-label="Tipo">
                   <span [attr.data-dir]="mov.direccion">{{ movementLabels[mov.tipo] }}</span>
                 </td>
-                <td>{{ formatStockOrigen(mov.stockTipo, mov.proveedor) }}</td>
-                <td>{{ mov.numeroLote }}</td>
-                <td>{{ mov.direccion === 'bajada' ? '-' : '+' }}{{ mov.cantidad }}</td>
-                <td>{{ mov.usuario || '—' }}</td>
-                <td>{{ formatDate(mov.fechaRegistro) }}</td>
+                <td data-label="Origen">{{ formatStockOrigen(mov.stockTipo, mov.proveedor) }}</td>
+                <td data-label="Lote / Retazo">{{ formatLoteMovimiento(mov) }}</td>
+                <td data-label="Cantidad">{{ mov.direccion === 'bajada' ? '-' : '+' }}{{ mov.cantidad }}</td>
+                <td data-label="Stock actual"><strong>{{ formatStockDespues(mov) }}</strong></td>
+                <td data-label="Usuario">{{ mov.usuario || '—' }}</td>
+                <td data-label="Fecha">{{ formatDate(mov.fechaRegistro) }}</td>
               </tr>
             }
           </tbody>
         </table>
+        </div>
         <app-pagination
           [page]="movementsPage()"
           [pageSize]="pageSize"

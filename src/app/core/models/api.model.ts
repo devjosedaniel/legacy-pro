@@ -78,6 +78,10 @@ export interface ApiMovimiento {
   producto?: ApiProducto;
   creado_por?: { id: number; nombre: string | null; usuario: string };
   retazos_origen?: ApiRetazo[];
+  stock_total_despues?: number | null;
+  stock_propio_despues?: number | null;
+  stock_consignacion_despues?: number | null;
+  material_kardex?: 'plancha' | 'retazo' | null;
 }
 
 export interface ApiUsuario {

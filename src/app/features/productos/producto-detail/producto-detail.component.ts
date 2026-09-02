@@ -16,6 +16,7 @@ import { ProductService } from '../../../core/services/product.service';
 import { RetazoService } from '../../../core/services/retazo.service';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { formatMedidasCm } from '../../../core/utils/dimensions.util';
+import { formatMovimientoMaterialLabel, resolveMovimientoMaterial } from '../../../core/utils/movimiento-material.util';
 import { formatMovimientoStockOrigen } from '../../../core/utils/stock-tipo.util';
 import { ConsumoConsignacionResumen } from '../../../core/services/movement.service';
 
@@ -57,6 +58,8 @@ export class ProductoDetailComponent implements OnInit {
   protected readonly retazoSuccess = signal<string | null>(null);
   protected readonly consumoConsignacion = signal<ConsumoConsignacionResumen | null>(null);
   protected readonly formatStockOrigen = formatMovimientoStockOrigen;
+  protected readonly formatMovimientoMaterial = formatMovimientoMaterialLabel;
+  protected readonly resolveMovimientoMaterial = resolveMovimientoMaterial;
 
   protected readonly retazoForm = this.fb.nonNullable.group({
     ancho: [null as number | null, [Validators.required, Validators.min(0.01)]],
@@ -85,6 +88,30 @@ export class ProductoDetailComponent implements OnInit {
     const s = this.stock();
     if (!s) return 0;
     return s.consignacion.reduce((sum, item) => sum + item.cantidad, 0);
+  }
+
+  protected formatLoteMovimiento(mov: Movement): string {
+    if (resolveMovimientoMaterial(mov) === 'retazo') {
+      return mov.numeroLote.replace(/^RETAZO-/i, '');
+    }
+
+    return mov.numeroLote;
+  }
+
+  protected formatStockDespues(mov: Movement): string {
+    if (!mov.activo) return '—';
+    if (resolveMovimientoMaterial(mov) === 'retazo') return '—';
+
+    if (mov.stockTotalDespues == null) return '—';
+
+    const propio = mov.stockPropioDespues;
+    const consignacion = mov.stockConsignacionDespues;
+
+    if (propio != null && consignacion != null && consignacion > 0) {
+      return `${mov.stockTotalDespues} (${propio}P + ${consignacion}C)`;
+    }
+
+    return String(mov.stockTotalDespues);
   }
 
   protected formatDate(iso: string): string {

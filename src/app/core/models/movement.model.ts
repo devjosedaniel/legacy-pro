@@ -41,6 +41,10 @@ export interface Movement {
   notas?: string;
   usuario: string;
   fechaRegistro: string;
+  stockTotalDespues?: number | null;
+  stockPropioDespues?: number | null;
+  stockConsignacionDespues?: number | null;
+  materialKardex?: 'plancha' | 'retazo' | null;
   retazosOrigen?: {
     id: string;
     codigo: string;

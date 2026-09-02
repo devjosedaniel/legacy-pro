@@ -93,6 +93,12 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: flex-end;
+
+  @media (max-width: 640px) {
+    .field--inline {
+      flex: 1 1 100%;
+    }
+  }
 }
 
 .productos__table-wrap {
