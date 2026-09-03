@@ -125,7 +125,61 @@
           </div>
         </div>
       </section>
+    }
 
+    @if (isStickyback()) {
+      <section class="producto-form__section">
+        <h3>Datos de stickyback</h3>
+        <p class="producto-form__section-desc">Ancho en <strong>centímetros (cm)</strong> y largo en <strong>metros (m)</strong>.</p>
+
+        <div class="field" [class.field--error]="form.controls.nombre.touched && form.controls.nombre.invalid">
+          <label for="nombre-stk">Producto / Descripción *</label>
+          <input
+            id="nombre-stk"
+            type="text"
+            formControlName="nombre"
+            placeholder="Ej: STICKYBACK ORACAL 50x25"
+          />
+          <span class="field__hint">Nombre completo según ficha técnica</span>
+          @if (form.controls.nombre.touched && form.controls.nombre.errors?.['required']) {
+            <span class="field__error">El nombre es requerido</span>
+          }
+        </div>
+
+        <div class="field-row">
+          <div class="field" [class.field--error]="form.controls.marcaId.touched && form.controls.marcaId.invalid">
+            <label for="marcaId-stk">Marca *</label>
+            <select id="marcaId-stk" formControlName="marcaId">
+              <option value="" disabled>Seleccionar marca</option>
+              @for (m of marcas(); track m.id) {
+                <option [value]="m.id">{{ m.nombre }}</option>
+              }
+              <option [value]="otraMarca">Otra marca...</option>
+            </select>
+          </div>
+
+          @if (showCustomMarca()) {
+            <div class="field">
+              <label for="marcaCustom-stk">Nombre de marca *</label>
+              <input id="marcaCustom-stk" type="text" formControlName="marcaCustom" placeholder="Ej: ORACAL" />
+            </div>
+          }
+        </div>
+
+        <div class="field-row">
+          <div class="field" [class.field--error]="form.controls.ancho.touched && form.controls.ancho.invalid">
+            <label for="ancho-stk">Ancho (cm) *</label>
+            <input id="ancho-stk" type="number" formControlName="ancho" placeholder="Ej: 50" min="0.01" step="0.01" />
+          </div>
+          <div class="field" [class.field--error]="form.controls.alto.touched && form.controls.alto.invalid">
+            <label for="alto-stk">Largo (m) *</label>
+            <input id="alto-stk" type="number" formControlName="alto" placeholder="Ej: 25" min="0.01" step="0.01" />
+          </div>
+        </div>
+      </section>
+    }
+
+    @if (isInventarioConLote()) {
       <section class="producto-form__section">
         <h3>Control de inventario</h3>
 

@@ -63,6 +63,14 @@ export function mapProducto(api: ApiProducto): Product {
     };
   }
 
+  if (slug === 'stickyback' && api.marca_id != null && api.ancho != null && api.alto != null) {
+    product.stickyback = {
+      marcaId: String(api.marca_id),
+      marca: api.marca?.nombre ?? '',
+      medidas: { ancho: Number(api.ancho), largo: Number(api.alto) },
+    };
+  }
+
   return product;
 }
 

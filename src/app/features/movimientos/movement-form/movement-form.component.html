@@ -131,7 +131,7 @@
             </div>
           </div>
 
-          @if (showPlanchaFilters()) {
+          @if (showMarcaFilter()) {
             <div class="movement-form__product-filters">
               <div class="movement-form__filters-row">
                 <div class="field field--inline">
@@ -148,19 +148,21 @@
                   </select>
                 </div>
 
-                <div class="field field--inline">
-                  <label for="filtro-calibre">Calibre</label>
-                  <select
-                    id="filtro-calibre"
-                    [value]="calibreFilter()"
-                    (change)="onCalibreFilterChange($any($event.target).value)"
-                  >
-                    <option value="">Todos los calibres</option>
-                    @for (cal of calibresDisponibles(); track cal.id) {
-                      <option [value]="cal.id">{{ cal.nombre }}</option>
-                    }
-                  </select>
-                </div>
+                @if (showCalibreFilter()) {
+                  <div class="field field--inline">
+                    <label for="filtro-calibre">Calibre</label>
+                    <select
+                      id="filtro-calibre"
+                      [value]="calibreFilter()"
+                      (change)="onCalibreFilterChange($any($event.target).value)"
+                    >
+                      <option value="">Todos los calibres</option>
+                      @for (cal of calibresDisponibles(); track cal.id) {
+                        <option [value]="cal.id">{{ cal.nombre }}</option>
+                      }
+                    </select>
+                  </div>
+                }
 
                 @if (marcaFilter() || calibreFilter()) {
                   <button type="button" class="btn btn--outline btn--sm" (click)="clearProductFilters()">
@@ -216,13 +218,13 @@
 
                   <div class="field" [class.field--error]="linea.get('numeroLote')?.touched && linea.get('numeroLote')?.invalid">
                     <label [for]="'lote-' + i">
-                      Número de lote @if (isLinePlanchas(i)) { * }
+                      Número de lote @if (isLineConLote(i)) { * }
                     </label>
                     <input
                       [id]="'lote-' + i"
                       type="text"
                       formControlName="numeroLote"
-                      [placeholder]="isLinePlanchas(i) ? 'Ej: L-2026-0342' : 'Opcional'"
+                      [placeholder]="isLineConLote(i) ? 'Ej: L-2026-0342' : 'Opcional'"
                     />
                   </div>
 
@@ -236,14 +238,14 @@
           </div>
         </div>
       } @else {
-        @if (showPlanchaFilters()) {
+        @if (showMarcaFilter()) {
           <div class="movement-form__product-filters">
             <p class="movement-form__filters-label">Filtrar producto</p>
             <div class="movement-form__filters-row">
               <div class="field field--inline">
-                <label for="filtro-marca">Marca</label>
+                <label for="filtro-marca-baj">Marca</label>
                 <select
-                  id="filtro-marca"
+                  id="filtro-marca-baj"
                   [value]="marcaFilter()"
                   (change)="onMarcaFilterChange($any($event.target).value)"
                 >
@@ -254,19 +256,21 @@
                 </select>
               </div>
 
-              <div class="field field--inline">
-                <label for="filtro-calibre">Calibre</label>
-                <select
-                  id="filtro-calibre"
-                  [value]="calibreFilter()"
-                  (change)="onCalibreFilterChange($any($event.target).value)"
-                >
-                  <option value="">Todos los calibres</option>
-                  @for (cal of calibresDisponibles(); track cal.id) {
-                    <option [value]="cal.id">{{ cal.nombre }}</option>
-                  }
-                </select>
-              </div>
+              @if (showCalibreFilter()) {
+                <div class="field field--inline">
+                  <label for="filtro-calibre-baj">Calibre</label>
+                  <select
+                    id="filtro-calibre-baj"
+                    [value]="calibreFilter()"
+                    (change)="onCalibreFilterChange($any($event.target).value)"
+                  >
+                    <option value="">Todos los calibres</option>
+                    @for (cal of calibresDisponibles(); track cal.id) {
+                      <option [value]="cal.id">{{ cal.nombre }}</option>
+                    }
+                  </select>
+                </div>
+              }
 
               @if (marcaFilter() || calibreFilter()) {
                 <button type="button" class="btn btn--outline btn--sm" (click)="clearProductFilters()">

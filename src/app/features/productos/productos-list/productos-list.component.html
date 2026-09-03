@@ -45,7 +45,7 @@
         </select>
       </div>
 
-      @if (showPlanchaColumns()) {
+      @if (showMarcaColumn()) {
         <div class="field field--inline">
           <label for="marca">Marca</label>
           <select id="marca" [value]="marcaFilter()" (change)="onMarcaChange($any($event.target).value)">
@@ -56,15 +56,17 @@
           </select>
         </div>
 
-        <div class="field field--inline">
-          <label for="calibre">Calibre</label>
-          <select id="calibre" [value]="calibreFilter()" (change)="onCalibreChange($any($event.target).value)">
-            <option value="">Todos</option>
-            @for (cal of calibres(); track cal.id) {
-              <option [value]="cal.id">{{ cal.nombre }}</option>
-            }
-          </select>
-        </div>
+        @if (showCalibreColumn()) {
+          <div class="field field--inline">
+            <label for="calibre">Calibre</label>
+            <select id="calibre" [value]="calibreFilter()" (change)="onCalibreChange($any($event.target).value)">
+              <option value="">Todos</option>
+              @for (cal of calibres(); track cal.id) {
+                <option [value]="cal.id">{{ cal.nombre }}</option>
+              }
+            </select>
+          </div>
+        }
       }
 
       <div class="field field--inline">
@@ -98,10 +100,12 @@
             @if (categoryFilter() === 'all') {
               <th>Categoría</th>
             }
-            @if (showPlanchaColumns()) {
+            @if (showMarcaColumn()) {
               <th>Marca</th>
-              <th>Calibre</th>
-              <th>Medidas (cm)</th>
+              @if (showCalibreColumn()) {
+                <th>Calibre</th>
+              }
+              <th>Medidas</th>
             }
             <th>Stock</th>
             <th></th>
@@ -119,13 +123,15 @@
                   <span class="productos__cat-badge">{{ getCategoryIcon(product) }} {{ getCategoryName(product) }}</span>
                 </td>
               }
-              @if (showPlanchaColumns()) {
-                <td data-label="Marca">{{ product.plancha?.marca ?? '—' }}</td>
-                <td data-label="Calibre">{{ product.plancha?.calibre ?? '—' }}</td>
+              @if (showMarcaColumn()) {
+                <td data-label="Marca">{{ productMarca(product) }}</td>
+                @if (showCalibreColumn()) {
+                  <td data-label="Calibre">{{ product.plancha?.calibre ?? '—' }}</td>
+                }
                 <td data-label="Medidas">
-                  @if (product.plancha) {
+                  @if (product.plancha || product.stickyback) {
                     <span class="productos__medidas">{{ formatMedidas(product) }}</span>
-                    <span class="productos__medidas-label">Ancho × Alto · cm</span>
+                    <span class="productos__medidas-label">{{ medidasLabel(product) }}</span>
                   } @else {
                     —
                   }

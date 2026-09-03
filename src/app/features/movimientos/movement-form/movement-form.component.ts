@@ -16,7 +16,7 @@ import {
   TIPOS_SUBIDA,
   loteKey,
 } from '../../../core/models/movement.model';
-import { Product } from '../../../core/models/product.model';
+import { Product, categoriaUsaLote } from '../../../core/models/product.model';
 import { InventarioDataService } from '../../../core/services/inventario-data.service';
 import { CalibreService } from '../../../core/services/calibre.service';
 import { CategoryService } from '../../../core/services/category.service';
@@ -25,7 +25,7 @@ import { MovementService } from '../../../core/services/movement.service';
 import { ProductService } from '../../../core/services/product.service';
 import { ProveedorService } from '../../../core/services/proveedor.service';
 import { SearchSelectComponent } from '../../../shared/components/search-select/search-select.component';
-import { formatMedidasCm } from '../../../core/utils/dimensions.util';
+import { formatMedidasCm, formatStickybackMedidas } from '../../../core/utils/dimensions.util';
 
 @Component({
   selector: 'app-movement-form',
@@ -64,7 +64,10 @@ export class MovementFormComponent implements OnInit {
   protected readonly isSubida = computed(() => this.direccion() === 'subida');
 
   protected readonly showLotePicker = computed(
-    () => this.isBajada() && this.isPlanchas() && !!this.form.controls.productId.value,
+    () =>
+      this.isBajada() &&
+      categoriaUsaLote(this.selectedProduct()?.categorySlug ?? 'otros') &&
+      !!this.form.controls.productId.value,
   );
 
   protected readonly productStock = computed(() => {
@@ -79,6 +82,10 @@ export class MovementFormComponent implements OnInit {
 
   protected readonly isPlanchas = computed(
     () => this.selectedProduct()?.categorySlug === 'planchas',
+  );
+
+  protected readonly isConLote = computed(() =>
+    categoriaUsaLote(this.selectedProduct()?.categorySlug ?? 'otros'),
   );
 
   protected readonly showProveedorSelect = computed(() => this.direccion() === 'subida');
@@ -100,7 +107,7 @@ export class MovementFormComponent implements OnInit {
 
   protected readonly showFechaIngreso = computed(() => {
     if (this.isBajada()) return false;
-    return this.lineasHavePlanchas();
+    return this.lineasRequierenLote();
   });
 
   protected readonly showFechaExpiracion = computed(() => this.direccion() === 'subida');
@@ -146,7 +153,11 @@ export class MovementFormComponent implements OnInit {
   protected readonly marcaFilter = signal('');
   protected readonly calibreFilter = signal('');
 
-  protected readonly showPlanchaFilters = computed(() => this.categorySlug() === 'planchas');
+  protected readonly showMarcaFilter = computed(
+    () => this.categorySlug() === 'planchas' || this.categorySlug() === 'stickyback',
+  );
+
+  protected readonly showCalibreFilter = computed(() => this.categorySlug() === 'planchas');
 
   protected readonly marcasDisponibles = computed(() =>
     this.marcaService.getByCategory(this.categorySlug()),
@@ -160,7 +171,8 @@ export class MovementFormComponent implements OnInit {
 
     return this.productService.all().filter((p) => {
       if (!p.activo || p.categorySlug !== this.categorySlug()) return false;
-      if (marcaId && p.plancha?.marcaId !== marcaId) return false;
+      const productMarcaId = p.plancha?.marcaId ?? p.stickyback?.marcaId;
+      if (marcaId && productMarcaId !== marcaId) return false;
       if (calibre && p.plancha?.calibreId !== calibre) return false;
       return true;
     });
@@ -253,10 +265,11 @@ export class MovementFormComponent implements OnInit {
     this.updateValidators();
   }
 
-  protected isLinePlanchas(index: number): boolean {
+  protected isLineConLote(index: number): boolean {
     const productId = this.lineas.at(index).get('productId')?.value;
-    if (!productId) return this.categorySlug() === 'planchas';
-    return this.productService.getById(productId)?.categorySlug === 'planchas';
+    if (!productId) return categoriaUsaLote(this.categorySlug());
+    const slug = this.productService.getById(productId)?.categorySlug;
+    return slug ? categoriaUsaLote(slug) : false;
   }
 
   protected onMarcaFilterChange(value: string): void {
@@ -281,6 +294,10 @@ export class MovementFormComponent implements OnInit {
       const m = product.plancha.medidas;
       return formatMedidasCm(m.ancho, m.alto);
     }
+    if (product.stickyback) {
+      const m = product.stickyback.medidas;
+      return formatStickybackMedidas(m.ancho, m.largo);
+    }
     return product.nombre;
   }
 
@@ -288,6 +305,10 @@ export class MovementFormComponent implements OnInit {
     if (product.plancha) {
       const m = product.plancha.medidas;
       return `${product.nombre} · ${product.plancha.marca} · ${product.plancha.calibre} · ${formatMedidasCm(m.ancho, m.alto)}`;
+    }
+    if (product.stickyback) {
+      const m = product.stickyback.medidas;
+      return `${product.nombre} · ${product.stickyback.marca} · ${formatStickybackMedidas(m.ancho, m.largo)}`;
     }
     return product.nombre;
   }
@@ -342,10 +363,10 @@ export class MovementFormComponent implements OnInit {
     for (let i = 0; i < lineas.length; i++) {
       const linea = lineas[i];
       const product = this.productService.getById(linea.productId);
-      const esPlancha = product?.categorySlug === 'planchas';
+      const requiereLote = product ? categoriaUsaLote(product.categorySlug) : false;
 
-      if (esPlancha && !linea.numeroLote.trim()) {
-        this.errorMessage.set(`La línea ${i + 1} requiere número de lote (plancha).`);
+      if (requiereLote && !linea.numeroLote.trim()) {
+        this.errorMessage.set(`La línea ${i + 1} requiere número de lote.`);
         return;
       }
 
@@ -356,8 +377,8 @@ export class MovementFormComponent implements OnInit {
       }
     }
 
-    if (this.lineasHavePlanchas() && !raw.fechaIngreso) {
-      this.errorMessage.set('La fecha de ingreso es requerida cuando hay planchas.');
+    if (this.lineasRequierenLote() && !raw.fechaIngreso) {
+      this.errorMessage.set('La fecha de ingreso es requerida para productos con control por lote.');
       return;
     }
 
@@ -398,10 +419,10 @@ export class MovementFormComponent implements OnInit {
 
   private submitBajada(raw: ReturnType<typeof this.form.getRawValue>): void {
     const product = this.selectedProduct();
-    const esPlancha = product?.categorySlug === 'planchas';
+    const requiereLote = product ? categoriaUsaLote(product.categorySlug) : false;
     const selectedLote = this.resolveSelectedLote();
 
-    if (esPlancha) {
+    if (requiereLote) {
       if (this.loadingLotes()) {
         this.errorMessage.set('Espera a que carguen los lotes disponibles.');
         this.scrollToAlerts();
@@ -477,9 +498,9 @@ export class MovementFormComponent implements OnInit {
     });
   }
 
-  private lineasHavePlanchas(): boolean {
+  private lineasRequierenLote(): boolean {
     for (let i = 0; i < this.lineas.length; i++) {
-      if (this.isLinePlanchas(i)) return true;
+      if (this.isLineConLote(i)) return true;
     }
     return false;
   }
@@ -600,7 +621,7 @@ export class MovementFormComponent implements OnInit {
     const tipo = this.form.controls.tipo.value;
     const isSubida = this.direccion() === 'subida';
     const isBajada = this.direccion() === 'bajada';
-    const isPlanchas = this.selectedProduct()?.categorySlug === 'planchas';
+    const isConLote = this.isConLote();
     const hasLotes = this.availableLotes().length > 0;
 
     const productId = this.form.controls.productId;
@@ -619,7 +640,7 @@ export class MovementFormComponent implements OnInit {
     } else {
       productId.setValidators([Validators.required]);
 
-      if (isPlanchas) {
+      if (isConLote) {
         loteKeyControl.setValidators(hasLotes ? [Validators.required] : []);
         lote.clearValidators();
       } else {
@@ -630,7 +651,7 @@ export class MovementFormComponent implements OnInit {
       cantidad.setValidators([Validators.required, Validators.min(1)]);
     }
 
-    fecha.setValidators(isSubida && this.lineasHavePlanchas() ? [Validators.required] : []);
+    fecha.setValidators(isSubida && this.lineasRequierenLote() ? [Validators.required] : []);
     proveedorId.setValidators(isSubida ? [Validators.required] : []);
     proveedor.setValidators(isBajada && tipo && requiresProveedor(tipo) ? [Validators.required] : []);
 
@@ -644,7 +665,7 @@ export class MovementFormComponent implements OnInit {
         productIdLinea?.setValidators([Validators.required]);
         cantidadLinea?.setValidators([Validators.required, Validators.min(1)]);
 
-        if (this.isLinePlanchas(i)) {
+        if (this.isLineConLote(i)) {
           numeroLoteLinea?.setValidators([Validators.required]);
         } else {
           numeroLoteLinea?.clearValidators();

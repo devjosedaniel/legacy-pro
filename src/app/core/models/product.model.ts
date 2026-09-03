@@ -13,6 +13,15 @@ export interface PlanchaAttributes {
   medidas: Medidas;
 }
 
+export interface StickybackAttributes {
+  marcaId: string;
+  marca: string;
+  medidas: {
+    ancho: number;
+    largo: number;
+  };
+}
+
 export interface Product {
   id: string;
   nombre: string;
@@ -24,8 +33,15 @@ export interface Product {
   activo: boolean;
   notas?: string;
   plancha?: PlanchaAttributes;
+  stickyback?: StickybackAttributes;
   createdAt: string;
   updatedAt: string;
+}
+
+export const CATEGORIAS_CON_LOTE: ProductCategorySlug[] = ['planchas', 'stickyback'];
+
+export function categoriaUsaLote(slug: ProductCategorySlug): boolean {
+  return CATEGORIAS_CON_LOTE.includes(slug);
 }
 
 export interface ProductoFormData {

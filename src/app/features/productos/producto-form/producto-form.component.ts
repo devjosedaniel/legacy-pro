@@ -8,7 +8,7 @@ import { CategoryService } from '../../../core/services/category.service';
 import { MarcaService } from '../../../core/services/marca.service';
 import { ProductService } from '../../../core/services/product.service';
 
-const SUPPORTED_CATEGORIES: ProductCategorySlug[] = ['planchas'];
+const SUPPORTED_CATEGORIES: ProductCategorySlug[] = ['planchas', 'stickyback'];
 
 @Component({
   selector: 'app-producto-form',
@@ -62,6 +62,10 @@ export class ProductoFormComponent implements OnInit {
   });
 
   protected readonly isPlanchas = computed(() => this.categorySlug() === 'planchas');
+  protected readonly isStickyback = computed(() => this.categorySlug() === 'stickyback');
+  protected readonly isInventarioConLote = computed(
+    () => this.isPlanchas() || this.isStickyback(),
+  );
 
   protected readonly isCategorySupported = computed(() => {
     const slug = this.categorySlug();
@@ -73,7 +77,7 @@ export class ProductoFormComponent implements OnInit {
 
     this.form.controls.categorySlug.valueChanges.subscribe((slug) => {
       this.categorySlug.set(slug);
-      this.updatePlanchaValidators(slug);
+      this.updateCategoryValidators(slug);
       this.errorMessage.set(null);
 
       if (slug) {
@@ -111,7 +115,7 @@ export class ProductoFormComponent implements OnInit {
   }
 
   protected onSubmit(): void {
-    this.updatePlanchaValidators(this.form.controls.categorySlug.value);
+    this.updateCategoryValidators(this.form.controls.categorySlug.value);
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -124,8 +128,9 @@ export class ProductoFormComponent implements OnInit {
       return;
     }
 
-    const marcaPayload = this.isPlanchas() ? this.resolveMarcaPayload() : {};
-    if (this.isPlanchas() && !marcaPayload.marcaId && !marcaPayload.marca) {
+    const needsMarca = slug === 'planchas' || slug === 'stickyback';
+    const marcaPayload = needsMarca ? this.resolveMarcaPayload() : {};
+    if (needsMarca && !marcaPayload.marcaId && !marcaPayload.marca) {
       this.errorMessage.set('Indica la marca del producto.');
       return;
     }
@@ -187,47 +192,71 @@ export class ProductoFormComponent implements OnInit {
     this.form.controls.categorySlug.disable();
 
     if (product.categorySlug === 'planchas' && product.plancha) {
-      this.marcaService.ensureLoaded(product.categorySlug).subscribe(() => {
-        const marcaKnown = this.marcaService
-          .getByCategory(product.categorySlug)
-          .some((m) => m.id === product.plancha!.marcaId);
-
-        this.showCustomMarca.set(!marcaKnown);
-
-        this.form.patchValue({
-          nombre: product.nombre,
-          marcaId: marcaKnown ? product.plancha!.marcaId : OTRA_MARCA,
-          marcaCustom: marcaKnown ? '' : product.plancha!.marca,
-          calibreId: product.plancha!.calibreId,
-          ancho: product.plancha!.medidas.ancho,
-          alto: product.plancha!.medidas.alto,
-          stockMinimo: product.stockMinimo,
-          notas: product.notas ?? '',
-        });
+      this.patchMarcaMedidas(product, product.plancha.marcaId, product.plancha.marca, {
+        calibreId: product.plancha.calibreId,
+        ancho: product.plancha.medidas.ancho,
+        alto: product.plancha.medidas.alto,
+      });
+    } else if (product.categorySlug === 'stickyback' && product.stickyback) {
+      this.patchMarcaMedidas(product, product.stickyback.marcaId, product.stickyback.marca, {
+        ancho: product.stickyback.medidas.ancho,
+        alto: product.stickyback.medidas.largo,
       });
     }
 
-    this.updatePlanchaValidators(product.categorySlug);
+    this.updateCategoryValidators(product.categorySlug);
     this.categorySlug.set(product.categorySlug);
   }
 
-  private updatePlanchaValidators(slug: ProductCategorySlug | ''): void {
+  private patchMarcaMedidas(
+    product: Product,
+    marcaId: string,
+    marcaNombre: string,
+    medidas: { calibreId?: string; ancho: number; alto: number },
+  ): void {
+    this.marcaService.ensureLoaded(product.categorySlug).subscribe(() => {
+      const marcaKnown = this.marcaService
+        .getByCategory(product.categorySlug)
+        .some((m) => m.id === marcaId);
+
+      this.showCustomMarca.set(!marcaKnown);
+
+      this.form.patchValue({
+        nombre: product.nombre,
+        marcaId: marcaKnown ? marcaId : OTRA_MARCA,
+        marcaCustom: marcaKnown ? '' : marcaNombre,
+        calibreId: medidas.calibreId ?? '',
+        ancho: medidas.ancho,
+        alto: medidas.alto,
+        stockMinimo: product.stockMinimo,
+        notas: product.notas ?? '',
+      });
+    });
+  }
+
+  private updateCategoryValidators(slug: ProductCategorySlug | ''): void {
     const isPlanchas = slug === 'planchas';
+    const isStickyback = slug === 'stickyback';
+    const needsMedidas = isPlanchas || isStickyback;
     const marcaId = this.form.controls.marcaId;
     const calibreId = this.form.controls.calibreId;
     const ancho = this.form.controls.ancho;
     const alto = this.form.controls.alto;
 
-    if (isPlanchas) {
+    if (needsMedidas) {
       marcaId.setValidators([Validators.required]);
-      calibreId.setValidators([Validators.required]);
       ancho.setValidators([Validators.required, Validators.min(0.01)]);
       alto.setValidators([Validators.required, Validators.min(0.01)]);
     } else {
       marcaId.clearValidators();
-      calibreId.clearValidators();
       ancho.clearValidators();
       alto.clearValidators();
+    }
+
+    if (isPlanchas) {
+      calibreId.setValidators([Validators.required]);
+    } else {
+      calibreId.clearValidators();
     }
 
     marcaId.updateValueAndValidity();

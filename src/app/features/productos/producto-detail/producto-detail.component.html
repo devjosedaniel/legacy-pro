@@ -12,6 +12,9 @@
             @if (p.plancha) {
               <span>{{ p.plancha.marca }} · Calibre {{ p.plancha.calibre }} · {{ formatMedidas(p.plancha.medidas.ancho, p.plancha.medidas.alto) }}</span>
             }
+            @if (p.stickyback) {
+              <span>{{ p.stickyback.marca }} · {{ formatStickyback(p.stickyback.medidas.ancho, p.stickyback.medidas.largo) }}</span>
+            }
           </p>
         </div>
         <a [routerLink]="['/dashboard/productos', p.id, 'editar']" class="btn btn--outline">Editar</a>
@@ -44,10 +47,12 @@
           <span class="stat__label">Usadas en consignación</span>
           <strong class="stat__value">{{ consumoConsignacion()?.totalPlanchas ?? 0 }}</strong>
         </article>
-        <article class="stat panel">
-          <span class="stat__label">Retazos disponibles</span>
-          <strong class="stat__value">{{ retazosDisponiblesCount() }}</strong>
-        </article>
+        @if (isPlanchas(p)) {
+          <article class="stat panel">
+            <span class="stat__label">Retazos disponibles</span>
+            <strong class="stat__value">{{ retazosDisponiblesCount() }}</strong>
+          </article>
+        }
       </section>
     }
 
@@ -85,6 +90,7 @@
       }
     </section>
 
+    @if (isPlanchas(p)) {
     <section class="panel producto-detail__section">
       <header class="producto-detail__section-header">
         <h3>Retazos</h3>
@@ -174,6 +180,7 @@
         />
       }
     </section>
+    }
 
     <section class="panel producto-detail__section">
       <header class="producto-detail__section-header">

@@ -9,6 +9,8 @@ import { extractApiError, mapProducto } from '../utils/api.mappers';
 import { CachedLoader } from '../utils/cached-load.util';
 import { MovementService } from './movement.service';
 
+const SUPPORTED_CATEGORIES: ProductCategorySlug[] = ['planchas', 'stickyback'];
+
 @Injectable({ providedIn: 'root' })
 export class ProductService {
   private readonly http = inject(HttpClient);
@@ -69,7 +71,7 @@ export class ProductService {
   }
 
   createProduct(data: ProductoFormData): Observable<Product> {
-    if (data.categorySlug !== 'planchas') {
+    if (!SUPPORTED_CATEGORIES.includes(data.categorySlug)) {
       return throwError(
         () => new Error('El formulario para esta categoría estará disponible próximamente.'),
       );
@@ -78,12 +80,15 @@ export class ProductService {
     const body: Record<string, unknown> = {
       categoria_slug: data.categorySlug,
       nombre: data.nombre.trim().toUpperCase(),
-      calibre_id: data.calibreId ? Number(data.calibreId) : undefined,
       ancho: data.ancho,
       alto: data.alto,
       stock_minimo: data.stockMinimo,
       notas: data.notas,
     };
+
+    if (data.categorySlug === 'planchas' && data.calibreId) {
+      body['calibre_id'] = Number(data.calibreId);
+    }
 
     if (data.marca) {
       body['marca'] = data.marca;
@@ -103,13 +108,16 @@ export class ProductService {
   updateProduct(id: string, data: ProductoFormData): Observable<Product> {
     const body: Record<string, unknown> = {
       nombre: data.nombre.trim().toUpperCase(),
-      calibre_id: data.calibreId ? Number(data.calibreId) : undefined,
       ancho: data.ancho,
       alto: data.alto,
       stock_minimo: data.stockMinimo,
       notas: data.notas,
       activo: true,
     };
+
+    if (data.categorySlug === 'planchas' && data.calibreId) {
+      body['calibre_id'] = Number(data.calibreId);
+    }
 
     if (data.marca) {
       body['marca'] = data.marca;

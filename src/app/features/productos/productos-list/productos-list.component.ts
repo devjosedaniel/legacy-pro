@@ -1,6 +1,6 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { formatMedidasCm } from '../../../core/utils/dimensions.util';
+import { formatMedidasCm, formatStickybackMedidas } from '../../../core/utils/dimensions.util';
 import { ProductCategorySlug } from '../../../core/models/category.model';
 import { ProductStock } from '../../../core/models/movement.model';
 import { Product } from '../../../core/models/product.model';
@@ -36,8 +36,10 @@ export class ProductosListComponent implements OnInit {
 
   protected readonly marcas = computed(() => {
     const cat = this.categoryFilter();
-    const slug = cat === 'all' ? 'planchas' : cat;
-    return this.marcaService.getByCategory(slug);
+    if (cat === 'all' || cat === 'planchas') {
+      return this.marcaService.getByCategory('planchas');
+    }
+    return this.marcaService.getByCategory(cat);
   });
 
   protected readonly calibres = computed(() => this.calibreService.all());
@@ -65,16 +67,19 @@ export class ProductosListComponent implements OnInit {
           p.sku,
           cat?.name,
           p.plancha?.marca,
+          p.stickyback?.marca,
           p.plancha ? String(p.plancha.calibre) : '',
-          p.plancha ? this.formatMedidas(p) : '',
+          this.formatMedidas(p),
         ]
           .join(' ')
           .toLowerCase();
         if (!haystack.includes(query)) return false;
       }
 
+      const marcaId = p.plancha?.marcaId ?? p.stickyback?.marcaId;
+      if (marca && marcaId !== marca) return false;
+
       if (p.plancha) {
-        if (marca && p.plancha.marcaId !== marca) return false;
         if (calibre && p.plancha.calibreId !== calibre) return false;
       }
 
@@ -95,10 +100,17 @@ export class ProductosListComponent implements OnInit {
     return this.activeProducts().filter((p) => this.movementService.hasConsignacion(p.id)).length;
   });
 
-  protected readonly showPlanchaColumns = computed(() => {
+  protected readonly showMarcaColumn = computed(() => {
+    const cat = this.categoryFilter();
+    return cat === 'all' || cat === 'planchas' || cat === 'stickyback';
+  });
+
+  protected readonly showCalibreColumn = computed(() => {
     const cat = this.categoryFilter();
     return cat === 'all' || cat === 'planchas';
   });
+
+  protected readonly showMedidasColumn = computed(() => this.showMarcaColumn());
 
   protected readonly selectedCategoryInfo = computed(() => {
     const cat = this.categoryFilter();
@@ -163,9 +175,25 @@ export class ProductosListComponent implements OnInit {
   }
 
   protected formatMedidas(product: Product): string {
-    const m = product.plancha?.medidas;
-    if (!m) return '—';
-    return formatMedidasCm(m.ancho, m.alto);
+    if (product.plancha) {
+      const m = product.plancha.medidas;
+      return formatMedidasCm(m.ancho, m.alto);
+    }
+    if (product.stickyback) {
+      const m = product.stickyback.medidas;
+      return formatStickybackMedidas(m.ancho, m.largo);
+    }
+    return '—';
+  }
+
+  protected medidasLabel(product: Product): string {
+    if (product.plancha) return 'Ancho × Alto · cm';
+    if (product.stickyback) return 'Ancho × Largo';
+    return '';
+  }
+
+  protected productMarca(product: Product): string {
+    return product.plancha?.marca ?? product.stickyback?.marca ?? '—';
   }
 
   protected formatNumber(n: number): string {

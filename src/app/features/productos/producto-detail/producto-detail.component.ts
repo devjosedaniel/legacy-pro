@@ -15,7 +15,7 @@ import { MovementService } from '../../../core/services/movement.service';
 import { ProductService } from '../../../core/services/product.service';
 import { RetazoService } from '../../../core/services/retazo.service';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
-import { formatMedidasCm } from '../../../core/utils/dimensions.util';
+import { formatMedidasCm, formatStickybackMedidas } from '../../../core/utils/dimensions.util';
 import { formatMovimientoMaterialLabel, resolveMovimientoMaterial } from '../../../core/utils/movimiento-material.util';
 import { formatMovimientoStockOrigen } from '../../../core/utils/stock-tipo.util';
 import { ConsumoConsignacionResumen } from '../../../core/services/movement.service';
@@ -82,6 +82,18 @@ export class ProductoDetailComponent implements OnInit {
 
   protected formatMedidas(ancho: number, alto: number): string {
     return formatMedidasCm(ancho, alto);
+  }
+
+  protected formatStickyback(ancho: number, largo: number): string {
+    return formatStickybackMedidas(ancho, largo);
+  }
+
+  protected isPlanchas(product: Product): boolean {
+    return product.categorySlug === 'planchas';
+  }
+
+  protected isStickyback(product: Product): boolean {
+    return product.categorySlug === 'stickyback';
   }
 
   protected consignacionTotal(): number {
@@ -193,18 +205,22 @@ export class ProductoDetailComponent implements OnInit {
         forkJoin({
           stock: this.movementService.refreshStock(id),
           movements: this.movementService.fetchPage({ productId: id, page: 1, pageSize: PAGE_SIZE }),
-          retazos: this.retazoService.fetchPage({
-            productId: id,
-            estado: this.retazoFilter(),
-            page: 1,
-            pageSize: PAGE_SIZE,
-          }),
-          retazosDisp: this.retazoService.fetchPage({
-            productId: id,
-            estado: 'disponible',
-            page: 1,
-            pageSize: 1,
-          }),
+          retazos: product.categorySlug === 'planchas'
+            ? this.retazoService.fetchPage({
+                productId: id,
+                estado: this.retazoFilter(),
+                page: 1,
+                pageSize: PAGE_SIZE,
+              })
+            : of({ items: [], total: 0, page: 1 }),
+          retazosDisp: product.categorySlug === 'planchas'
+            ? this.retazoService.fetchPage({
+                productId: id,
+                estado: 'disponible',
+                page: 1,
+                pageSize: 1,
+              })
+            : of({ items: [], total: 0, page: 1 }),
           consumo: this.movementService
             .fetchConsumoConsignacion({ productId: id })
             .pipe(catchError(() => of(null))),
@@ -253,7 +269,7 @@ export class ProductoDetailComponent implements OnInit {
 
   private loadRetazos(page: number): void {
     const product = this.product();
-    if (!product) return;
+    if (!product || product.categorySlug !== 'planchas') return;
 
     this.loadingRetazos.set(true);
     this.retazoService
