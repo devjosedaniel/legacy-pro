@@ -1,0 +1,109 @@
+<div class="usuarios">
+  <header class="usuarios__header">
+    <div>
+      <h2>Usuarios</h2>
+      <p>{{ usuarios().length }} usuarios activos en el sistema.</p>
+    </div>
+    <a routerLink="/dashboard/usuarios/nuevo" class="btn btn--primary">+ Nuevo usuario</a>
+  </header>
+
+  @if (successMessage()) {
+    <div class="alert alert--success" role="status">{{ successMessage() }}</div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <section class="usuarios__filters panel">
+    <div class="usuarios__search">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+      </svg>
+      <input
+        type="search"
+        placeholder="Buscar usuario, nombre, correo o perfil..."
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+      />
+    </div>
+  </section>
+
+  @if (isLoading()) {
+    <div class="usuarios__empty panel">
+      <p>Cargando usuarios...</p>
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="usuarios__empty panel">
+      <span>👥</span>
+      <h3>No se encontraron usuarios</h3>
+      <p>Prueba con otra búsqueda o registra un usuario nuevo.</p>
+      <a routerLink="/dashboard/usuarios/nuevo" class="btn btn--primary">+ Nuevo usuario</a>
+    </div>
+  } @else {
+    <div class="usuarios__table-wrap panel">
+      <table class="usuarios__table">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Rol</th>
+            <th>Perfil</th>
+            <th>Última conexión</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (usuario of filtered(); track usuario.id) {
+            <tr>
+              <td class="usuarios__name" data-label="Usuario">
+                <strong>{{ usuario.nombre || usuario.usuario }}</strong>
+                <span class="usuarios__login">{{ usuario.usuario }}</span>
+                @if (usuario.email) {
+                  <span class="usuarios__email">{{ usuario.email }}</span>
+                }
+              </td>
+              <td data-label="Rol">
+                <span
+                  class="badge"
+                  [class.badge--admin]="usuario.rol === 'ROL_ADMIN'"
+                  [class.badge--user]="usuario.rol === 'ROL_USER'"
+                >
+                  {{ rolLabel(usuario.rol) }}
+                </span>
+              </td>
+              <td data-label="Perfil">{{ usuario.perfilNombre || '—' }}</td>
+              <td data-label="Última conexión">{{ formatDate(usuario.ultimaConexion) }}</td>
+              <td class="usuarios__actions" data-label="">
+                <a [routerLink]="['/dashboard/usuarios', usuario.id, 'editar']" class="btn btn--outline btn--sm">
+                  Editar
+                </a>
+                <button
+                  type="button"
+                  class="btn btn--danger btn--sm"
+                  [disabled]="deletingId() === usuario.id"
+                  (click)="confirmDelete(usuario)"
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <p class="usuarios__count">Mostrando {{ filtered().length }} de {{ usuarios().length }} usuarios</p>
+  }
+
+  <app-confirm-dialog
+    [open]="confirmOpen()"
+    title="Eliminar usuario"
+    message="El usuario quedará inactivo y no podrá iniciar sesión."
+    [highlight]="pendingDelete()?.usuario ?? null"
+    confirmLabel="Eliminar"
+    cancelLabel="Cancelar"
+    variant="danger"
+    [loading]="confirmLoading()"
+    (confirmed)="onConfirmDelete()"
+    (cancelled)="onCancelDelete()"
+  />
+</div>

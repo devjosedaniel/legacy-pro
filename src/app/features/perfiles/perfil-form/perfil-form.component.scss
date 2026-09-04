@@ -1,0 +1,163 @@
+@use '../../../shared/styles/forms';
+
+:host {
+  display: block;
+}
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.perfil-form__header {
+  margin-bottom: 1.25rem;
+}
+
+.perfil-form__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
+
+  &:hover {
+    color: var(--color-primary);
+  }
+}
+
+.perfil-form__header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.perfil-form__header p,
+.perfil-form__section-desc {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.alert {
+  margin-bottom: 1rem;
+}
+
+.perfil-form__card {
+  padding: 1.5rem;
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
+}
+
+.perfil-form__section {
+  margin-bottom: 2rem;
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+
+.perfil-form__section-desc {
+  margin-bottom: 1rem;
+}
+
+.perfil-form__modules {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.permiso-mod {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.permiso-mod__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg);
+}
+
+.permiso-mod__toggle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+.permiso-mod__count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.permiso-mod__all {
+  flex-shrink: 0;
+}
+
+.permiso-mod__pages {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+  padding: 1rem;
+  border-top: 1px solid var(--color-border);
+
+  @media (min-width: 640px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.permiso-mod__soon {
+  font-size: 0.65rem;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-light);
+  background: #f1f5f9;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+}
+
+.perfil-form__footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.checkbox {
+  margin-top: 0.75rem;
+}
+
+.dashboard-icon {
+  width: 1.25rem;
+  text-align: center;
+
+  &[data-icon='inventory']::before { content: '🗃️'; }
+  &[data-icon='work']::before { content: '🎨'; }
+  &[data-icon='production']::before { content: '🏭'; }
+  &[data-icon='sales']::before { content: '💼'; }
+  &[data-icon='purchase']::before { content: '🛒'; }
+  &[data-icon='accounting']::before { content: '📒'; }
+  &[data-icon='users']::before { content: '👥'; }
+  &[data-icon='settings']::before { content: '⚙️'; }
+  &[data-icon='system']::before { content: '🛡️'; }
+}

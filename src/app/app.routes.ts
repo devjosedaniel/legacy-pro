@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/guards/auth.guard';
+import { authGuard, guestGuard, permisoGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -21,6 +21,7 @@ export const routes: Routes = [
           import('./features/dashboard/home/dashboard-home.component').then(
             (m) => m.DashboardHomeComponent,
           ),
+        canActivate: [permisoGuard('inventario')],
       },
       {
         path: 'productos',
@@ -28,6 +29,7 @@ export const routes: Routes = [
           import('./features/productos/productos-list/productos-list.component').then(
             (m) => m.ProductosListComponent,
           ),
+        canActivate: [permisoGuard('productos')],
       },
       {
         path: 'productos/nuevo',
@@ -35,6 +37,7 @@ export const routes: Routes = [
           import('./features/productos/producto-form/producto-form.component').then(
             (m) => m.ProductoFormComponent,
           ),
+        canActivate: [permisoGuard('productos')],
       },
       {
         path: 'productos/:id',
@@ -42,6 +45,7 @@ export const routes: Routes = [
           import('./features/productos/producto-detail/producto-detail.component').then(
             (m) => m.ProductoDetailComponent,
           ),
+        canActivate: [permisoGuard('productos')],
       },
       {
         path: 'productos/:id/editar',
@@ -49,6 +53,7 @@ export const routes: Routes = [
           import('./features/productos/producto-form/producto-form.component').then(
             (m) => m.ProductoFormComponent,
           ),
+        canActivate: [permisoGuard('productos')],
       },
       {
         path: 'movimientos',
@@ -56,6 +61,7 @@ export const routes: Routes = [
           import('./features/movimientos/movimientos-list/movimientos-list.component').then(
             (m) => m.MovimientosListComponent,
           ),
+        canActivate: [permisoGuard('movimientos')],
       },
       {
         path: 'movimientos/nuevo',
@@ -63,6 +69,7 @@ export const routes: Routes = [
           import('./features/movimientos/movement-form/movement-form.component').then(
             (m) => m.MovementFormComponent,
           ),
+        canActivate: [permisoGuard('movimientos')],
       },
       {
         path: 'retazos',
@@ -70,6 +77,7 @@ export const routes: Routes = [
           import('./features/retazos/retazos-list/retazos-list.component').then(
             (m) => m.RetazosListComponent,
           ),
+        canActivate: [permisoGuard('retazos')],
       },
       {
         path: 'reportes',
@@ -77,6 +85,7 @@ export const routes: Routes = [
           import('./features/reportes/reportes-home/reportes-home.component').then(
             (m) => m.ReportesHomeComponent,
           ),
+        canActivate: [permisoGuard('reportes-inventario')],
       },
       {
         path: 'reportes/retazos-disponibles',
@@ -84,6 +93,64 @@ export const routes: Routes = [
           import('./features/reportes/retazos-disponibles-report/retazos-disponibles-report.component').then(
             (m) => m.RetazosDisponiblesReportComponent,
           ),
+        canActivate: [permisoGuard('reportes-inventario')],
+      },
+      {
+        path: 'usuarios',
+        loadComponent: () =>
+          import('./features/usuarios/usuarios-list/usuarios-list.component').then(
+            (m) => m.UsuariosListComponent,
+          ),
+        canActivate: [permisoGuard('usuarios')],
+      },
+      {
+        path: 'usuarios/nuevo',
+        loadComponent: () =>
+          import('./features/usuarios/usuario-form/usuario-form.component').then(
+            (m) => m.UsuarioFormComponent,
+          ),
+        canActivate: [permisoGuard('usuarios')],
+      },
+      {
+        path: 'usuarios/:id/editar',
+        loadComponent: () =>
+          import('./features/usuarios/usuario-form/usuario-form.component').then(
+            (m) => m.UsuarioFormComponent,
+          ),
+        canActivate: [permisoGuard('usuarios')],
+      },
+      {
+        path: 'perfiles',
+        loadComponent: () =>
+          import('./features/perfiles/perfiles-list/perfiles-list.component').then(
+            (m) => m.PerfilesListComponent,
+          ),
+        canActivate: [permisoGuard('perfiles')],
+      },
+      {
+        path: 'perfiles/nuevo',
+        loadComponent: () =>
+          import('./features/perfiles/perfil-form/perfil-form.component').then(
+            (m) => m.PerfilFormComponent,
+          ),
+        canActivate: [permisoGuard('perfiles')],
+      },
+      {
+        path: 'perfiles/:id/editar',
+        loadComponent: () =>
+          import('./features/perfiles/perfil-form/perfil-form.component').then(
+            (m) => m.PerfilFormComponent,
+          ),
+        canActivate: [permisoGuard('perfiles')],
+      },
+      { path: 'produccion', redirectTo: 'produccion/reportes', pathMatch: 'full' },
+      {
+        path: 'produccion/reportes',
+        loadComponent: () =>
+          import('./features/produccion/produccion-reportes/produccion-reportes.component').then(
+            (m) => m.ProduccionReportesComponent,
+          ),
+        canActivate: [permisoGuard('produccion-reportes')],
       },
     ],
   },

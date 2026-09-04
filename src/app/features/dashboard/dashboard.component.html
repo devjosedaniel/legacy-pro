@@ -25,44 +25,46 @@
     </div>
 
     <nav class="dashboard__nav">
-      <div class="dashboard__nav-group" [class.dashboard__nav-group--open]="inventarioMenuOpen()">
-        <button
-          type="button"
-          class="dashboard__nav-item dashboard__nav-item--parent"
-          [class.dashboard__nav-item--active]="isInventarioSectionActive()"
-          [attr.aria-expanded]="inventarioMenuOpen()"
-          (click)="toggleInventarioMenu()"
-        >
-          <span class="dashboard__nav-icon" data-icon="inventory"></span>
-          Inventario
-          <span class="dashboard__nav-chevron" aria-hidden="true"></span>
-        </button>
+      @for (group of navGroups(); track group.id) {
+        @if (group.comingSoon) {
+          <span class="dashboard__nav-item dashboard__nav-item--disabled">
+            <span class="dashboard__nav-icon" [attr.data-icon]="group.icon"></span>
+            {{ group.label }}
+            <span class="dashboard__badge">Pronto</span>
+          </span>
+        } @else {
+          <div class="dashboard__nav-group" [class.dashboard__nav-group--open]="openGroupId() === group.id">
+            <button
+              type="button"
+              class="dashboard__nav-item dashboard__nav-item--parent"
+              [class.dashboard__nav-item--active]="isGroupActive(group)"
+              [attr.aria-expanded]="openGroupId() === group.id"
+              (click)="toggleGroup(group.id)"
+            >
+              <span class="dashboard__nav-icon" [attr.data-icon]="group.icon"></span>
+              {{ group.label }}
+              <span class="dashboard__nav-chevron" aria-hidden="true"></span>
+            </button>
 
-        @if (inventarioMenuOpen()) {
-          <div class="dashboard__nav-sub">
-            @for (item of inventarioNavItems; track item.route) {
-              @if (item.disabled) {
-                <span class="dashboard__nav-item dashboard__nav-item--child dashboard__nav-item--disabled">
-                  <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
-                  {{ item.label }}
-                  <span class="dashboard__badge">Pronto</span>
-                </span>
-              } @else {
-                <a
-                  class="dashboard__nav-item dashboard__nav-item--child"
-                  [routerLink]="item.route"
-                  routerLinkActive="dashboard__nav-item--active"
-                  [routerLinkActiveOptions]="{ exact: item.route === '/dashboard/inventario' }"
-                  (click)="closeSidebar()"
-                >
-                  <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
-                  {{ item.label }}
-                </a>
-              }
+            @if (openGroupId() === group.id && group.items) {
+              <div class="dashboard__nav-sub">
+                @for (item of group.items; track item.route) {
+                  <a
+                    class="dashboard__nav-item dashboard__nav-item--child"
+                    [routerLink]="item.route"
+                    routerLinkActive="dashboard__nav-item--active"
+                    [routerLinkActiveOptions]="{ exact: item.exact === true }"
+                    (click)="closeSidebar()"
+                  >
+                    <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
+                    {{ item.label }}
+                  </a>
+                }
+              </div>
             }
           </div>
         }
-      </div>
+      }
     </nav>
 
     <div class="dashboard__sidebar-footer">
@@ -131,7 +133,7 @@
   </div>
 
   <nav class="dashboard__bottom-nav">
-    @for (item of bottomNavItems; track item.route) {
+    @for (item of bottomNavItems(); track item.label) {
       @if (item.disabled) {
         <span class="dashboard__bottom-item dashboard__bottom-item--disabled">
           <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
@@ -141,8 +143,7 @@
         <a
           class="dashboard__bottom-item"
           [routerLink]="item.route"
-          routerLinkActive="dashboard__bottom-item--active"
-          [routerLinkActiveOptions]="{ exact: item.route === '/dashboard/inventario' }"
+          [class.dashboard__bottom-item--active]="isBottomItemActive(item)"
         >
           <span class="dashboard__nav-icon" [attr.data-icon]="item.icon"></span>
           <span>{{ item.label }}</span>

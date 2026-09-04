@@ -1,0 +1,101 @@
+<div class="reportes">
+  <header class="reportes__header">
+    <div>
+      <h2>Reportes de producción</h2>
+      <p>
+        Descarga el consumo y desperdicio de los grupos terminados en el mes que elijas.
+      </p>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error">{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="alert alert--success">{{ successMessage() }}</div>
+  }
+
+  <section class="reportes__content">
+    <article class="report-card panel">
+      <div class="report-card__hero">
+        <div class="report-card__icon-wrap" aria-hidden="true">📐</div>
+        <div class="report-card__hero-text">
+          <div class="report-card__title-row">
+            <h3>Consumo y desperdicio mensual</h3>
+            <span class="report-card__badge">PDF · A4 horizontal</span>
+          </div>
+          <p>
+            Totales de material usado y desperdiciado, resumen por calibre y detalle de cada grupo
+            terminado.
+          </p>
+        </div>
+      </div>
+
+      <div class="report-card__body">
+        <div class="report-card__section">
+          <span class="report-card__section-label">Período</span>
+          <div class="period-choices">
+            <button
+              type="button"
+              class="period-choice"
+              [class.period-choice--active]="period() === 'mes_actual'"
+              (click)="onPeriodChange('mes_actual')"
+            >
+              <span class="period-choice__icon">📅</span>
+              <span class="period-choice__text">
+                <strong>Este mes</strong>
+                <small>{{ mesActualLabel() }}</small>
+              </span>
+            </button>
+            <button
+              type="button"
+              class="period-choice"
+              [class.period-choice--active]="period() === 'mes_especifico'"
+              (click)="onPeriodChange('mes_especifico')"
+            >
+              <span class="period-choice__icon">🗓️</span>
+              <span class="period-choice__text">
+                <strong>Otro mes</strong>
+                <small>Elige el cierre mensual</small>
+              </span>
+            </button>
+          </div>
+
+          @if (period() === 'mes_especifico') {
+            <div class="field report-card__month">
+              <label for="mes-consumo">Selecciona el mes</label>
+              <input
+                id="mes-consumo"
+                type="month"
+                [max]="maxMonth()"
+                [value]="selectedMonth()"
+                (change)="onMonthChange($any($event.target).value)"
+              />
+            </div>
+          }
+        </div>
+
+        <ul class="report-card__features">
+          <li>Consumo y desperdicio en cm²</li>
+          <li>Resumen por calibre</li>
+          <li>Detalle por grupo terminado</li>
+        </ul>
+
+        <div class="report-card__actions">
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="isDownloading()"
+            (click)="download()"
+          >
+            @if (isDownloading()) {
+              Generando PDF…
+            } @else {
+              Descargar consumo y desperdicio
+            }
+          </button>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>

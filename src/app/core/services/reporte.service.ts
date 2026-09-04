@@ -1,6 +1,6 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, map, throwError } from 'rxjs';
+import { Observable, catchError, from, map, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { RetazosDisponiblesReporte } from '../models/reporte.model';
 import { extractApiError } from '../utils/api.mappers';
@@ -90,6 +90,13 @@ export class ReporteService {
     return this.fetchPdfBlob(`${environment.apiUrl}/inv/reportes/retazos/disponibles/pdf`);
   }
 
+  downloadConsumoDesperdicioPdf(mes: string): Observable<Blob> {
+    const params = new URLSearchParams({ mes });
+    return this.fetchPdfBlob(
+      `${environment.apiUrl}/produccion/reportes/consumo-desperdicio/pdf?${params.toString()}`,
+    );
+  }
+
   saveBlob(blob: Blob, filename: string): void {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -117,7 +124,21 @@ export class ReporteService {
           }
           return blob;
         }),
-        catchError((error) => throwError(() => new Error(extractApiError(error)))),
+        catchError((error: unknown) => {
+          if (error instanceof HttpErrorResponse && error.error instanceof Blob) {
+            return from(error.error.text()).pipe(
+              switchMap((text) => {
+                try {
+                  const body = JSON.parse(text) as { mensaje?: string };
+                  return throwError(() => new Error(body.mensaje || 'No se pudo generar el reporte.'));
+                } catch {
+                  return throwError(() => new Error(extractApiError(error)));
+                }
+              }),
+            );
+          }
+          return throwError(() => new Error(extractApiError(error)));
+        }),
       );
   }
 }

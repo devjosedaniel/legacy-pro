@@ -4,6 +4,8 @@ export interface User {
   email: string;
   role: 'admin' | 'operador' | 'visor';
   avatar?: string;
+  perfilId?: string;
+  directorios: number[];
 }
 
 export interface LoginCredentials {

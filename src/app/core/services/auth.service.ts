@@ -120,7 +120,9 @@ export class AuthService {
         return null;
       }
 
-      return JSON.parse(raw) as User;
+      const user = JSON.parse(raw) as User;
+      user.directorios = Array.isArray(user.directorios) ? user.directorios : [];
+      return user;
     } catch {
       return null;
     }

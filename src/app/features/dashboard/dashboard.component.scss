@@ -179,6 +179,40 @@
   &[data-icon='arrows']::before { content: '🔄'; font-size: 1rem; }
   &[data-icon='grid']::before { content: '📂'; font-size: 1rem; }
   &[data-icon='chart']::before { content: '📊'; font-size: 1rem; }
+  &[data-icon='sales']::before { content: '💼'; font-size: 1rem; }
+  &[data-icon='work']::before { content: '🎨'; font-size: 1rem; }
+  &[data-icon='production']::before { content: '🏭'; font-size: 1rem; }
+  &[data-icon='purchase']::before { content: '🛒'; font-size: 1rem; }
+  &[data-icon='accounting']::before { content: '📒'; font-size: 1rem; }
+  &[data-icon='settings']::before { content: '⚙️'; font-size: 1rem; }
+  &[data-icon='system']::before { content: '🛡️'; font-size: 1rem; }
+  &[data-icon='users']::before { content: '👥'; font-size: 1rem; }
+}
+
+.dashboard__loading,
+.dashboard__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 240px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.dashboard__error .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  background: var(--color-primary);
+  color: #fff;
 }
 
 .dashboard__badge {

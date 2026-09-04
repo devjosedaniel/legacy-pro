@@ -84,12 +84,26 @@ export interface ApiMovimiento {
   material_kardex?: 'plancha' | 'retazo' | null;
 }
 
+export interface ApiPerfil {
+  id: number;
+  nombre: string;
+  directorios?: string | string[] | null;
+  correotrabajos?: boolean | number | null;
+  estado?: boolean | number;
+}
+
 export interface ApiUsuario {
   id: number;
   usuario: string;
   nombre: string | null;
   email: string | null;
   rol: string;
+  perfil_id?: number | null;
+  empresa_id?: number | null;
+  mensajeria?: boolean | number | null;
+  ultima_conexion?: string | null;
+  directorios?: Array<string | number> | string | null;
+  perfil?: ApiPerfil | null;
 }
 
 export interface AuthResponse {

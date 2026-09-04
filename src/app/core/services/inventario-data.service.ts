@@ -14,6 +14,10 @@ export class InventarioDataService {
   private readonly productService = inject(ProductService);
   private catalogReady = false;
 
+  get isReady(): boolean {
+    return this.catalogReady;
+  }
+
   loadAll(): Observable<void> {
     this.catalogReady = false;
     return forkJoin([

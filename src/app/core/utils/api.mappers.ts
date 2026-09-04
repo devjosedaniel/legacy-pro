@@ -8,7 +8,10 @@ import {
 } from '../models/movement.model';
 import { Product } from '../models/product.model';
 import { Retazo, RetazoHistorialItem } from '../models/retazo.model';
+import { Perfil } from '../models/perfil.model';
+import { SistemaUsuario, UsuarioRol } from '../models/usuario.model';
 import { User } from '../models/user.model';
+import { parseDirectorios } from './directorios.util';
 import {
   ApiCategoria,
   ApiLoteStock,
@@ -17,6 +20,7 @@ import {
   ApiRetazo,
   ApiRetazoHistorialEvento,
   ApiStock,
+  ApiPerfil,
   ApiUsuario,
 } from '../models/api.model';
 
@@ -235,6 +239,8 @@ export function mapUsuario(api: ApiUsuario): User {
     email: api.email ?? '',
     role: mapRol(api.rol),
     avatar: initials,
+    perfilId: api.perfil_id != null ? String(api.perfil_id) : undefined,
+    directorios: parseDirectorios(api.directorios ?? api.perfil?.directorios),
   };
 }
 
@@ -243,6 +249,37 @@ function mapRol(rol: string): User['role'] {
   if (value.includes('admin')) return 'admin';
   if (value.includes('visor')) return 'visor';
   return 'operador';
+}
+
+export function mapPerfil(api: ApiPerfil): Perfil {
+  return {
+    id: String(api.id),
+    nombre: api.nombre,
+    directorios: parseDirectorios(api.directorios),
+    correoTrabajos: Boolean(api.correotrabajos),
+  };
+}
+
+export function mapSistemaUsuario(api: ApiUsuario): SistemaUsuario {
+  const rol = (api.rol ?? 'ROL_USER') as UsuarioRol;
+  return {
+    id: String(api.id),
+    usuario: api.usuario,
+    nombre: api.nombre?.trim() || '',
+    email: api.email ?? '',
+    rol,
+    perfilId: api.perfil_id != null ? String(api.perfil_id) : api.perfil ? String(api.perfil.id) : '',
+    perfilNombre: api.perfil?.nombre ?? '',
+    empresaId: api.empresa_id ?? 1,
+    mensajeria: Boolean(api.mensajeria),
+    ultimaConexion: api.ultima_conexion ?? undefined,
+  };
+}
+
+export function rolLabel(rol: string): string {
+  if (rol === 'ROL_ADMIN') return 'Administrador';
+  if (rol === 'ROL_USER') return 'Usuario';
+  return rol;
 }
 
 export function extractApiError(error: unknown): string {

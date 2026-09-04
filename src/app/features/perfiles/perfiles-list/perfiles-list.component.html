@@ -1,0 +1,92 @@
+<div class="perfiles">
+  <header class="perfiles__header">
+    <div>
+      <h2>Perfiles y permisos</h2>
+      <p>Define qué módulos y páginas puede ver cada tipo de usuario.</p>
+    </div>
+    <a routerLink="/dashboard/perfiles/nuevo" class="btn btn--primary">+ Nuevo perfil</a>
+  </header>
+
+  @if (successMessage()) {
+    <div class="alert alert--success" role="status">{{ successMessage() }}</div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <section class="perfiles__filters panel">
+    <div class="perfiles__search">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+      </svg>
+      <input
+        type="search"
+        placeholder="Buscar perfil..."
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+      />
+    </div>
+  </section>
+
+  @if (isLoading()) {
+    <div class="perfiles__empty panel">
+      <p>Cargando perfiles...</p>
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="perfiles__empty panel">
+      <span>🛡️</span>
+      <h3>No se encontraron perfiles</h3>
+      <p>Crea un perfil y marca las páginas que podrá usar.</p>
+      <a routerLink="/dashboard/perfiles/nuevo" class="btn btn--primary">+ Nuevo perfil</a>
+    </div>
+  } @else {
+    <div class="perfiles__table-wrap panel">
+      <table class="perfiles__table">
+        <thead>
+          <tr>
+            <th>Perfil</th>
+            <th>Permisos</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (perfil of filtered(); track perfil.id) {
+            <tr>
+              <td class="perfiles__name" data-label="Perfil">
+                <strong>{{ perfil.nombre }}</strong>
+                <span class="perfiles__meta">
+                  {{ perfil.directorios.length }} páginas
+                  @if (perfil.correoTrabajos) {
+                    · correo de trabajos
+                  }
+                </span>
+              </td>
+              <td data-label="Permisos">{{ paginasLabel(perfil) }}</td>
+              <td class="perfiles__actions" data-label="">
+                <a [routerLink]="['/dashboard/perfiles', perfil.id, 'editar']" class="btn btn--outline btn--sm">
+                  Editar
+                </a>
+                <button type="button" class="btn btn--danger btn--sm" (click)="confirmDelete(perfil)">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <app-confirm-dialog
+    [open]="confirmOpen()"
+    title="Eliminar perfil"
+    message="Los usuarios con este perfil seguirán existiendo, pero el perfil quedará inactivo."
+    [highlight]="pendingDelete()?.nombre ?? null"
+    confirmLabel="Eliminar"
+    cancelLabel="Cancelar"
+    variant="danger"
+    [loading]="confirmLoading()"
+    (confirmed)="onConfirmDelete()"
+    (cancelled)="onCancelDelete()"
+  />
+</div>
