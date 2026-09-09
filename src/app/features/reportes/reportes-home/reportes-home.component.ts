@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ReporteService } from '../../../core/services/reporte.service';
 
 type PeriodMode = 'actual' | 'mes_anterior' | 'mes_especifico';
+type MaterialPeriodMode = 'mes_actual' | 'mes_especifico';
 
 @Component({
   selector: 'app-reportes-home',
@@ -14,10 +15,13 @@ export class ReportesHomeComponent {
   private readonly reporteService = inject(ReporteService);
 
   protected readonly isDownloading = signal(false);
+  protected readonly isDownloadingMaterial = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly successMessage = signal<string | null>(null);
   protected readonly periodMode = signal<PeriodMode>('actual');
   protected readonly selectedMonth = signal(this.defaultMonthInput());
+  protected readonly materialPeriod = signal<MaterialPeriodMode>('mes_actual');
+  protected readonly materialMonth = signal(this.currentMonthInput());
 
   protected readonly maxMonth = computed(() => this.formatMonthInput(new Date()));
 
@@ -25,6 +29,11 @@ export class ReportesHomeComponent {
     const d = new Date();
     d.setDate(1);
     d.setMonth(d.getMonth() - 1);
+    return d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  });
+
+  protected readonly mesActualLabel = computed(() => {
+    const d = new Date();
     return d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
   });
 
@@ -42,6 +51,56 @@ export class ReportesHomeComponent {
     this.periodMode.set('mes_anterior');
     this.selectedMonth.set(this.previousMonthInput());
     this.downloadInventario();
+  }
+
+  protected onMaterialPeriodChange(value: string): void {
+    this.materialPeriod.set(value as MaterialPeriodMode);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+  }
+
+  protected onMaterialMonthChange(value: string): void {
+    this.materialMonth.set(value);
+  }
+
+  protected useMaterialMesAnterior(): void {
+    this.materialPeriod.set('mes_especifico');
+    this.materialMonth.set(this.previousMonthInput());
+    this.downloadMaterialUsado();
+  }
+
+  protected downloadMaterialUsado(): void {
+    let mes: string;
+    if (this.materialPeriod() === 'mes_actual') {
+      mes = this.currentMonthInput();
+    } else {
+      const picked = this.materialMonth();
+      if (!picked) {
+        this.errorMessage.set('Selecciona un mes.');
+        return;
+      }
+      if (picked > this.maxMonth()) {
+        this.errorMessage.set('No puedes elegir un mes futuro.');
+        return;
+      }
+      mes = picked;
+    }
+
+    this.isDownloadingMaterial.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+
+    this.reporteService.downloadMaterialUsadoPdf(mes).subscribe({
+      next: (blob) => {
+        this.reporteService.saveBlob(blob, `material-usado-${mes}.pdf`);
+        this.isDownloadingMaterial.set(false);
+        this.successMessage.set(`PDF de material usado de ${this.formatMonthLabel(mes)} descargado.`);
+      },
+      error: (err: Error) => {
+        this.isDownloadingMaterial.set(false);
+        this.errorMessage.set(err.message ?? 'No se pudo descargar el reporte.');
+      },
+    });
   }
 
   protected downloadInventario(): void {
@@ -91,6 +150,10 @@ export class ReportesHomeComponent {
     d.setDate(1);
     d.setMonth(d.getMonth() - 1);
     return this.formatMonthInput(d);
+  }
+
+  private currentMonthInput(): string {
+    return this.formatMonthInput(new Date());
   }
 
   private previousMonthInput(): string {

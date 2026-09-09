@@ -97,6 +97,13 @@ export class ReporteService {
     );
   }
 
+  downloadMaterialUsadoPdf(mes: string): Observable<Blob> {
+    const params = new URLSearchParams({ mes });
+    return this.fetchPdfBlob(
+      `${environment.apiUrl}/inv/reportes/material-usado/pdf?${params.toString()}`,
+    );
+  }
+
   saveBlob(blob: Blob, filename: string): void {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

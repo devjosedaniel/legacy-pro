@@ -204,8 +204,17 @@
   }
 }
 
+.report-card__hero--material {
+  background: linear-gradient(135deg, #fffbeb 0%, #f8fafc 55%, var(--color-surface) 100%);
+}
+
 .report-card__hero--retazos {
   background: linear-gradient(135deg, #ecfdf5 0%, #f8fafc 55%, var(--color-surface) 100%);
+}
+
+.report-card__badge--amber {
+  background: rgba(217, 119, 6, 0.12);
+  color: #b45309;
 }
 
 .report-card__badge--teal {
