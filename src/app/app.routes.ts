@@ -145,6 +145,22 @@ export const routes: Routes = [
       },
       { path: 'produccion', redirectTo: 'produccion/reportes', pathMatch: 'full' },
       {
+        path: 'produccion/planificacion',
+        loadComponent: () =>
+          import('./features/produccion/planificacion/planificacion-list.component').then(
+            (m) => m.PlanificacionListComponent,
+          ),
+        canActivate: [permisoGuard('produccion-planificacion')],
+      },
+      {
+        path: 'produccion/planificacion/:id',
+        loadComponent: () =>
+          import('./features/produccion/orden-produccion-detail/orden-produccion-detail.component').then(
+            (m) => m.OrdenProduccionDetailComponent,
+          ),
+        canActivate: [permisoGuard('produccion-planificacion')],
+      },
+      {
         path: 'produccion/reportes',
         loadComponent: () =>
           import('./features/produccion/produccion-reportes/produccion-reportes.component').then(

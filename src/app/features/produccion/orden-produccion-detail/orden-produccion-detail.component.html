@@ -1,0 +1,232 @@
+<div class="orden-detail">
+  <header class="orden-detail__header">
+    <a routerLink="/dashboard/produccion/planificacion" class="orden-detail__back">← Volver a planificación</a>
+
+    @if (orden(); as o) {
+      <div class="orden-detail__hero panel">
+        <div class="orden-detail__hero-main">
+          <div class="orden-detail__badges">
+            <span class="badge badge--calibre">Cal. {{ o.calibreNombre }}</span>
+            @if (o.estadoOrdenNombre) {
+              <span class="badge badge--estado">{{ o.estadoOrdenNombre }}</span>
+            }
+            @if (urgenciaLabel(o.urgencia); as prioridad) {
+              <span
+                class="badge"
+                [class.badge--urgente]="o.urgencia === 1"
+                [class.badge--emergente]="o.urgencia === 2"
+              >{{ prioridad }}</span>
+            }
+          </div>
+          <h2>{{ o.secuencia }}</h2>
+          <p class="orden-detail__meta">
+            <span>{{ o.clienteNombre }}</span>
+            @if (o.trabajoSecuencia) {
+              <span>{{ o.trabajoSecuencia }}</span>
+            }
+            @if (o.etapaNombre) {
+              <span>Etapa: {{ o.etapaNombre }}</span>
+            }
+          </p>
+          @if (o.detalle) {
+            <p class="orden-detail__detalle">{{ o.detalle }}</p>
+          }
+        </div>
+
+        <aside class="orden-detail__highlight" aria-label="Resumen de producción">
+          <span class="orden-detail__highlight-label">Calibre</span>
+          <strong class="orden-detail__highlight-calibre">{{ o.calibreNombre }}</strong>
+          <span class="orden-detail__highlight-colores">
+            {{ o.coloresCount }} {{ o.coloresCount === 1 ? 'color' : 'colores' }}
+          </span>
+        </aside>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error">{{ errorMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <p class="orden-detail__loading panel">Cargando orden...</p>
+  } @else if (orden(); as o) {
+    <section class="orden-detail__stats">
+      <article class="stat panel">
+        <span class="stat__label">Registrada</span>
+        <strong class="stat__value stat__value--text">{{ formatDate(o.createdAt) }}</strong>
+        @if (o.creadoPor) {
+          <small>{{ o.creadoPor }}</small>
+        }
+      </article>
+      <article class="stat panel">
+        <span class="stat__label">Inicio</span>
+        <strong class="stat__value stat__value--text">{{ formatDate(o.fechaInicio) }}</strong>
+      </article>
+      <article class="stat panel">
+        <span class="stat__label">Procesada</span>
+        <strong class="stat__value stat__value--text">{{ formatDate(o.fechaProceso) }}</strong>
+      </article>
+      <article class="stat panel">
+        <span class="stat__label">Archivos</span>
+        <strong class="stat__value">{{ o.archivosCount }}</strong>
+      </article>
+    </section>
+
+    <div class="orden-detail__grid">
+      <section class="panel orden-detail__section">
+        <h3>Información de trabajo</h3>
+        <dl class="field-grid">
+          <div class="field-grid__item">
+            <dt>Bitácora</dt>
+            <dd>{{ display(o.trabajoSecuencia) }}</dd>
+          </div>
+          <div class="field-grid__item">
+            <dt>Cliente</dt>
+            <dd>{{ display(o.clienteNombre) }}</dd>
+          </div>
+          <div class="field-grid__item field-grid__item--full">
+            <dt>Detalle</dt>
+            <dd>{{ display(o.detalle) }}</dd>
+          </div>
+          <div class="field-grid__item">
+            <dt>Ciudad</dt>
+            <dd>{{ display(o.ciudad) }}</dd>
+          </div>
+          <div class="field-grid__item">
+            <dt>Motivo</dt>
+            <dd>{{ display(o.motivoNombre) }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="panel orden-detail__section">
+        <h3>Información de producción</h3>
+        <dl class="field-grid">
+          <div class="field-grid__item">
+            <dt>Calibre</dt>
+            <dd>{{ display(o.calibreNombre) }}</dd>
+          </div>
+          <div class="field-grid__item">
+            <dt>Tip. impresión</dt>
+            <dd>{{ display(o.tipoImpresion) }}</dd>
+          </div>
+          <div class="field-grid__item">
+            <dt>Distorsión</dt>
+            <dd>{{ display(o.distorsion) }}</dd>
+          </div>
+          <div class="field-grid__item">
+            <dt>VPS</dt>
+            <dd>{{ display(o.vps) }}</dd>
+          </div>
+          <div class="field-grid__item">
+            <dt>Intelligent Flexo</dt>
+            <dd>{{ formatSiNo(o.intelligentFlexo) }}</dd>
+          </div>
+          <div class="field-grid__item field-grid__item--full">
+            <dt>Observación</dt>
+            <dd class="field-grid__multiline">{{ display(o.observacion) }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+
+    <section class="panel orden-detail__section">
+      <h3>Adicional</h3>
+      <dl class="field-grid field-grid--adicional">
+        <div class="field-grid__item">
+          <dt>Medidas</dt>
+          <dd>{{ display(o.medida) }}</dd>
+        </div>
+        <div class="field-grid__item">
+          <dt>Asunto</dt>
+          <dd>{{ display(o.asunto) }}</dd>
+        </div>
+        <div class="field-grid__item">
+          <dt>Colores</dt>
+          <dd>{{ o.coloresCount }}</dd>
+        </div>
+        <div class="field-grid__item field-grid__item--full">
+          <dt>Importante 1</dt>
+          <dd class="field-grid__multiline">{{ display(o.importante) }}</dd>
+        </div>
+        <div class="field-grid__item field-grid__item--full">
+          <dt>Importante 2</dt>
+          <dd class="field-grid__multiline">{{ display(o.importanteProducto) }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="panel orden-detail__section">
+      <div class="orden-detail__section-head">
+        <h3>Colores a procesar</h3>
+        <span class="orden-detail__count">{{ o.lineas.length }} líneas</span>
+      </div>
+
+      @if (o.lineas.length === 0) {
+        <p class="orden-detail__empty">Sin líneas de detalle.</p>
+      } @else {
+        <div class="detail-table-wrap">
+          <table class="detail-table detail-table--wide">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Producto</th>
+                <th>Color</th>
+                <th>Lado</th>
+                <th>Ángulo</th>
+                <th>%</th>
+                <th>Cobertura</th>
+                <th>Lineatura</th>
+                <th>P. mín.</th>
+                <th>DigiCap</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (linea of o.lineas; track linea.id; let i = $index) {
+                <tr>
+                  <td data-label="#">{{ i + 1 }}</td>
+                  <td data-label="Producto"><strong>{{ linea.productoNombre }}</strong></td>
+                  <td data-label="Color">{{ display(linea.color) }}</td>
+                  <td data-label="Lado">{{ display(linea.lado) }}</td>
+                  <td data-label="Ángulo">{{ display(linea.angulo) }}</td>
+                  <td data-label="%">{{ display(linea.porcentajeTinta) }}</td>
+                  <td data-label="Cobertura">{{ display(linea.coberturaTinta) }}</td>
+                  <td data-label="Lineatura">{{ display(linea.lineatura) }}</td>
+                  <td data-label="P. mín.">{{ display(linea.puntoMinimo) }}</td>
+                  <td data-label="DigiCap">{{ display(linea.digicap) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    @if (o.medidas.length > 0) {
+      <section class="panel orden-detail__section">
+        <h3>Medidas por color</h3>
+        <div class="detail-table-wrap">
+          <table class="detail-table">
+            <thead>
+              <tr>
+                <th>Color</th>
+                <th>Medidas (cm)</th>
+                <th>Cantidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (medida of o.medidas; track medida.id) {
+                <tr>
+                  <td data-label="Color"><strong>{{ medida.color }}</strong></td>
+                  <td data-label="Medidas">{{ formatMedidas(medida.ancho, medida.alto) }}</td>
+                  <td data-label="Cantidad">{{ medida.cantidad }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+</div>

@@ -80,6 +80,12 @@ export class DashboardComponent implements OnInit {
       icon: 'production',
       items: [
         {
+          label: 'Planificación',
+          icon: 'work',
+          route: '/dashboard/produccion/planificacion',
+          permiso: 'produccion-planificacion',
+        },
+        {
           label: 'Reportes',
           icon: 'chart',
           route: '/dashboard/produccion/reportes',
@@ -122,7 +128,9 @@ export class DashboardComponent implements OnInit {
 
     items.push({ label: 'Ventas', icon: 'sales', route: '/dashboard/ventas', disabled: true });
 
-    if (this.permisos.can('produccion-reportes')) {
+    if (this.permisos.can('produccion-planificacion')) {
+      items.push({ label: 'Producción', icon: 'production', route: '/dashboard/produccion/planificacion' });
+    } else if (this.permisos.can('produccion-reportes')) {
       items.push({ label: 'Producción', icon: 'production', route: '/dashboard/produccion/reportes' });
     } else {
       items.push({ label: 'Producción', icon: 'production', route: '/dashboard/produccion', disabled: true });
@@ -297,6 +305,14 @@ export class DashboardComponent implements OnInit {
     }
     if (path.startsWith('/dashboard/perfiles')) {
       this.pageHeader.set({ module: 'Sistema', title: 'Perfiles y permisos' });
+      return;
+    }
+    if (path.startsWith('/dashboard/produccion/planificacion/') && path !== '/dashboard/produccion/planificacion') {
+      this.pageHeader.set({ module: 'Producción', title: 'Detalle de orden' });
+      return;
+    }
+    if (path.startsWith('/dashboard/produccion/planificacion')) {
+      this.pageHeader.set({ module: 'Producción', title: 'Planificación' });
       return;
     }
     if (path.startsWith('/dashboard/produccion/reportes')) {

@@ -1,0 +1,156 @@
+<div class="planificacion">
+  <header class="planificacion__header">
+    <div>
+      <h2>Planificación de producción</h2>
+      <p>Órdenes activas pendientes de procesar, ordenadas por prioridad.</p>
+    </div>
+    <button type="button" class="btn btn--outline btn--sm" (click)="reload()" [disabled]="loading()">
+      Actualizar
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error">{{ errorMessage() }}</div>
+  }
+
+  <section class="planificacion__stats">
+    <article class="stat panel">
+      <span class="stat__label">En planificación</span>
+      <strong class="stat__value">{{ stats().total }}</strong>
+    </article>
+    @if (stats().urgentes > 0) {
+      <article class="stat panel stat--urgente">
+        <span class="stat__label">Urgentes</span>
+        <strong class="stat__value">{{ stats().urgentes }}</strong>
+      </article>
+    }
+    @if (stats().emergentes > 0) {
+      <article class="stat panel stat--emergente">
+        <span class="stat__label">Emergentes</span>
+        <strong class="stat__value">{{ stats().emergentes }}</strong>
+      </article>
+    }
+  </section>
+
+  <section class="planificacion__filters panel">
+    <div class="planificacion__search">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18" aria-hidden="true">
+        <path
+          fill-rule="evenodd"
+          d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+          clip-rule="evenodd"
+        />
+      </svg>
+      <input
+        type="search"
+        placeholder="Buscar OP, cliente, trabajo, detalle..."
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+      />
+    </div>
+
+    <div class="planificacion__filter-row">
+      <div class="field field--inline">
+        <label for="calibre">Calibre</label>
+        <select id="calibre" [value]="calibreFilter()" (change)="onCalibreChange($any($event.target).value)">
+          <option value="">Todos</option>
+          @for (calibre of calibres(); track calibre.id) {
+            <option [value]="calibre.id">{{ calibre.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field field--inline">
+        <label for="estado">Estado</label>
+        <select id="estado" [value]="estadoFilter()" (change)="onEstadoChange($any($event.target).value)">
+          <option value="">Todos</option>
+          @for (estado of estados(); track estado) {
+            <option [value]="estado">{{ estado }}</option>
+          }
+        </select>
+      </div>
+
+      @if (search() || calibreFilter() || estadoFilter()) {
+        <button type="button" class="btn btn--outline btn--sm" (click)="clearFilters()">Limpiar</button>
+      }
+    </div>
+  </section>
+
+  @if (loading() && ordenes().length === 0) {
+    <div class="planificacion__empty panel">
+      <p>Cargando órdenes...</p>
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="planificacion__empty panel">
+      <h3>Sin órdenes</h3>
+      <p>
+        @if (search() || calibreFilter() || estadoFilter()) {
+          No hay coincidencias con los filtros actuales.
+        } @else {
+          No hay órdenes en planificación en este momento.
+        }
+      </p>
+    </div>
+  } @else {
+    <div class="planificacion__table-wrap panel">
+      <table class="planificacion__table">
+        <thead>
+          <tr>
+            <th>OP</th>
+            <th>Cliente</th>
+            <th>Calibre</th>
+            <th>Estado</th>
+            <th>Etapa</th>
+            <th>Trabajo</th>
+            <th>Registro</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (orden of filtered(); track orden.id) {
+            <tr
+              [class.planificacion__row--urgente]="orden.urgencia === 1"
+              [class.planificacion__row--emergente]="orden.urgencia === 2"
+            >
+              <td data-label="OP">
+                <a [routerLink]="['/dashboard/produccion/planificacion', orden.id]" class="planificacion__op-link">
+                  <strong>{{ orden.secuencia }}</strong>
+                </a>
+                @if (urgenciaLabel(orden.urgencia); as prioridad) {
+                  <span
+                    class="badge"
+                    [class.badge--urgente]="orden.urgencia === 1"
+                    [class.badge--emergente]="orden.urgencia === 2"
+                  >{{ prioridad }}</span>
+                }
+                @if (orden.detalle) {
+                  <small>{{ orden.detalle }}</small>
+                }
+              </td>
+              <td data-label="Cliente">{{ orden.clienteNombre }}</td>
+              <td data-label="Calibre">
+                <span class="badge badge--calibre">{{ orden.calibreNombre }}</span>
+              </td>
+              <td data-label="Estado">{{ orden.estadoOrdenNombre ?? '—' }}</td>
+              <td data-label="Etapa">{{ orden.etapaNombre ?? '—' }}</td>
+              <td data-label="Trabajo">{{ orden.trabajoSecuencia ?? '—' }}</td>
+              <td data-label="Registro">
+                <span>{{ formatDate(orden.createdAt) }}</span>
+                @if (orden.creadoPor) {
+                  <small>{{ orden.creadoPor }}</small>
+                }
+              </td>
+              <td class="planificacion__actions" data-label="">
+                <a [routerLink]="['/dashboard/produccion/planificacion', orden.id]" class="btn btn--outline btn--sm">
+                  Ver
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <p class="planificacion__count">Mostrando {{ filtered().length }} de {{ ordenes().length }} órdenes</p>
+  }
+</div>
