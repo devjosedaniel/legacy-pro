@@ -32,8 +32,13 @@
 
   @media (min-width: 1024px) {
     position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100dvh;
+    max-height: 100dvh;
     transform: none;
     flex-shrink: 0;
+    overflow: hidden;
   }
 
   &--open {
@@ -82,6 +87,7 @@
 
 .dashboard__nav {
   flex: 1;
+  min-height: 0;
   padding: 1rem 0.75rem;
   display: flex;
   flex-direction: column;
@@ -226,6 +232,7 @@
 }
 
 .dashboard__sidebar-footer {
+  flex-shrink: 0;
   padding: 1rem 1.25rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
