@@ -14,6 +14,7 @@ import {
   RetazoHistorialEvento,
   RetazoHistorialItem,
 } from '../../../core/models/retazo.model';
+import { CalibreService } from '../../../core/services/calibre.service';
 import { ProductService } from '../../../core/services/product.service';
 import { RetazoService } from '../../../core/services/retazo.service';
 import { parseRetazosCsv } from '../../../core/utils/retazo-csv.parser';
@@ -33,6 +34,7 @@ type RetazosViewTab = 'retazos' | 'movimientos';
 export class RetazosListComponent implements OnInit {
   private readonly retazoService = inject(RetazoService);
   private readonly productService = inject(ProductService);
+  private readonly calibreService = inject(CalibreService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly retazoEstadoLabels = RETAZO_ESTADO_LABELS;
@@ -42,6 +44,8 @@ export class RetazosListComponent implements OnInit {
   protected readonly viewTab = signal<RetazosViewTab>('retazos');
 
   protected readonly search = signal('');
+  protected readonly calibreFilter = signal('');
+  protected readonly productFilter = signal('');
   protected readonly estadoFilter = signal<RetazoEstado | 'all'>('disponible');
   protected readonly retazos = signal<Retazo[]>([]);
   protected readonly total = signal(0);
@@ -75,6 +79,24 @@ export class RetazosListComponent implements OnInit {
       .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')),
   );
 
+  protected readonly calibresDisponibles = this.calibreService.all;
+
+  protected readonly productosFiltrados = computed(() => {
+    const calibreId = this.calibreFilter();
+    return this.productos().filter((product) => {
+      if (!calibreId) return true;
+      return product.plancha?.calibreId === calibreId;
+    });
+  });
+
+  protected readonly hasActiveFilters = computed(
+    () =>
+      !!this.search().trim() ||
+      !!this.calibreFilter() ||
+      !!this.productFilter() ||
+      this.estadoFilter() !== 'disponible',
+  );
+
   protected readonly manualForm = this.fb.nonNullable.group({
     productId: ['', Validators.required],
     ancho: [null as number | null, [Validators.required, Validators.min(0.01)]],
@@ -88,6 +110,10 @@ export class RetazosListComponent implements OnInit {
 RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
 
   ngOnInit(): void {
+    this.calibreService.ensureLoaded().subscribe({
+      error: (err: Error) => this.errorMessage.set(err.message),
+    });
+
     this.productService.ensureLoaded().subscribe({
       next: () => {
         this.productsLoaded.set(true);
@@ -103,6 +129,35 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
 
   protected onEstadoChange(value: string): void {
     this.estadoFilter.set(value as RetazoEstado | 'all');
+    this.loadPage(1);
+  }
+
+  protected onCalibreFilterChange(value: string): void {
+    this.calibreFilter.set(value);
+    const productId = this.productFilter();
+    if (productId) {
+      const product = this.productService.getById(productId);
+      if (value && product?.plancha?.calibreId !== value) {
+        this.productFilter.set('');
+      }
+    }
+  }
+
+  protected onProductFilterChange(value: string): void {
+    this.productFilter.set(value);
+    if (value) {
+      const product = this.productService.getById(value);
+      if (product?.plancha?.calibreId && !this.calibreFilter()) {
+        this.calibreFilter.set(product.plancha.calibreId);
+      }
+    }
+  }
+
+  protected clearFilters(): void {
+    this.search.set('');
+    this.calibreFilter.set('');
+    this.productFilter.set('');
+    this.estadoFilter.set('disponible');
     this.loadPage(1);
   }
 
@@ -159,6 +214,8 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
         page,
         pageSize: PAGE_SIZE,
         codigo: this.search().trim() || undefined,
+        calibreId: this.calibreFilter() || undefined,
+        productId: this.productFilter() || undefined,
         estado: this.estadoFilter(),
       })
       .subscribe({
@@ -185,6 +242,7 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
         pageSize: PAGE_SIZE,
         evento: this.historialEventoFilter(),
         codigo: this.search().trim() || undefined,
+        productId: this.productFilter() || undefined,
       })
       .subscribe({
         next: (res) => {

@@ -17,6 +17,7 @@ export class RetazoService {
     estado?: RetazoEstado | 'all';
     codigo?: string;
     productId?: string;
+    calibreId?: string;
     conMovimientoOrigen?: boolean;
   }): Observable<PaginatedResult<Retazo>> {
     const page = filters?.page ?? 1;
@@ -36,6 +37,10 @@ export class RetazoService {
 
     if (filters?.productId) {
       params = params.set('producto_id', filters.productId);
+    }
+
+    if (filters?.calibreId) {
+      params = params.set('calibre_id', filters.calibreId);
     }
 
     if (filters?.conMovimientoOrigen) {
@@ -112,6 +117,7 @@ export class RetazoService {
     estado?: RetazoEstado | 'all';
     codigo?: string;
     productId?: string;
+    calibreId?: string;
     page?: number;
     pageSize?: number;
   }): Observable<Retazo[]> {

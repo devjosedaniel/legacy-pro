@@ -188,15 +188,44 @@
         (input)="onSearchInput($any($event.target).value)"
         (keyup.enter)="buscar()"
       />
+      <select
+        [value]="calibreFilter()"
+        (change)="onCalibreFilterChange($any($event.target).value)"
+        [disabled]="!productsLoaded()"
+      >
+        <option value="">Todos los calibres</option>
+        @for (calibre of calibresDisponibles(); track calibre.id) {
+          <option [value]="calibre.id">{{ calibre.nombre }}</option>
+        }
+      </select>
+      <select
+        [value]="productFilter()"
+        (change)="onProductFilterChange($any($event.target).value)"
+        [disabled]="!productsLoaded()"
+      >
+        <option value="">Todos los productos</option>
+        @for (product of productosFiltrados(); track product.id) {
+          <option [value]="product.id">
+            {{ product.nombre }}@if (product.plancha) { — Cal. {{ product.plancha.calibre }}}
+          </option>
+        }
+      </select>
       <select [value]="estadoFilter()" (change)="onEstadoChange($any($event.target).value)">
         <option value="disponible">Disponibles</option>
         <option value="consumido">Consumidos</option>
         <option value="inactivo">Inactivos</option>
         <option value="all">Todos</option>
       </select>
-      <button type="button" class="btn btn--primary" (click)="buscar()" [disabled]="isLoading()">
-        {{ isLoading() ? 'Cargando...' : 'Aplicar filtros' }}
-      </button>
+      <div class="retazos__filter-actions">
+        <button type="button" class="btn btn--primary" (click)="buscar()" [disabled]="isLoading()">
+          {{ isLoading() ? 'Cargando...' : 'Aplicar filtros' }}
+        </button>
+        @if (hasActiveFilters()) {
+          <button type="button" class="btn btn--outline btn--sm" (click)="clearFilters()">
+            Limpiar
+          </button>
+        }
+      </div>
     </div>
   </section>
 
