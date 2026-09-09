@@ -1,13 +1,22 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { PaginatedResult } from '../models/pagination.model';
 import {
   ApiOrdenProduccion,
   OrdenProduccion,
   OrdenProduccionDetalle,
 } from '../models/orden-produccion.model';
 import { extractApiError } from '../utils/api.mappers';
+
+export interface OrdenProduccionPageFilters {
+  page?: number;
+  pageSize?: number;
+  detalle?: string;
+  clienteId?: number | null;
+  calibreId?: number | null;
+}
 
 function formatOpSecuencia(secuencia: string): string {
   const value = secuencia.trim();
@@ -89,6 +98,38 @@ function mapOrdenProduccionDetalle(api: ApiOrdenProduccion): OrdenProduccionDeta
 @Injectable({ providedIn: 'root' })
 export class OrdenProduccionService {
   private readonly http = inject(HttpClient);
+
+  fetchPage(filters: OrdenProduccionPageFilters = {}): Observable<PaginatedResult<OrdenProduccion>> {
+    const page = filters.page ?? 1;
+    const pageSize = filters.pageSize ?? 10;
+    let params = new HttpParams().set('pagina', String(page)).set('limite', String(pageSize));
+
+    const detalle = filters.detalle?.trim();
+    if (detalle) {
+      params = params.set('busqueda', detalle);
+    }
+    if (filters.clienteId) {
+      params = params.set('cliente_id', String(filters.clienteId));
+    }
+    if (filters.calibreId) {
+      params = params.set('calibre_id', String(filters.calibreId));
+    }
+
+    return this.http
+      .get<{ ok: boolean; ordenes: ApiOrdenProduccion[]; cantidad: number }>(
+        `${environment.apiUrl}/produccion`,
+        { params },
+      )
+      .pipe(
+        map((res) => ({
+          items: (res.ordenes ?? []).map(mapOrdenProduccion),
+          total: res.cantidad ?? 0,
+          page,
+          pageSize,
+        })),
+        catchError((err) => throwError(() => new Error(extractApiError(err)))),
+      );
+  }
 
   listPlanificacion(): Observable<OrdenProduccion[]> {
     return this.http

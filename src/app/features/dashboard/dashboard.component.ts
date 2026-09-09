@@ -80,6 +80,12 @@ export class DashboardComponent implements OnInit {
       icon: 'production',
       items: [
         {
+          label: 'Órdenes',
+          icon: 'work',
+          route: '/dashboard/produccion/ordenes',
+          permiso: 'produccion-ordenes',
+        },
+        {
           label: 'Grupos',
           icon: 'box',
           route: '/dashboard/produccion/grupos',
@@ -134,7 +140,9 @@ export class DashboardComponent implements OnInit {
 
     items.push({ label: 'Ventas', icon: 'sales', route: '/dashboard/ventas', disabled: true });
 
-    if (this.permisos.can('produccion-grupos')) {
+    if (this.permisos.can('produccion-ordenes')) {
+      items.push({ label: 'Producción', icon: 'production', route: '/dashboard/produccion/ordenes' });
+    } else if (this.permisos.can('produccion-grupos')) {
       items.push({ label: 'Producción', icon: 'production', route: '/dashboard/produccion/grupos' });
     } else if (this.permisos.can('produccion-planificacion')) {
       items.push({ label: 'Producción', icon: 'production', route: '/dashboard/produccion/planificacion' });
@@ -313,6 +321,14 @@ export class DashboardComponent implements OnInit {
     }
     if (path.startsWith('/dashboard/perfiles')) {
       this.pageHeader.set({ module: 'Sistema', title: 'Perfiles y permisos' });
+      return;
+    }
+    if (path.startsWith('/dashboard/produccion/ordenes/') && path !== '/dashboard/produccion/ordenes') {
+      this.pageHeader.set({ module: 'Producción', title: 'Detalle de orden' });
+      return;
+    }
+    if (path.startsWith('/dashboard/produccion/ordenes')) {
+      this.pageHeader.set({ module: 'Producción', title: 'Órdenes' });
       return;
     }
     if (path.startsWith('/dashboard/produccion/grupos/') && path !== '/dashboard/produccion/grupos') {

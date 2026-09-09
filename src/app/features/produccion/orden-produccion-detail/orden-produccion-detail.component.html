@@ -1,6 +1,6 @@
 <div class="orden-detail">
   <header class="orden-detail__header">
-    <a routerLink="/dashboard/produccion/planificacion" class="orden-detail__back">← Volver a planificación</a>
+    <a [routerLink]="listRoute" class="orden-detail__back">← {{ listLabel }}</a>
 
     @if (orden(); as o) {
       <div class="orden-detail__hero panel">

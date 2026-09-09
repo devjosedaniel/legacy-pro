@@ -1,0 +1,270 @@
+@use '../../../shared/styles/forms';
+
+:host {
+  display: block;
+}
+
+.ordenes__header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+
+  @media (min-width: 640px) {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  p {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+}
+
+.ordenes__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.stat {
+  padding: 0.85rem 1rem;
+
+  &__label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  &__value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-primary-dark);
+  }
+
+  &--urgente {
+    border-color: #fcd34d;
+    background: #fffbeb;
+  }
+
+  &--emergente {
+    border-color: #fca5a5;
+    background: #fef2f2;
+  }
+}
+
+.ordenes__filters {
+  padding: 0.85rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ordenes__search {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+
+  svg {
+    color: var(--color-text-light);
+    flex-shrink: 0;
+  }
+
+  input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 0.92rem;
+    min-width: 0;
+
+    &:focus {
+      outline: none;
+    }
+  }
+}
+
+.ordenes__filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.65rem;
+}
+
+.field--inline {
+  min-width: 8rem;
+
+  label {
+    font-size: 0.72rem;
+  }
+
+  select {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.88rem;
+  }
+}
+
+.ordenes__empty {
+  padding: 2rem 1.25rem;
+  text-align: center;
+
+  h3 {
+    margin-bottom: 0.35rem;
+  }
+
+  p {
+    color: var(--color-text-muted);
+  }
+}
+
+.ordenes__table-wrap {
+  overflow-x: auto;
+}
+
+.ordenes__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th,
+  td {
+    padding: 0.75rem 0.85rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+  }
+
+  th {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    background: var(--color-surface-muted);
+  }
+
+  td strong {
+    display: block;
+    margin-bottom: 0.15rem;
+  }
+
+  td small {
+    display: block;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    margin-top: 0.15rem;
+  }
+
+  tbody tr:hover {
+    background: var(--color-surface-muted);
+  }
+}
+
+.ordenes__row--urgente {
+  border-left: 3px solid #f59e0b;
+}
+
+.ordenes__row--emergente {
+  border-left: 3px solid #ef4444;
+}
+
+.ordenes__op-link {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover strong {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+  }
+}
+
+.ordenes__actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.badge--urgente {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fcd34d;
+  margin-left: 0.35rem;
+}
+
+.badge--emergente {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  margin-left: 0.35rem;
+}
+
+.badge--calibre {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+.ordenes__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+
+  @media (min-width: 640px) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.ordenes__count {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .ordenes__table thead {
+    display: none;
+  }
+
+  .ordenes__table tr {
+    display: block;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .ordenes__table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border: none;
+    padding: 0.35rem 0.85rem;
+
+    &::before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+    }
+  }
+
+  .ordenes__actions::before {
+    display: none;
+  }
+}

@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { OrdenProduccionDetalle } from '../../../core/models/orden-produccion.model';
 import { OrdenProduccionService } from '../../../core/services/orden-produccion.service';
 import { urgenciaLabel } from '../../../core/utils/urgencia.util';
@@ -12,7 +12,15 @@ import { urgenciaLabel } from '../../../core/utils/urgencia.util';
 })
 export class OrdenProduccionDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly ordenService = inject(OrdenProduccionService);
+
+  protected readonly listRoute = this.router.url.includes('/produccion/ordenes')
+    ? '/dashboard/produccion/ordenes'
+    : '/dashboard/produccion/planificacion';
+  protected readonly listLabel = this.router.url.includes('/produccion/ordenes')
+    ? 'Volver a órdenes'
+    : 'Volver a planificación';
 
   protected readonly orden = signal<OrdenProduccionDetalle | null>(null);
   protected readonly isLoading = signal(true);

@@ -143,7 +143,23 @@ export const routes: Routes = [
           ),
         canActivate: [permisoGuard('perfiles')],
       },
-      { path: 'produccion', redirectTo: 'produccion/reportes', pathMatch: 'full' },
+      { path: 'produccion', redirectTo: 'produccion/ordenes', pathMatch: 'full' },
+      {
+        path: 'produccion/ordenes',
+        loadComponent: () =>
+          import('./features/produccion/ordenes/ordenes-list.component').then(
+            (m) => m.OrdenesListComponent,
+          ),
+        canActivate: [permisoGuard('produccion-ordenes')],
+      },
+      {
+        path: 'produccion/ordenes/:id',
+        loadComponent: () =>
+          import('./features/produccion/orden-produccion-detail/orden-produccion-detail.component').then(
+            (m) => m.OrdenProduccionDetailComponent,
+          ),
+        canActivate: [permisoGuard('produccion-ordenes')],
+      },
       {
         path: 'produccion/planificacion',
         loadComponent: () =>
