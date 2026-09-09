@@ -1,0 +1,195 @@
+<div class="grupos">
+  <header class="grupos__header">
+    <div>
+      <h2>Grupos de producción</h2>
+      <p>Consulta grupos armados, filtra por fecha o usuario y descarga reportes PDF.</p>
+    </div>
+  </header>
+
+  <section class="grupos__filters panel">
+    <div class="grupos__filters-grid">
+      <label class="field grupos__filter-field">
+        <span>Estado</span>
+        <select [value]="estadoFilter()" (change)="onEstadoChange($any($event.target).value)">
+          <option value="todos">Todos</option>
+          <option value="activos">Armado registrado</option>
+          <option value="produccion">En producción</option>
+        </select>
+      </label>
+      <label class="field grupos__filter-field">
+        <span>Desde</span>
+        <input type="date" [value]="fechaDesde()" (input)="onFechaDesdeChange($event)" />
+      </label>
+      <label class="field grupos__filter-field">
+        <span>Hasta</span>
+        <input type="date" [value]="fechaHasta()" (input)="onFechaHastaChange($event)" />
+      </label>
+      <label class="field grupos__filter-field">
+        <span>Usuario</span>
+        <input
+          type="search"
+          placeholder="Nombre o usuario"
+          [value]="usuario()"
+          (input)="onUsuarioChange($event)"
+          (keydown.enter)="aplicarFiltros()"
+        />
+      </label>
+      <div class="grupos__filters-actions">
+        <button type="button" class="btn btn--primary btn--sm" [disabled]="isLoading()" (click)="aplicarFiltros()">
+          Buscar
+        </button>
+        @if (tieneFiltros()) {
+          <button type="button" class="btn btn--outline btn--sm" [disabled]="isLoading()" (click)="limpiarFiltros()">
+            Limpiar
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+
+  @if (pdfError()) {
+    <div class="alert alert--error">{{ pdfError() }}</div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert--error">{{ errorMessage() }}</div>
+  }
+
+  @if (isLoading() && gruposVisibles().length === 0) {
+    <div class="grupos__empty panel">
+      <p>Cargando grupos...</p>
+    </div>
+  } @else if (gruposVisibles().length === 0) {
+    <div class="grupos__empty panel">
+      <h3>Sin grupos</h3>
+      <p>No hay grupos con los filtros seleccionados.</p>
+      @if (tieneFiltros()) {
+        <button type="button" class="btn btn--outline" (click)="limpiarFiltros()">Quitar filtros</button>
+      }
+    </div>
+  } @else {
+    <div class="grupos__table-wrap panel">
+      <table class="grupos__table">
+        <thead>
+          <tr>
+            <th>Grupo</th>
+            <th>Estado</th>
+            <th>Órdenes</th>
+            <th>Material</th>
+            <th>Fecha</th>
+            <th>Armado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (grupo of gruposVisibles(); track grupo.id) {
+            <tr>
+              <td data-label="Grupo">
+                <a [routerLink]="['/dashboard/produccion/grupos', grupo.id]" class="grupos__link">
+                  #{{ grupo.id }}
+                </a>
+                @if (grupo.calibreNombre) {
+                  <small>Cal. {{ grupo.calibreNombre }}</small>
+                }
+              </td>
+              <td data-label="Estado">
+                <span
+                  class="badge"
+                  [class.badge--activo]="grupo.estado === 'registrado'"
+                  [class.badge--produccion]="grupo.estado === 'terminado'"
+                >
+                  {{ estadoLabels[grupo.estado] }}
+                </span>
+              </td>
+              <td data-label="Órdenes">
+                @if (grupo.ordenes.length > 0) {
+                  <strong>{{ grupo.ordenes[0].secuencia }}</strong>
+                  @if (grupo.ordenes.length > 1) {
+                    <small>+{{ grupo.ordenes.length - 1 }}</small>
+                  }
+                } @else {
+                  <span>—</span>
+                }
+              </td>
+              <td data-label="Material">
+                @if (grupo.material; as material) {
+                  <span class="badge badge--material">{{ materialLabels[material.tipo] }}</span>
+                  @if (material.tipo === 'plancha' && material.productoNombre) {
+                    <small>{{ material.productoNombre }}</small>
+                  } @else if (material.tipo === 'retazo' && material.retazoCodigo) {
+                    <small>{{ material.retazoCodigo }}</small>
+                  }
+                } @else {
+                  <span>—</span>
+                }
+              </td>
+              <td data-label="Fecha">
+                @if (grupo.terminadoAt) {
+                  <span>{{ formatDate(grupo.terminadoAt) }}</span>
+                  <small>{{ formatTime(grupo.terminadoAt) }}</small>
+                  @if (grupo.terminadoPor) {
+                    <small>{{ grupo.terminadoPor }}</small>
+                  }
+                } @else {
+                  <span>{{ formatDate(grupo.createdAt) }}</span>
+                  @if (grupo.registradoPor) {
+                    <small>{{ grupo.registradoPor }}</small>
+                  }
+                }
+              </td>
+              <td data-label="Armado">
+                @if (grupo.armadoPiezas?.length) {
+                  <span>{{ grupo.armadoPiezas!.length }} piezas</span>
+                } @else {
+                  <span>—</span>
+                }
+              </td>
+              <td class="grupos__actions" data-label="Acciones">
+                <a [routerLink]="['/dashboard/produccion/grupos', grupo.id]" class="btn btn--outline btn--sm">
+                  Ver
+                </a>
+                <button
+                  type="button"
+                  class="btn btn--outline btn--sm"
+                  [disabled]="!canDownloadPdf(grupo) || viewingReporteId() === grupo.id"
+                  (click)="verReporte($event, grupo)"
+                >
+                  @if (viewingReporteId() === grupo.id) {
+                    Abriendo...
+                  } @else {
+                    Reporte
+                  }
+                </button>
+                <button
+                  type="button"
+                  class="btn btn--outline btn--sm"
+                  [disabled]="!canDownloadPdf(grupo) || downloadingPdfId() === grupo.id"
+                  (click)="descargarReporte($event, grupo)"
+                >
+                  @if (downloadingPdfId() === grupo.id) {
+                    PDF...
+                  } @else {
+                    PDF
+                  }
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (showPagination() && total() > pageSize) {
+      <app-pagination
+        [page]="page()"
+        [pageSize]="pageSize"
+        [total]="total()"
+        [disabled]="isLoading()"
+        (pageChange)="onPageChange($event)"
+      />
+    }
+  }
+
+  <app-grupo-pdf-export [grupo]="pdfExportGrupo()" />
+  <app-grupo-reporte-view [grupo]="reporteViewGrupo()" (closed)="cerrarReporte()" />
+</div>

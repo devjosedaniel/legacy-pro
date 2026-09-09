@@ -1,0 +1,228 @@
+<div class="armado-preview">
+  <div class="armado-preview__canvas-wrap" #graphicCanvas>
+    <svg
+      #layoutSvg
+      class="armado-preview__svg"
+      [attr.viewBox]="viewBox()"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      [attr.aria-label]="'Vista previa del armado con ' + cantidadPiezas() + ' piezas'"
+    >
+      <rect
+        class="armado-preview__plancha"
+        x="0"
+        y="0"
+        [attr.width]="materialSize().ancho_mm"
+        [attr.height]="materialSize().alto_mm"
+        rx="2"
+      />
+
+      @for (pieza of piezasVisuales(); track pieza.indice) {
+        <g class="armado-preview__pieza">
+          <rect
+            [attr.x]="pieza.x_mm"
+            [attr.y]="pieza.y_mm"
+            [attr.width]="pieza.ancho_mm"
+            [attr.height]="pieza.alto_mm"
+            [attr.fill]="color(pieza.indice)"
+            [attr.stroke]="stroke(pieza.indice)"
+            rx="1.5"
+          />
+          <text
+            [attr.x]="labelX(pieza)"
+            [attr.y]="labelY(pieza)"
+            class="armado-preview__pieza-label"
+            [attr.font-size]="pieza.label_mm"
+            text-anchor="middle"
+            dominant-baseline="middle"
+          >
+            {{ pieza.numero }}
+          </text>
+        </g>
+      }
+
+      <g class="armado-preview__cotas" aria-hidden="true">
+        <g class="armado-preview__cota armado-preview__cota--horizontal">
+          <line x1="0" [attr.y1]="materialSize().alto_mm" x2="0" [attr.y2]="cotaHorizontal().y" />
+          <line
+            [attr.x1]="materialSize().ancho_mm"
+            [attr.y1]="materialSize().alto_mm"
+            [attr.x2]="materialSize().ancho_mm"
+            [attr.y2]="cotaHorizontal().y"
+          />
+          <line
+            x1="0"
+            [attr.y1]="cotaHorizontal().y"
+            [attr.x2]="cotaHorizontal().gapStart"
+            [attr.y2]="cotaHorizontal().y"
+          />
+          <line
+            [attr.x1]="cotaHorizontal().gapEnd"
+            [attr.y1]="cotaHorizontal().y"
+            [attr.x2]="materialSize().ancho_mm"
+            [attr.y2]="cotaHorizontal().y"
+          />
+          <rect
+            class="armado-preview__cota-bg"
+            [attr.x]="cotaHorizontal().midX - cotaHorizontal().labelW / 2"
+            [attr.y]="cotaHorizontal().y - cotaHorizontal().labelH / 2"
+            [attr.width]="cotaHorizontal().labelW"
+            [attr.height]="cotaHorizontal().labelH"
+            rx="2"
+          />
+          <text
+            [attr.x]="cotaHorizontal().midX"
+            [attr.y]="cotaHorizontal().y"
+            [attr.font-size]="cotaFontSize()"
+            fill="#1e293b"
+            class="armado-preview__cota-label"
+            text-anchor="middle"
+            dominant-baseline="middle"
+          >
+            {{ cotaHorizontal().text }}
+          </text>
+        </g>
+
+        <g class="armado-preview__cota armado-preview__cota--vertical">
+          <line [attr.x1]="materialSize().ancho_mm" y1="0" [attr.x2]="cotaVertical().x" y2="0" />
+          <line
+            [attr.x1]="materialSize().ancho_mm"
+            [attr.y1]="materialSize().alto_mm"
+            [attr.x2]="cotaVertical().x"
+            [attr.y2]="materialSize().alto_mm"
+          />
+          <line
+            [attr.x1]="cotaVertical().x"
+            y1="0"
+            [attr.x2]="cotaVertical().x"
+            [attr.y2]="cotaVertical().gapStart"
+          />
+          <line
+            [attr.x1]="cotaVertical().x"
+            [attr.y1]="cotaVertical().gapEnd"
+            [attr.x2]="cotaVertical().x"
+            [attr.y2]="materialSize().alto_mm"
+          />
+          <rect
+            class="armado-preview__cota-bg"
+            [attr.x]="cotaVertical().textX - cotaVertical().labelW / 2"
+            [attr.y]="cotaVertical().midY - cotaVertical().labelH / 2"
+            [attr.width]="cotaVertical().labelW"
+            [attr.height]="cotaVertical().labelH"
+            rx="2"
+          />
+          <text
+            [attr.x]="cotaVertical().textX"
+            [attr.y]="cotaVertical().midY"
+            [attr.font-size]="cotaFontSize()"
+            fill="#1e293b"
+            class="armado-preview__cota-label armado-preview__cota-label--vertical"
+            text-anchor="middle"
+            dominant-baseline="middle"
+          >
+            {{ cotaVertical().text }}
+          </text>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  @if (showLegend()) {
+  <div class="armado-preview__legend">
+    <div class="armado-preview__legend-meta">
+      <span>
+        {{ materialLabel() }}:
+        {{ materialSize().ancho_cm | number:'1.0-1' }} × {{ materialSize().alto_cm | number:'1.0-1' }} cm
+      </span>
+      <span>{{ cantidadPiezas() }} piezas</span>
+      @if (showDownload()) {
+        <div class="armado-preview__actions">
+          <button type="button" class="armado-action armado-action--svg" (click)="downloadLayout()">
+            <span class="armado-action__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                <rect x="3" y="3" width="18" height="18" rx="2.5" />
+                <path d="M8 12h8M12 8v8" />
+                <path d="M7 17l3-3 3 3 4-4" />
+              </svg>
+            </span>
+            <span class="armado-action__body">
+              <strong>Diseño SVG</strong>
+              <small>Gráfico del montaje en plancha</small>
+            </span>
+            <span class="armado-action__arrow" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd" />
+              </svg>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="armado-action armado-action--report"
+            (click)="downloadReport()"
+            [disabled]="downloadingReport()"
+          >
+            <span class="armado-action__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <path d="M14 2v6h6M8 13h8M8 17h8M8 9h2" />
+              </svg>
+            </span>
+            <span class="armado-action__body">
+              <strong>{{ downloadingReport() ? 'Generando PDF...' : 'Reporte PDF' }}</strong>
+              <small>Datos, tabla de piezas y gráfico</small>
+            </span>
+            <span class="armado-action__arrow" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd" />
+              </svg>
+            </span>
+          </button>
+        </div>
+      }
+      @if (materialSize().source === 'material') {
+        <span class="armado-preview__legend-note">Medida del material seleccionado</span>
+      }
+    </div>
+
+    <ul class="armado-preview__piezas-list">
+      @for (pieza of piezasLayout(); track pieza.indice) {
+        <li>
+          <span class="armado-preview__swatch" [style.background]="color(pieza.indice)"></span>
+          <span class="armado-preview__pieza-name">
+            <strong>{{ pieceNumber(pieza) }}.</strong>
+            {{ pieza.nombre }}
+          </span>
+          <span class="armado-preview__pieza-size">
+            {{ piezaSizeLabel(pieza) }}
+          </span>
+        </li>
+      }
+    </ul>
+
+    @if (reportContext()?.retazos?.length) {
+      <div class="armado-preview__retazos">
+        <h4>Retazos sobrantes</h4>
+        <ul class="armado-preview__piezas-list">
+          @for (retazo of reportContext()!.retazos!; track $index) {
+            <li>
+              <span class="armado-preview__swatch armado-preview__swatch--retazo"></span>
+              <span class="armado-preview__pieza-name">
+                <strong>{{ retazo.codigo }}</strong>
+              </span>
+              <span class="armado-preview__pieza-size">
+                {{ retazo.anchoCm | number:'1.2-2' }} × {{ retazo.altoCm | number:'1.2-2' }} cm
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+    } @else {
+      <div class="armado-preview__retazos armado-preview__retazos--empty">
+        <h4>Retazos sobrantes</h4>
+        <p>Sin retazos registrados.</p>
+      </div>
+    }
+  </div>
+  }
+</div>

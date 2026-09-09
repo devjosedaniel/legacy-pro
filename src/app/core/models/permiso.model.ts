@@ -53,7 +53,13 @@ export const PERMISO_MODULOS: PermisoModulo[] = [
     nombre: 'Producción',
     icon: 'production',
     paginas: [
-      { id: 200, slug: 'produccion', nombre: 'Órdenes de producción', available: false },
+      {
+        id: 200,
+        slug: 'produccion-grupos',
+        nombre: 'Grupos',
+        route: '/dashboard/produccion/grupos',
+        available: true,
+      },
       {
         id: 201,
         slug: 'produccion-planificacion',

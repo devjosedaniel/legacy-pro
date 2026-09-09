@@ -168,6 +168,22 @@ export const routes: Routes = [
           ),
         canActivate: [permisoGuard('produccion-reportes')],
       },
+      {
+        path: 'produccion/grupos',
+        loadComponent: () =>
+          import('./features/produccion/grupos/grupos-list/grupos-list.component').then(
+            (m) => m.GruposListComponent,
+          ),
+        canActivate: [permisoGuard('produccion-grupos')],
+      },
+      {
+        path: 'produccion/grupos/:id',
+        loadComponent: () =>
+          import('./features/produccion/grupos/grupo-detail/grupo-detail.component').then(
+            (m) => m.GrupoDetailComponent,
+          ),
+        canActivate: [permisoGuard('produccion-grupos')],
+      },
     ],
   },
   { path: '', redirectTo: 'dashboard/inventario', pathMatch: 'full' },

@@ -1,0 +1,313 @@
+.armado-preview {
+  display: grid;
+  gap: 1rem;
+}
+
+.armado-preview__canvas-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+    linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+    #f8fafc;
+  background-size: 20px 20px;
+  padding: 0.75rem;
+  height: min(520px, 58vh);
+  min-height: 320px;
+  overflow: hidden;
+}
+
+.armado-preview__svg {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.armado-preview__plancha {
+  fill: #ffffff;
+  stroke: #64748b;
+  stroke-width: 2;
+}
+
+.armado-preview__pieza rect {
+  stroke-width: 1.5;
+}
+
+.armado-preview__pieza-label {
+  font-weight: 700;
+  fill: #0f172a;
+  pointer-events: none;
+}
+
+.armado-preview__cotas {
+  stroke: #475569;
+  stroke-width: 1.2;
+}
+
+.armado-preview__cota line {
+  fill: none;
+  stroke: inherit;
+  stroke-width: inherit;
+}
+
+.armado-preview__cota-bg {
+  fill: #ffffff;
+  stroke: none;
+}
+
+.armado-preview__cota-label {
+  fill: #1e293b;
+  font-weight: 600;
+  stroke: none;
+}
+
+.armado-preview__cota-label--vertical {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.armado-preview__pieza-row--muted {
+  opacity: 0.72;
+}
+
+.armado-preview__pieza-tag {
+  margin-left: 0.35rem;
+  font-size: 0.72rem;
+  color: #b45309;
+  font-style: normal;
+}
+
+.armado-preview__legend-note {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.armado-preview__legend-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.85rem;
+}
+
+.armado-preview__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  width: 100%;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.armado-action {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 0.85rem;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform var(--transition),
+    box-shadow var(--transition),
+    border-color var(--transition),
+    background var(--transition);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.72;
+    cursor: wait;
+    transform: none;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-primary-glow);
+    border-color: var(--color-primary);
+  }
+}
+
+.armado-action__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+
+  svg {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+}
+
+.armado-action__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+
+  strong {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--color-text);
+    letter-spacing: -0.01em;
+  }
+
+  small {
+    font-size: 0.74rem;
+    color: var(--color-text-muted);
+    line-height: 1.35;
+  }
+}
+
+.armado-action__arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity var(--transition), transform var(--transition), background var(--transition);
+
+  svg {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+}
+
+.armado-action:hover .armado-action__arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.armado-action--svg {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+
+  .armado-action__icon {
+    background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+    color: #2563eb;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
+  }
+
+  &:hover {
+    border-color: #93c5fd;
+    background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+
+    .armado-action__arrow {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+  }
+}
+
+.armado-action--report {
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+  border-color: #bbf7d0;
+
+  .armado-action__icon {
+    background: linear-gradient(135deg, #bbf7d0 0%, #ecfdf5 100%);
+    color: #059669;
+    box-shadow: inset 0 0 0 1px rgba(5, 150, 105, 0.12);
+  }
+
+  &:hover {
+    border-color: #6ee7b7;
+    background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+
+    .armado-action__arrow {
+      background: #bbf7d0;
+      color: #047857;
+    }
+  }
+}
+
+.armado-preview__piezas-list {
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+  max-height: 180px;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.55rem;
+    align-items: center;
+    font-size: 0.82rem;
+  }
+}
+
+.armado-preview__swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 0.2rem;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+}
+
+.armado-preview__pieza-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.armado-preview__pieza-size {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.armado-preview__retazos {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--color-border);
+
+  h4 {
+    margin: 0 0 0.55rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #b45309;
+  }
+}
+
+.armado-preview__swatch--retazo {
+  background: #fef3c7;
+  border-color: #f59e0b;
+}
+
+.armado-preview__retazos--empty p {
+  margin: 0;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--color-text-muted);
+}

@@ -1,0 +1,123 @@
+@if (grupo(); as grupoActual) {
+  <div class="reporte-modal" role="dialog" aria-modal="true" [attr.aria-labelledby]="'reporte-titulo-' + grupoActual.id" (document:keydown.escape)="close()">
+    <div class="reporte-modal__backdrop" (click)="close()"></div>
+    <div class="reporte-modal__panel" tabindex="-1">
+      <header class="reporte-modal__header">
+        <div>
+          <p class="reporte-modal__eyebrow">Mismo contenido que el PDF</p>
+          <h2 [id]="'reporte-titulo-' + grupoActual.id">{{ titulo() }}</h2>
+        </div>
+        <div class="reporte-modal__header-actions">
+          <button
+            type="button"
+            class="btn btn--primary reporte-modal__pdf-btn"
+            [disabled]="downloadingPdf()"
+            (click)="downloadPdf()"
+          >
+            <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <path d="M14 2v6h6M8 13h8M8 17h5M8 9h2" />
+            </svg>
+            @if (downloadingPdf()) {
+              Generando...
+            } @else {
+              Descargar PDF
+            }
+          </button>
+          <button type="button" class="btn btn--outline reporte-modal__close-btn" (click)="close()">
+            <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+            Cerrar
+          </button>
+        </div>
+      </header>
+
+      <div class="reporte-modal__body">
+        <dl class="reporte-campos">
+          @for (campo of campos(); track campo.etiqueta) {
+            <div class="reporte-campos__item">
+              <dt>{{ campo.etiqueta }}</dt>
+              <dd>{{ campo.valor }}</dd>
+            </div>
+          }
+        </dl>
+
+        @if (armado(); as armadoData) {
+          <app-armado-preview
+            [armado]="armadoData"
+            [materialAnchoCm]="materialAnchoCm()"
+            [materialAltoCm]="materialAltoCm()"
+            [materialTipo]="materialTipo()"
+            [showDownload]="false"
+            [showLegend]="false"
+            [downloadFileName]="downloadFileName()"
+            [reportContext]="reportContext()"
+          />
+        }
+
+        @if (retazos().length > 0) {
+          <section class="reporte-tabla-wrap">
+            <h3>Retazos ({{ retazos().length }})</h3>
+            <div class="reporte-tabla-scroll">
+              <table class="reporte-tabla">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Código</th>
+                    <th>An</th>
+                    <th>Al</th>
+                    <th>Área</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (retazo of retazos(); track $index) {
+                    <tr>
+                      <td>{{ $index + 1 }}</td>
+                      <td>{{ retazo.codigo }}</td>
+                      <td>{{ formatPiezaCm(retazo.anchoCm) }}</td>
+                      <td>{{ formatPiezaCm(retazo.altoCm) }}</td>
+                      <td>{{ formatPiezaCm(retazo.anchoCm * retazo.altoCm) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        }
+
+        <section class="reporte-tabla-wrap">
+          <h3>Componentes ({{ piezas().length }})</h3>
+          <div class="reporte-tabla-scroll">
+            <table class="reporte-tabla">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Componente</th>
+                  <th>An</th>
+                  <th>Al</th>
+                  <th>X</th>
+                  <th>Y</th>
+                  <th>°</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (pieza of piezas(); track pieza.indice) {
+                  <tr>
+                    <td>{{ pieceNumber(pieza) }}</td>
+                    <td>{{ pieza.nombre }}</td>
+                    <td>{{ formatPiezaCm(piezaAnchoCm(pieza)) }}</td>
+                    <td>{{ formatPiezaCm(piezaAltoCm(pieza)) }}</td>
+                    <td>{{ formatPiezaCm(piezaXCm(pieza)) }}</td>
+                    <td>{{ formatPiezaCm(piezaYCm(pieza)) }}</td>
+                    <td>{{ pieza.angulo }}°</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+}

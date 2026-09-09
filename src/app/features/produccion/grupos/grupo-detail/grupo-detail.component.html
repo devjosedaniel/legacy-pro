@@ -1,0 +1,238 @@
+<div class="grupo-detail">
+  <header class="grupo-detail__header">
+    <a routerLink="/dashboard/produccion/grupos" class="grupo-detail__back">← Volver a grupos</a>
+
+    @if (grupo(); as g) {
+      <div class="grupo-detail__hero panel">
+        <div>
+          <div class="grupo-detail__badges">
+            <span
+              class="badge"
+              [class.badge--activo]="g.estado === 'registrado'"
+              [class.badge--produccion]="g.estado === 'terminado'"
+            >
+              {{ estadoLabels[g.estado] }}
+            </span>
+            @if (g.calibreNombre) {
+              <span class="badge badge--calibre">Cal. {{ g.calibreNombre }}</span>
+            }
+          </div>
+          <h2>Grupo #{{ g.id }}</h2>
+          <p class="grupo-detail__meta">
+            @if (g.movimientoNumero) {
+              <span>Mov. {{ g.movimientoNumero }}</span>
+            }
+            @if (g.registradoPor) {
+              <span>Registrado por {{ g.registradoPor }}</span>
+            }
+          </p>
+        </div>
+
+        <div class="grupo-detail__actions">
+          <button
+            type="button"
+            class="btn btn--outline"
+            [disabled]="!canExport()"
+            (click)="abrirReporte()"
+          >
+            Ver reporte
+          </button>
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="!canExport() || downloadingPdf()"
+            (click)="descargarPdf()"
+          >
+            {{ downloadingPdf() ? 'Generando PDF...' : 'Descargar PDF' }}
+          </button>
+        </div>
+      </div>
+    }
+  </header>
+
+  @if (pdfError()) {
+    <div class="alert alert--error">{{ pdfError() }}</div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert--error">{{ errorMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <p class="grupo-detail__loading panel">Cargando grupo...</p>
+  } @else if (grupo(); as g) {
+    <section class="grupo-detail__stats">
+      <article class="stat panel">
+        <span class="stat__label">Órdenes</span>
+        <strong class="stat__value">{{ g.ordenes.length }}</strong>
+      </article>
+      <article class="stat panel">
+        <span class="stat__label">Piezas armado</span>
+        <strong class="stat__value">{{ g.armadoPiezas?.length ?? 0 }}</strong>
+      </article>
+      <article class="stat panel">
+        <span class="stat__label">Consumo</span>
+        <strong class="stat__value stat__value--text">{{ formatCm2(g.consumoCm2) }}</strong>
+      </article>
+      <article class="stat panel">
+        <span class="stat__label">Desperdicio</span>
+        <strong class="stat__value stat__value--text">{{ formatCm2(g.desperdicioCm2) }}</strong>
+      </article>
+    </section>
+
+    <div class="grupo-detail__grid">
+      <section class="panel grupo-detail__section">
+        <h3>Material</h3>
+        @if (g.material; as material) {
+          <dl class="field-grid">
+            <div class="field-grid__item">
+              <dt>Tipo</dt>
+              <dd>{{ materialLabels[material.tipo] }}</dd>
+            </div>
+            @if (material.tipo === 'plancha') {
+              <div class="field-grid__item">
+                <dt>Producto</dt>
+                <dd>{{ material.productoNombre ?? '—' }}</dd>
+              </div>
+              <div class="field-grid__item">
+                <dt>Lote</dt>
+                <dd>{{ material.loteNumero ?? '—' }}</dd>
+              </div>
+            } @else {
+              <div class="field-grid__item">
+                <dt>Retazo</dt>
+                <dd>{{ material.retazoCodigo ?? '—' }}</dd>
+              </div>
+              <div class="field-grid__item">
+                <dt>Medidas</dt>
+                <dd>
+                  @if (material.retazoAncho && material.retazoAlto) {
+                    {{ material.retazoAncho }} × {{ material.retazoAlto }} cm
+                  } @else {
+                    —
+                  }
+                </dd>
+              </div>
+            }
+            <div class="field-grid__item">
+              <dt>Plancha</dt>
+              <dd>
+                @if (g.materialAnchoCm && g.materialAltoCm) {
+                  {{ g.materialAnchoCm }} × {{ g.materialAltoCm }} cm
+                } @else {
+                  —
+                }
+              </dd>
+            </div>
+          </dl>
+        } @else {
+          <p class="grupo-detail__empty-text">Sin material registrado.</p>
+        }
+      </section>
+
+      <section class="panel grupo-detail__section">
+        <h3>Fechas</h3>
+        <dl class="field-grid">
+          <div class="field-grid__item">
+            <dt>Registrado</dt>
+            <dd>{{ formatDate(g.createdAt) }}</dd>
+          </div>
+          <div class="field-grid__item">
+            <dt>Inicio producción</dt>
+            <dd>{{ formatDate(g.terminadoAt) }}</dd>
+          </div>
+          @if (g.terminadoPor) {
+            <div class="field-grid__item">
+              <dt>Iniciado por</dt>
+              <dd>{{ g.terminadoPor }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+    </div>
+
+    <section class="panel grupo-detail__section">
+      <h3>Órdenes del grupo</h3>
+      @if (g.ordenes.length === 0) {
+        <p class="grupo-detail__empty-text">Sin órdenes.</p>
+      } @else {
+        <div class="detail-table-wrap">
+          <table class="detail-table">
+            <thead>
+              <tr>
+                <th>OP</th>
+                <th>Cliente</th>
+                <th>Bitácora</th>
+                <th>Detalle</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (orden of g.ordenes; track orden.id) {
+                <tr>
+                  <td data-label="OP"><strong>{{ orden.secuencia }}</strong></td>
+                  <td data-label="Cliente">{{ orden.clienteNombre ?? '—' }}</td>
+                  <td data-label="Bitácora">{{ orden.trabajoSecuencia ?? '—' }}</td>
+                  <td data-label="Detalle">{{ orden.detalle ?? '—' }}</td>
+                  <td data-label="">
+                    <a [routerLink]="['/dashboard/produccion/planificacion', orden.id]" class="grupo-detail__link">
+                      Ver OP
+                    </a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    @if (g.retazosSobrantes?.length) {
+      <section class="panel grupo-detail__section">
+        <h3>Retazos sobrantes ({{ g.retazosSobrantes!.length }})</h3>
+        <div class="detail-table-wrap">
+          <table class="detail-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Ancho (cm)</th>
+                <th>Alto (cm)</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (retazo of g.retazosSobrantes!; track retazo.id ?? retazo.codigo) {
+                <tr>
+                  <td data-label="Código">{{ retazo.codigo ?? '—' }}</td>
+                  <td data-label="Ancho">{{ retazo.ancho }}</td>
+                  <td data-label="Alto">{{ retazo.alto }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    @if (armado(); as armadoData) {
+      <section class="panel grupo-detail__section">
+        <h3>Diseño de armado</h3>
+        <app-armado-preview
+          [armado]="armadoData"
+          [materialAnchoCm]="g.materialAnchoCm ?? null"
+          [materialAltoCm]="g.materialAltoCm ?? null"
+          [materialTipo]="g.material?.tipo ?? null"
+          [showDownload]="true"
+          [showLegend]="true"
+          [downloadFileName]="'grupo-' + g.id"
+          [reportContext]="reportContext()"
+        />
+      </section>
+    }
+  }
+
+  @if (showReporteModal() && grupo()) {
+    <app-grupo-reporte-view [grupo]="grupo()" (closed)="cerrarReporte()" />
+  }
+
+  <app-grupo-pdf-export [grupo]="pdfExportGrupo()" />
+</div>
