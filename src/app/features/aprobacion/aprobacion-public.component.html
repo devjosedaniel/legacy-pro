@@ -1,0 +1,394 @@
+<div class="aprobacion">
+  <header class="aprobacion__top">
+    <div class="aprobacion__brand">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="40" height="40" rx="10" fill="currentColor" opacity="0.15" />
+        <path d="M12 14h16v3H12v-3zm0 6h16v3H12v-3zm0 6h10v3H12v-3z" fill="currentColor" />
+        <rect x="28" y="26" width="4" height="7" rx="1" fill="currentColor" />
+      </svg>
+      <div>
+        <strong>Legacy Pro</strong>
+        <span>Revisión externa</span>
+      </div>
+    </div>
+    @if (archivo(); as a) {
+      <span
+        class="aprobacion__top-status"
+        [class.aprobacion__top-status--ok]="aprobado()"
+        [class.aprobacion__top-status--cambio]="yaRespondido() && !aprobado()"
+        [class.aprobacion__top-status--pending]="!yaRespondido()"
+      >
+        @if (!yaRespondido()) {
+          Pendiente de revisión
+        } @else if (aprobado()) {
+          Aprobado
+        } @else {
+          Cambio registrado
+        }
+      </span>
+    }
+  </header>
+
+  <main class="aprobacion__body">
+    @if (successMessage()) {
+      <div class="alert alert--success">{{ successMessage() }}</div>
+    }
+    @if (errorMessage()) {
+      <div class="alert alert--error">{{ errorMessage() }}</div>
+    }
+
+    @if (loading()) {
+      <div class="aprobacion__loading">Validando el enlace y cargando el archivo…</div>
+    } @else if (archivo(); as a) {
+      @if (a.aprobacion?.pruebacolor === 1) {
+        <div class="alert alert--info">Ya se solicitó una prueba de color para este trabajo.</div>
+      }
+      @if (a.aprobacion?.fotopolimero === 1) {
+        <div class="alert alert--info">Ya se solicitó fotopolímero para este trabajo.</div>
+      }
+
+      @if (yaRespondido()) {
+        <section
+          class="aprobacion__status"
+          [class.aprobacion__status--ok]="aprobado()"
+          [class.aprobacion__status--cambio]="!aprobado()"
+          role="status"
+        >
+          <span class="aprobacion__status-icon" aria-hidden="true">
+            @if (aprobado()) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+            }
+          </span>
+          <div>
+            <strong>{{ aprobado() ? 'Archivo aprobado' : 'Cambio registrado' }}</strong>
+            <p>
+              @if (aprobado()) {
+                Este trabajo ya fue aprobado. La revisión digital quedó registrada.
+              } @else {
+                Se registró una solicitud de cambios. El archivo ya no está pendiente de aprobación.
+              }
+            </p>
+            @if (fechaRegistro()) {
+              <p class="aprobacion__status-time">{{ aprobado() ? 'Aprobado el' : 'Registrado el' }} {{ fechaRegistro() }}</p>
+            }
+            @if (!aprobado() && a.aprobacion?.sugerencia; as sugerencia) {
+              <p class="aprobacion__status-note">“{{ sugerencia }}”</p>
+            }
+          </div>
+        </section>
+      }
+
+      <section class="aprobacion__hero">
+        <div>
+          <p class="aprobacion__eyebrow">Aprobación de {{ (a.carpeta || 'archivo') | uppercase }}</p>
+          <h1>{{ secuenciaLabel() }} · {{ trabajo()?.referencia || trabajo()?.detalle }}</h1>
+          <p class="aprobacion__subtitle">{{ trabajo()?.detalle }}</p>
+        </div>
+        <div class="aprobacion__actions">
+          @if (!yaRespondido()) {
+            <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="abrirAviso()">Aprobar</button>
+            <button type="button" class="btn btn--danger" [disabled]="submitting()" (click)="abrirCambios()">Solicitar cambios</button>
+          } @else {
+            @if (esCransa()) {
+              <button type="button" class="btn btn--primary" (click)="abrirCotizacion()">Solicitar cotización</button>
+            }
+            @if (puedePruebaColor()) {
+              <button type="button" class="btn btn--outline" (click)="abrirPruebaColor()">Prueba de color</button>
+            }
+            @if (puedeFotopolimero()) {
+              <button type="button" class="btn btn--outline" (click)="abrirFotopolimero()">Fotopolímero</button>
+            }
+          }
+        </div>
+      </section>
+
+      <div class="aprobacion__grid">
+        <section class="panel aprobacion__preview">
+          <div class="panel__header">
+            <h2>Archivo</h2>
+            <div class="aprobacion__preview-actions">
+              @if (previewUrl() && (previewKind() === 'pdf' || previewKind() === 'image')) {
+                <button type="button" class="btn btn--outline btn--sm" (click)="abrirEnPestana()">Nueva pestaña</button>
+                <button type="button" class="btn btn--outline btn--sm" (click)="abrirPantallaCompleta()">Pantalla completa</button>
+              }
+              <button type="button" class="btn btn--outline btn--sm" [disabled]="downloading()" (click)="descargar()">
+                {{ downloading() ? 'Descargando…' : 'Descargar' }}
+              </button>
+            </div>
+          </div>
+          <div class="aprobacion__filemeta">
+            <strong class="aprobacion__filename">{{ a.nombre }}</strong>
+            <div class="aprobacion__filechips">
+              <span>{{ fileTypeLabel() }}</span>
+              <span>{{ fileSizeLabel() }}</span>
+            </div>
+          </div>
+          <div class="aprobacion__preview-frame">
+            @if (aprobado()) {
+              <div class="aprobacion__stamp" aria-hidden="true">Aprobado</div>
+            }
+            @if (previewLoading()) {
+              <div class="aprobacion__empty">Cargando vista previa…</div>
+            } @else if (previewFailed() || (!previewUrl() && previewKind() !== 'other')) {
+              <div class="aprobacion__empty">
+                No se pudo mostrar el visor. Descargue el archivo para revisarlo.
+                <button type="button" class="btn btn--primary btn--sm" [disabled]="downloading()" (click)="descargar()">Descargar para revisar</button>
+              </div>
+            } @else if (previewKind() === 'pdf' && previewUrl()) {
+              <iframe class="aprobacion__frame" [src]="previewUrl()" title="Vista previa PDF" (error)="marcarPdfFallido()"></iframe>
+              <p class="aprobacion__preview-hint">Si el PDF no se ve bien, ábralo en una pestaña nueva o descárguelo para revisarlo.</p>
+            } @else if (previewKind() === 'image' && previewUrl()) {
+              <div class="aprobacion__image-toolbar">
+                <button type="button" class="btn btn--outline btn--sm" (click)="zoomImagen(-0.25)">−</button>
+                <span>{{ (imageZoom() * 100).toFixed(0) }}%</span>
+                <button type="button" class="btn btn--outline btn--sm" (click)="zoomImagen(0.25)">+</button>
+                <button type="button" class="btn btn--outline btn--sm" (click)="rotarImagen()">Rotar</button>
+                <button type="button" class="btn btn--outline btn--sm" (click)="resetImagen()">Restablecer</button>
+              </div>
+              <div class="aprobacion__image-stage">
+                <img
+                  class="aprobacion__image"
+                  [src]="previewUrl()"
+                  [alt]="a.nombre"
+                  [style.transform]="imageTransform()"
+                />
+              </div>
+            } @else {
+              <div class="aprobacion__empty">
+                La vista previa no está disponible para este tipo de archivo. Descargue para revisar.
+                <button type="button" class="btn btn--primary btn--sm" [disabled]="downloading()" (click)="descargar()">Descargar para revisar</button>
+              </div>
+            }
+          </div>
+        </section>
+
+        <aside class="panel aprobacion__details">
+          <div class="panel__header"><h2>Datos del trabajo</h2></div>
+          <dl class="aprobacion__meta">
+            <div><dt>Cliente / referencia</dt><dd>{{ dato(trabajo()?.referencia) }}</dd></div>
+            <div><dt>Producto</dt><dd>{{ dato(trabajo()?.producto?.nombre) }}</dd></div>
+            <div><dt>Calibre</dt><dd>{{ dato(trabajo()?.calibre?.nombre) }}</dd></div>
+            <div><dt>Medidas</dt><dd>{{ formatMedidas() }}</dd></div>
+            <div><dt>Repetición</dt><dd>{{ dato(trabajo()?.repeticionancho) }} × {{ dato(trabajo()?.repeticionalto) }}</dd></div>
+            <div><dt>Ancho material</dt><dd>{{ dato(trabajo()?.anchomaterial) }}</dd></div>
+            <div><dt>Máquina</dt><dd>{{ dato(trabajo()?._maquina?.nombre) }}</dd></div>
+            <div><dt>Impresión</dt><dd>{{ dato(trabajo()?.tipoimpresion) }}</dd></div>
+          </dl>
+
+          @if (trabajo()?.colores?.length) {
+            <h3>Colores</h3>
+            <div class="detail-table-wrap">
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>Color</th>
+                    <th>Lado</th>
+                    <th>Lineatura</th>
+                    <th>P. mín.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (color of trabajo()!.colores!; track color.id) {
+                    <tr>
+                      <td>{{ color.color }}</td>
+                      <td>{{ color.lado }}</td>
+                      <td>{{ dato(color.lineatura) }}</td>
+                      <td>{{ dato(color.puntominimo) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </aside>
+      </div>
+    } @else {
+      <div class="panel aprobacion__empty-card">
+        <h2>No se encontró el archivo</h2>
+        <p>El enlace puede haber expirado o el identificador no es válido. Solicite un nuevo correo de aprobación.</p>
+      </div>
+    }
+  </main>
+</div>
+
+@if (previewFullscreen() && previewUrl()) {
+  <div class="aprobacion-fullscreen" role="dialog" aria-modal="true" aria-label="Vista previa a pantalla completa">
+    <div class="aprobacion-fullscreen__bar">
+      <strong>{{ archivo()?.nombre }}</strong>
+      <div class="aprobacion__preview-actions">
+        @if (previewKind() === 'image') {
+          <button type="button" class="btn btn--outline btn--sm" (click)="zoomImagen(-0.25)">−</button>
+          <button type="button" class="btn btn--outline btn--sm" (click)="zoomImagen(0.25)">+</button>
+          <button type="button" class="btn btn--outline btn--sm" (click)="rotarImagen()">Rotar</button>
+        }
+        <button type="button" class="btn btn--outline btn--sm" (click)="abrirEnPestana()">Nueva pestaña</button>
+        <button type="button" class="btn btn--outline btn--sm" [disabled]="downloading()" (click)="descargar()">Descargar</button>
+        <button type="button" class="btn btn--primary btn--sm" (click)="cerrarPantallaCompleta()">Cerrar</button>
+      </div>
+    </div>
+    @if (previewKind() === 'pdf') {
+      <iframe class="aprobacion-fullscreen__frame" [src]="previewUrl()" title="PDF a pantalla completa"></iframe>
+    } @else {
+      <div class="aprobacion__image-stage aprobacion__image-stage--full">
+        <img class="aprobacion__image" [src]="previewUrl()" [alt]="archivo()?.nombre" [style.transform]="imageTransform()" />
+      </div>
+    }
+  </div>
+}
+
+@if (modal(); as currentModal) {
+  <div class="aprobacion-modal" role="dialog" aria-modal="true" (click)="cerrarModal()">
+    <div class="aprobacion-modal__panel" [class.aprobacion-modal__panel--wide]="currentModal === 'fotopolimero' || currentModal === 'cotizacion'" (click)="$event.stopPropagation()">
+      @if (currentModal === 'aviso') {
+        <h2>Aviso de aprobación</h2>
+        <p>Con este proceso se aprueba la totalidad del trabajo: diseño, textos, medidas, colores, códigos, imágenes y plano mecánico.</p>
+        <p class="aprobacion__legal">Luego de su aprobación, Serflex no se hace responsable por errores u omisiones no detectados en su revisión.</p>
+        @if (requiereEvidencia()) {
+          <div class="field">
+            <label for="evidencia">Evidencia de aprobación</label>
+            <input id="evidencia" type="file" (change)="onEvidenciaFile($event)" />
+          </div>
+        }
+        <label class="checkbox">
+          <input type="checkbox" [formControl]="avisoForm.controls.aviso" />
+          <span class="checkbox__mark"></span>
+          He leído y acepto los términos y condiciones.
+        </label>
+        <div class="aprobacion-modal__actions">
+          <button type="button" class="btn btn--outline" (click)="cerrarModal()">Cancelar</button>
+          <button type="button" class="btn btn--primary" [disabled]="submitting() || remainingSeconds() > 0 || avisoForm.invalid" (click)="aprobar()">
+            @if (remainingSeconds() > 0) {
+              Espere {{ remainingSeconds() }} s…
+            } @else if (submitting()) {
+              Aprobando…
+            } @else {
+              Aprobar
+            }
+          </button>
+        </div>
+      }
+
+      @if (currentModal === 'cambios') {
+        <h2>Solicitar cambios</h2>
+        <form [formGroup]="cambiosForm" (ngSubmit)="enviarCambios()">
+          <div class="field" [class.field--error]="cambiosForm.controls.sugerencia.touched && cambiosForm.controls.sugerencia.invalid">
+            <label for="sugerencia">Sugerencias</label>
+            <textarea id="sugerencia" formControlName="sugerencia" rows="6" placeholder="Describa los cambios necesarios"></textarea>
+            @if (cambiosForm.controls.sugerencia.touched && cambiosForm.controls.sugerencia.invalid) {
+              <span class="field__error">Escriba su sugerencia de cambio.</span>
+            }
+          </div>
+          <div class="field">
+            <label for="cambio-file">Archivo de referencia (opcional)</label>
+            <input id="cambio-file" type="file" (change)="onCambioFile($event)" />
+          </div>
+          <div class="aprobacion-modal__actions">
+            <button type="button" class="btn btn--outline" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="submitting()">{{ submitting() ? 'Enviando…' : 'Enviar' }}</button>
+          </div>
+        </form>
+      }
+
+      @if (currentModal === 'cotizacion') {
+        <h2>Solicitar cotización</h2>
+        <dl class="aprobacion__meta">
+          <div><dt>Producto</dt><dd>{{ dato(trabajo()?.producto?.nombre) }}</dd></div>
+          <div><dt>Calibre</dt><dd>{{ dato(trabajo()?.calibre?.nombre) }}</dd></div>
+          <div><dt>Medidas</dt><dd>{{ formatMedidas() }}</dd></div>
+          <div><dt>Repetición</dt><dd>{{ dato(trabajo()?.repeticionancho) }} × {{ dato(trabajo()?.repeticionalto) }}</dd></div>
+        </dl>
+        <form [formGroup]="cotizacionForm" (ngSubmit)="enviarCotizacion()">
+          <div class="field">
+            <label for="observacion">Observación</label>
+            <textarea id="observacion" formControlName="observacion" rows="4" placeholder="Detalle adicional para la cotización"></textarea>
+          </div>
+          <div class="aprobacion-modal__actions">
+            <button type="button" class="btn btn--outline" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="submitting()">{{ submitting() ? 'Enviando…' : 'Solicitar' }}</button>
+          </div>
+        </form>
+      }
+
+      @if (currentModal === 'prueba') {
+        <h2>Prueba de color</h2>
+        <form [formGroup]="pruebaForm" (ngSubmit)="enviarPruebaColor()">
+          <div class="field">
+            <label for="cola_id">Cola</label>
+            <select id="cola_id" formControlName="cola_id">
+              <option [ngValue]="null">Seleccione una cola</option>
+              @for (cola of colas(); track cola.id) {
+                <option [ngValue]="cola.id">{{ cola.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="aprobacion-modal__actions">
+            <button type="button" class="btn btn--outline" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="submitting()">{{ submitting() ? 'Enviando…' : 'Solicitar' }}</button>
+          </div>
+        </form>
+      }
+
+      @if (currentModal === 'fotopolimero') {
+        <h2>Solicitud de fotopolímero</h2>
+        <dl class="aprobacion__meta">
+          <div><dt>Producto</dt><dd>{{ dato(trabajo()?.producto?.nombre) }}</dd></div>
+          <div><dt>Máquina</dt><dd>{{ dato(trabajo()?._maquina?.nombre) }}</dd></div>
+          <div><dt>Calibre</dt><dd>{{ dato(trabajo()?.calibre?.nombre) }}</dd></div>
+          <div><dt>Cilindro</dt><dd>{{ dato(trabajo()?._distorsion?.cilindro) }}</dd></div>
+        </dl>
+        @if (fotoColores().length) {
+          <p class="field__hint">Marque los colores a procesar.</p>
+          <div class="detail-table-wrap">
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Color</th>
+                  <th>Lado</th>
+                  <th>DigiCap</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (color of fotoColores(); track color.id; let i = $index) {
+                  <tr>
+                    <td>
+                      <label class="checkbox">
+                        <input type="checkbox" [checked]="color.procesar" (change)="toggleColor(i)" />
+                        <span class="checkbox__mark"></span>
+                      </label>
+                    </td>
+                    <td>{{ color.color }}</td>
+                    <td>{{ color.lado }}</td>
+                    <td>
+                      <input class="aprobacion__inline-input" [value]="color.digicap" (input)="onDigicapInput(i, $event)" />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        <form [formGroup]="fotoForm" (ngSubmit)="enviarFotopolimero()">
+          <div class="field">
+            <label for="informacion">Información adicional</label>
+            <textarea id="informacion" formControlName="informacion" rows="4"></textarea>
+          </div>
+          <div class="field">
+            <label for="foto-files">Archivos (máx. 200 MB c/u)</label>
+            <input id="foto-files" type="file" multiple (change)="onFotoFiles($event)" />
+          </div>
+          <div class="aprobacion-modal__actions">
+            <button type="button" class="btn btn--outline" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="submitting()">{{ submitting() ? 'Enviando…' : 'Solicitar' }}</button>
+          </div>
+        </form>
+      }
+    </div>
+  </div>
+}

@@ -9,6 +9,18 @@ export const routes: Routes = [
     canActivate: [guestGuard],
   },
   {
+    path: 'aprobacion',
+    children: [
+      {
+        path: '**',
+        loadComponent: () =>
+          import('./features/aprobacion/aprobacion-public.component').then(
+            (m) => m.AprobacionPublicComponent,
+          ),
+      },
+    ],
+  },
+  {
     path: 'dashboard',
     loadComponent: () =>
       import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),

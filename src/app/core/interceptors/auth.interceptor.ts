@@ -3,10 +3,14 @@ import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
+function isPublicAprobacionRequest(url: string): boolean {
+  return url.includes('/pwa/') || url.includes('/aprobacion/') || /\/archivo\/.+\/(download-secure|aprobar-digital|cambios)(\?|$)/.test(url);
+}
+
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
 
-  if (req.url.includes('/usuario/auth')) {
+  if (req.url.includes('/usuario/auth') || isPublicAprobacionRequest(req.url)) {
     return next(req);
   }
 
