@@ -176,6 +176,7 @@
           [pageSize]="pageSize"
           [total]="retazosTotal()"
           [disabled]="loadingRetazos()"
+          itemLabel="retazos"
           (pageChange)="onRetazosPageChange($event)"
         />
       }
@@ -237,6 +238,7 @@
           [pageSize]="pageSize"
           [total]="movementsTotal()"
           [disabled]="loadingMovements()"
+          itemLabel="movimientos"
           (pageChange)="onMovementsPageChange($event)"
         />
       }

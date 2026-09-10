@@ -317,6 +317,7 @@
       [pageSize]="pageSize"
       [total]="total()"
       [disabled]="isLoading()"
+      itemLabel="retazos"
       (pageChange)="onPageChange($event)"
     />
   }
@@ -427,6 +428,7 @@
           [pageSize]="pageSize"
           [total]="historialTotal()"
           [disabled]="loadingHistorial()"
+          itemLabel="eventos"
           (pageChange)="onHistorialPageChange($event)"
         />
       }

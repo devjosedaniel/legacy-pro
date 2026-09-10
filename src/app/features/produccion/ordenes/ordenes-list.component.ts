@@ -4,7 +4,6 @@ import { forkJoin } from 'rxjs';
 import { Calibre } from '../../../core/models/calibre.model';
 import { Cliente } from '../../../core/models/cliente.model';
 import { OrdenProduccion } from '../../../core/models/orden-produccion.model';
-import { pageRangeEnd, pageRangeStart } from '../../../core/models/pagination.model';
 import { CalibreService } from '../../../core/services/calibre.service';
 import { ClienteService } from '../../../core/services/cliente.service';
 import { OrdenProduccionService } from '../../../core/services/orden-produccion.service';
@@ -48,9 +47,6 @@ export class OrdenesListComponent implements OnInit {
     urgentes: this.ordenes().filter((orden) => orden.urgencia === 1).length,
     emergentes: this.ordenes().filter((orden) => orden.urgencia === 2).length,
   }));
-
-  protected readonly rangeStart = computed(() => pageRangeStart(this.page(), PAGE_SIZE, this.total()));
-  protected readonly rangeEnd = computed(() => pageRangeEnd(this.page(), PAGE_SIZE, this.total()));
 
   ngOnInit(): void {
     this.loading.set(true);

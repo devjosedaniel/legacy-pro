@@ -11,12 +11,18 @@ export class PaginationComponent {
   readonly pageSize = input(25);
   readonly total = input(0);
   readonly disabled = input(false);
+  readonly itemLabel = input('registros');
 
   readonly pageChange = output<number>();
 
   protected readonly totalPages = computed(() => totalPages(this.total(), this.pageSize()));
   protected readonly rangeStart = computed(() => pageRangeStart(this.page(), this.pageSize(), this.total()));
   protected readonly rangeEnd = computed(() => pageRangeEnd(this.page(), this.pageSize(), this.total()));
+  protected readonly showFirstLast = computed(() => this.totalPages() > 5);
+
+  protected formatNumber(value: number): string {
+    return value.toLocaleString('es-ES');
+  }
 
   protected goTo(page: number): void {
     if (this.disabled()) return;

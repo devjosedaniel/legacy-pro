@@ -534,17 +534,12 @@
 
 
     <app-pagination
-
       [page]="page()"
-
       [pageSize]="pageSize"
-
       [total]="total()"
-
       [disabled]="isLoading()"
-
+      itemLabel="movimientos"
       (pageChange)="onPageChange($event)"
-
     />
 
   }
