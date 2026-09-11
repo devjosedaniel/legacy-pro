@@ -92,11 +92,18 @@
         </div>
         <div class="aprobacion__actions">
           @if (!yaRespondido()) {
+            @if (puedeSolicitarCotizacion()) {
+              <button type="button" class="btn btn--outline" [disabled]="submitting()" (click)="abrirCotizacion()">
+                Solicitar cotización
+              </button>
+            }
             <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="abrirAviso()">Aprobar</button>
             <button type="button" class="btn btn--danger" [disabled]="submitting()" (click)="abrirCambios()">Solicitar cambios</button>
-          } @else {
-            @if (esCransa()) {
-              <button type="button" class="btn btn--primary" (click)="abrirCotizacion()">Solicitar cotización</button>
+          } @else if (aprobado()) {
+            @if (puedeSolicitarCotizacion()) {
+              <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="abrirCotizacion()">
+                Solicitar cotización
+              </button>
             }
             @if (puedePruebaColor()) {
               <button type="button" class="btn btn--outline" (click)="abrirPruebaColor()">Prueba de color</button>

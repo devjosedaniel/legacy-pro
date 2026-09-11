@@ -90,6 +90,15 @@ export class AprobacionPublicComponent {
       trabajo.es_duplicacion === 0
     );
   });
+  /** Igual que el Angular 2023: Cransa sin cotización al pendiente; si ya está aprobado, siempre se puede pedir. */
+  readonly puedeSolicitarCotizacion = computed(() => {
+    const trabajo = this.trabajo();
+    if (!trabajo) return false;
+    if (!this.yaRespondido()) {
+      return trabajo.es_cransa === 1 && !trabajo.etapa?.cotizacion_id;
+    }
+    return this.aprobado();
+  });
   readonly puedePruebaColor = computed(() => {
     const archivo = this.archivo();
     if (!archivo?.aprobacion || archivo.aprobacion.aprobado !== 1) return false;
