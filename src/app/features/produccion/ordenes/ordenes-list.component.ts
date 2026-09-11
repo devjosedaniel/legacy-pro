@@ -1,6 +1,7 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
 import { Calibre } from '../../../core/models/calibre.model';
 import { Cliente } from '../../../core/models/cliente.model';
 import { OrdenProduccion } from '../../../core/models/orden-produccion.model';
@@ -9,12 +10,16 @@ import { ClienteService } from '../../../core/services/cliente.service';
 import { OrdenProduccionService } from '../../../core/services/orden-produccion.service';
 import { urgenciaLabel } from '../../../core/utils/urgencia.util';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import {
+  SearchSelectComponent,
+  SearchSelectOption,
+} from '../../../shared/components/search-select/search-select.component';
 
 const PAGE_SIZE = 15;
 
 @Component({
   selector: 'app-ordenes-list',
-  imports: [RouterLink, PaginationComponent],
+  imports: [RouterLink, PaginationComponent, ReactiveFormsModule, SearchSelectComponent],
   templateUrl: './ordenes-list.component.html',
   styleUrl: './ordenes-list.component.scss',
 })
@@ -22,12 +27,14 @@ export class OrdenesListComponent implements OnInit {
   private readonly ordenService = inject(OrdenProduccionService);
   private readonly calibreService = inject(CalibreService);
   private readonly clienteService = inject(ClienteService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly urgenciaLabel = urgenciaLabel;
   protected readonly pageSize = PAGE_SIZE;
 
   protected readonly search = signal('');
   protected readonly clienteFilter = signal('');
+  protected readonly clienteFilterControl = new FormControl('', { nonNullable: true });
   protected readonly calibreFilter = signal('');
   protected readonly ordenes = signal<OrdenProduccion[]>([]);
   protected readonly total = signal(0);
@@ -37,6 +44,16 @@ export class OrdenesListComponent implements OnInit {
 
   protected readonly clientes = signal<Cliente[]>([]);
   protected readonly calibres = signal<Calibre[]>([]);
+
+  protected readonly clienteOptions = computed((): SearchSelectOption[] =>
+    this.clientes()
+      .slice()
+      .sort((a, b) => a.nombres.localeCompare(b.nombres, 'es'))
+      .map((cliente) => ({
+        value: String(cliente.id),
+        label: cliente.nombres,
+      })),
+  );
 
   protected readonly tieneFiltros = computed(
     () => !!this.search().trim() || !!this.clienteFilter() || !!this.calibreFilter(),
@@ -49,30 +66,24 @@ export class OrdenesListComponent implements OnInit {
   }));
 
   ngOnInit(): void {
-    this.loading.set(true);
-    forkJoin({
-      clientes: this.clienteService.list(),
-      calibres: this.calibreService.ensureLoaded(),
-    }).subscribe({
-      next: ({ clientes, calibres }) => {
-        this.clientes.set(clientes);
-        this.calibres.set(calibres);
-        this.cargar(1);
-      },
-      error: (err: Error) => {
-        this.errorMessage.set(err.message);
-        this.loading.set(false);
-      },
+    this.clienteFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
+      this.clienteFilter.set(value);
+      this.cargar(1);
     });
+
+    this.clienteService.list().subscribe({
+      next: (clientes) => this.clientes.set(clientes),
+      error: () => this.clientes.set([]),
+    });
+    this.calibreService.ensureLoaded().subscribe({
+      next: (calibres) => this.calibres.set(calibres),
+      error: () => this.calibres.set([]),
+    });
+    this.cargar(1);
   }
 
   protected onSearch(value: string): void {
     this.search.set(value);
-  }
-
-  protected onClienteChange(value: string): void {
-    this.clienteFilter.set(value);
-    this.cargar(1);
   }
 
   protected onCalibreChange(value: string): void {
@@ -87,6 +98,7 @@ export class OrdenesListComponent implements OnInit {
   protected clearFilters(): void {
     this.search.set('');
     this.clienteFilter.set('');
+    this.clienteFilterControl.setValue('', { emitEvent: false });
     this.calibreFilter.set('');
     this.cargar(1);
   }

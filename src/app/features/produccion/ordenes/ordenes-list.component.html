@@ -51,14 +51,16 @@
     </div>
 
     <div class="ordenes__filter-row">
-      <div class="field field--inline">
+      <div class="field field--inline ordenes__filter-cliente">
         <label for="cliente">Cliente</label>
-        <select id="cliente" [value]="clienteFilter()" (change)="onClienteChange($any($event.target).value)">
-          <option value="">Todos</option>
-          @for (cliente of clientes(); track cliente.id) {
-            <option [value]="cliente.id">{{ cliente.nombres }}</option>
-          }
-        </select>
+        <app-search-select
+          inputId="cliente"
+          [formControl]="clienteFilterControl"
+          [options]="clienteOptions()"
+          placeholder="Todos los clientes"
+          searchPlaceholder="Buscar cliente…"
+          emptyMessage="Sin clientes con ese criterio"
+        />
       </div>
 
       <div class="field field--inline">
