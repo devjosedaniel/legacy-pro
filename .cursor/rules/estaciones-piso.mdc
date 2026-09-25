@@ -1,0 +1,13 @@
+---
+description: Estaciones PWA — iniciar/terminar sin login; PIN después
+alwaysApply: true
+---
+
+# Estaciones (produccion-estaciones-pwa + API piso)
+
+Código: `C:\Users\Exodo\produccion-estaciones-pwa` y backend Laravel `produccion/piso`.
+
+- **Hoy:** iniciar/terminar etapa **sin login**. Config de pantallas: solo `ROL_ADMIN`.
+- **Después:** PIN de operador (no usuario/contraseña por cada tarjeta). JWT opcional ya se respeta si llega `Authorization`.
+- Subir siempre: `EstacionProduccionController.php` y `EstacionProduccionService.php` cuando cambie piso.
+- PHP producción **7.3**.

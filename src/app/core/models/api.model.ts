@@ -46,6 +46,7 @@ export interface ApiStock {
   productId: string;
   propio: number;
   consignacion: { proveedor: string; cantidad: number }[];
+  cliente?: number;
   total: number;
   lotes: ApiLoteStock[];
 }
@@ -81,6 +82,7 @@ export interface ApiMovimiento {
   stock_total_despues?: number | null;
   stock_propio_despues?: number | null;
   stock_consignacion_despues?: number | null;
+  stock_cliente_despues?: number | null;
   material_kardex?: 'plancha' | 'retazo' | null;
 }
 

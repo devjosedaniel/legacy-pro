@@ -8,7 +8,10 @@
       <p>
         {{ totalCount() }} productos
         @if (categoryFilter() === 'all') {
-          · {{ consignacionCount() }} con stock en consignación
+          · {{ consignacionCount() }} con consignación
+          @if (clienteCount() > 0) {
+            · {{ clienteCount() }} con stock del cliente
+          }
         }
       </p>
     </div>
@@ -75,6 +78,7 @@
           <option value="all">Todos</option>
           <option value="propio">Con stock propio</option>
           <option value="consignacion">Con consignación</option>
+          <option value="cliente">Con stock del cliente</option>
         </select>
       </div>
 
@@ -145,11 +149,15 @@
                     [class.badge--stock-low]="stockBadge(product) === 'low'"
                     [class.badge--stock-zero]="stockBadge(product) === 'zero'"
                     [class.badge--consignacion]="stockBadge(product) === 'consignacion'"
+                    [class.badge--cliente]="stockBadge(product) === 'cliente'"
                   >
                     {{ stockLabel(product) }}
                   </span>
                   @if (hasConsignacion(getStock(product))) {
                     <span class="productos__consignacion-detail">{{ consignacionDetail(product) }}</span>
+                  }
+                  @if (getStock(product).cliente > 0) {
+                    <span class="productos__consignacion-detail">{{ getStock(product).cliente }} uds. del cliente</span>
                   }
                 </div>
               </td>

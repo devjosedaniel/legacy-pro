@@ -184,6 +184,7 @@
           <option value="propio">Propio</option>
 
           <option value="consignacion">Consignación</option>
+          <option value="cliente">Cliente</option>
 
         </select>
 
@@ -408,7 +409,7 @@
                   class="movimientos__stock badge"
 
                   [class.badge--consignacion]="m.stockTipo === 'consignacion'"
-
+                  [class.badge--cliente]="m.stockTipo === 'cliente'"
                   [class.badge--propio]="m.stockTipo === 'propio'"
 
                 >

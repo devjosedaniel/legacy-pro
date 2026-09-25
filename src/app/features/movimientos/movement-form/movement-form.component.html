@@ -10,9 +10,13 @@
       <h2>Nuevo movimiento</h2>
       <p>
         @if (isSubida()) {
-          Registra un ingreso del proveedor con uno o varios productos.
+          @if (tipoSeleccionado() === 'entrada_cliente') {
+            Registra planchas que el cliente envía para usar en sus trabajos.
+          } @else {
+            Registra un ingreso del proveedor con uno o varios productos.
+          }
         } @else {
-          Registra salidas y movimientos de consignación.
+          Registra salidas, consignación y devolución de planchas del cliente.
         }
       </p>
     </div>

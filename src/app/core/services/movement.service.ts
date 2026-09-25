@@ -249,6 +249,7 @@ export class MovementService {
         productId,
         propio: 0,
         consignacion: [],
+        cliente: 0,
         total: 0,
         lotes: [],
       }
@@ -273,6 +274,10 @@ export class MovementService {
 
     if (tipo === 'compra_consignacion' || tipo === 'devolucion_consignacion') {
       return lotes.filter((l) => l.stockTipo === 'consignacion');
+    }
+
+    if (tipo === 'devolucion_cliente') {
+      return lotes.filter((l) => l.stockTipo === 'cliente');
     }
 
     return lotes;
@@ -329,7 +334,7 @@ export class MovementService {
   }> {
     const body = {
       tipo: data.tipo,
-      proveedor_id: Number(data.proveedorId),
+      proveedor_id: data.proveedorId ? Number(data.proveedorId) : undefined,
       fecha_ingreso: data.fechaIngreso,
       fecha_expiracion: data.fechaExpiracion,
       documento_ref: data.documentoRef,

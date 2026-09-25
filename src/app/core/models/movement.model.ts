@@ -8,12 +8,14 @@ export type MovementType =
   | 'entrada_compra'
   | 'salida_uso'
   | 'entrada_consignacion'
+  | 'entrada_cliente'
   | 'devolucion_consignacion'
+  | 'devolucion_cliente'
   | 'compra_consignacion'
   | 'ajuste_entrada'
   | 'ajuste_salida';
 
-export type StockTipo = 'propio' | 'consignacion';
+export type StockTipo = 'propio' | 'consignacion' | 'cliente';
 
 export interface Movement {
   id: string;
@@ -44,6 +46,7 @@ export interface Movement {
   stockTotalDespues?: number | null;
   stockPropioDespues?: number | null;
   stockConsignacionDespues?: number | null;
+  stockClienteDespues?: number | null;
   materialKardex?: 'plancha' | 'retazo' | null;
   retazosOrigen?: {
     id: string;
@@ -75,6 +78,7 @@ export interface ProductStock {
   productId: string;
   propio: number;
   consignacion: ConsignacionStock[];
+  cliente: number;
   total: number;
   lotes: LoteStock[];
 }
@@ -121,7 +125,9 @@ export const MOVEMENT_LABELS: Record<MovementType, string> = {
   entrada_compra: 'Entrada por compra',
   salida_uso: 'Salida por uso',
   entrada_consignacion: 'Entrada en consignación',
+  entrada_cliente: 'Entrada planchas del cliente',
   devolucion_consignacion: 'Devolución de consignación',
+  devolucion_cliente: 'Devolución planchas del cliente',
   compra_consignacion: 'Compra de consignación',
   ajuste_entrada: 'Ajuste positivo',
   ajuste_salida: 'Ajuste negativo',
@@ -130,9 +136,11 @@ export const MOVEMENT_LABELS: Record<MovementType, string> = {
 export const MOVEMENT_DIRECTION: Record<MovementType, MovementDirection> = {
   entrada_compra: 'subida',
   entrada_consignacion: 'subida',
+  entrada_cliente: 'subida',
   ajuste_entrada: 'subida',
   salida_uso: 'bajada',
   devolucion_consignacion: 'bajada',
+  devolucion_cliente: 'bajada',
   compra_consignacion: 'bajada',
   ajuste_salida: 'bajada',
 };
@@ -140,12 +148,14 @@ export const MOVEMENT_DIRECTION: Record<MovementType, MovementDirection> = {
 export const TIPOS_SUBIDA: MovementType[] = [
   'entrada_compra',
   'entrada_consignacion',
+  'entrada_cliente',
   'ajuste_entrada',
 ];
 
 export const TIPOS_BAJADA: MovementType[] = [
   'salida_uso',
   'devolucion_consignacion',
+  'devolucion_cliente',
   'compra_consignacion',
   'ajuste_salida',
 ];
@@ -154,9 +164,11 @@ export const STOCK_TIPO_BY_TYPE: Record<MovementType, StockTipo> = {
   entrada_compra: 'propio',
   ajuste_entrada: 'propio',
   entrada_consignacion: 'consignacion',
+  entrada_cliente: 'cliente',
   salida_uso: 'propio',
   ajuste_salida: 'propio',
   devolucion_consignacion: 'consignacion',
+  devolucion_cliente: 'cliente',
   compra_consignacion: 'consignacion',
 };
 

@@ -102,6 +102,12 @@ export class ProductoDetailComponent implements OnInit {
     return s.consignacion.reduce((sum, item) => sum + item.cantidad, 0);
   }
 
+  protected loteTipoLabel(tipo: string): string {
+    if (tipo === 'cliente') return 'Cliente';
+    if (tipo === 'consignacion') return 'Consignación';
+    return 'Propio';
+  }
+
   protected formatLoteMovimiento(mov: Movement): string {
     if (resolveMovimientoMaterial(mov) === 'retazo') {
       return mov.numeroLote.replace(/^RETAZO-/i, '');
@@ -118,9 +124,15 @@ export class ProductoDetailComponent implements OnInit {
 
     const propio = mov.stockPropioDespues;
     const consignacion = mov.stockConsignacionDespues;
+    const cliente = mov.stockClienteDespues;
 
-    if (propio != null && consignacion != null && consignacion > 0) {
-      return `${mov.stockTotalDespues} (${propio}P + ${consignacion}C)`;
+    const partes: string[] = [];
+    if (propio != null) partes.push(`${propio}P`);
+    if (consignacion != null && consignacion > 0) partes.push(`${consignacion}C`);
+    if (cliente != null && cliente > 0) partes.push(`${cliente}Cl`);
+
+    if (partes.length > 1) {
+      return `${mov.stockTotalDespues} (${partes.join(' + ')})`;
     }
 
     return String(mov.stockTotalDespues);

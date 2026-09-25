@@ -49,6 +49,7 @@ export class MovementFormComponent implements OnInit {
   protected readonly movementLabels = MOVEMENT_LABELS;
 
   protected readonly direccion = signal<MovementDirection>('subida');
+  protected readonly tipoSeleccionado = signal<MovementType>('entrada_compra');
   protected readonly isSaving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly successMessage = signal<string | null>(null);
@@ -88,7 +89,10 @@ export class MovementFormComponent implements OnInit {
     categoriaUsaLote(this.selectedProduct()?.categorySlug ?? 'otros'),
   );
 
-  protected readonly showProveedorSelect = computed(() => this.direccion() === 'subida');
+  protected readonly showProveedorSelect = computed(() => {
+    if (this.direccion() !== 'subida') return false;
+    return this.tipoSeleccionado() !== 'entrada_cliente';
+  });
 
   protected readonly showProveedorReadonly = computed(() => {
     const tipo = this.form.controls.tipo.value;
@@ -228,6 +232,7 @@ export class MovementFormComponent implements OnInit {
     this.direccion.set(dir);
     const tipos = dir === 'subida' ? TIPOS_SUBIDA : TIPOS_BAJADA;
     this.form.controls.tipo.setValue(tipos[0], this.silentValidity);
+    this.tipoSeleccionado.set(tipos[0]);
     this.form.controls.loteKey.reset('', this.silentValidity);
     this.form.controls.numeroLote.reset('', this.silentValidity);
     this.form.controls.proveedorId.reset('', this.silentValidity);
@@ -314,7 +319,12 @@ export class MovementFormComponent implements OnInit {
   }
 
   protected formatLoteOption(lote: LoteStock): string {
-    const tipo = lote.stockTipo === 'propio' ? 'Propio' : `Consignación ${lote.proveedor}`;
+    const tipo =
+      lote.stockTipo === 'cliente'
+        ? 'Cliente'
+        : lote.stockTipo === 'propio'
+          ? 'Propio'
+          : `Consignación ${lote.proveedor ?? ''}`.trim();
     return `${lote.numeroLote} · ${tipo} · ${lote.cantidad} uds · ${lote.fechaIngreso}`;
   }
 
@@ -323,6 +333,7 @@ export class MovementFormComponent implements OnInit {
   }
 
   protected formatStockTipo(tipo: LoteStock['stockTipo']): string {
+    if (tipo === 'cliente') return 'Cliente';
     return tipo === 'propio' ? 'Propio' : 'Consignación';
   }
 
@@ -521,6 +532,10 @@ export class MovementFormComponent implements OnInit {
   }
 
   private onTipoChange(): void {
+    this.tipoSeleccionado.set(this.form.controls.tipo.value);
+    if (this.form.controls.tipo.value === 'entrada_cliente') {
+      this.form.controls.proveedorId.reset('', this.silentValidity);
+    }
     const productId = this.form.controls.productId.value;
     if (productId) {
       this.queueLoadLotes(productId);
@@ -652,7 +667,7 @@ export class MovementFormComponent implements OnInit {
     }
 
     fecha.setValidators(isSubida && this.lineasRequierenLote() ? [Validators.required] : []);
-    proveedorId.setValidators(isSubida ? [Validators.required] : []);
+    proveedorId.setValidators(isSubida && tipo !== 'entrada_cliente' ? [Validators.required] : []);
     proveedor.setValidators(isBajada && tipo && requiresProveedor(tipo) ? [Validators.required] : []);
 
     for (let i = 0; i < this.lineas.length; i++) {

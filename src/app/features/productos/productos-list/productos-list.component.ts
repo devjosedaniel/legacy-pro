@@ -1,5 +1,5 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { formatMedidasCm, formatStickybackMedidas } from '../../../core/utils/dimensions.util';
 import { ProductCategorySlug } from '../../../core/models/category.model';
 import { ProductStock } from '../../../core/models/movement.model';
@@ -22,7 +22,6 @@ export class ProductosListComponent implements OnInit {
   private readonly calibreService = inject(CalibreService);
   private readonly marcaService = inject(MarcaService);
   private readonly categoryService = inject(CategoryService);
-  private readonly router = inject(Router);
 
   protected readonly successMessage = signal<string | null>(null);
 
@@ -32,7 +31,7 @@ export class ProductosListComponent implements OnInit {
   protected readonly categoryFilter = signal<ProductCategorySlug | 'all'>('all');
   protected readonly marcaFilter = signal('');
   protected readonly calibreFilter = signal('');
-  protected readonly stockFilter = signal<'all' | 'propio' | 'consignacion'>('all');
+  protected readonly stockFilter = signal<'all' | 'propio' | 'consignacion' | 'cliente'>('all');
 
   protected readonly marcas = computed(() => {
     const cat = this.categoryFilter();
@@ -85,7 +84,7 @@ export class ProductosListComponent implements OnInit {
 
       if (stockFilter === 'propio' && stock.propio === 0) return false;
       if (stockFilter === 'consignacion' && !this.hasConsignacion(stock)) return false;
-
+      if (stockFilter === 'cliente' && stock.cliente <= 0) return false;
       return true;
     });
   });
@@ -98,6 +97,10 @@ export class ProductosListComponent implements OnInit {
 
   protected readonly consignacionCount = computed(() => {
     return this.activeProducts().filter((p) => this.movementService.hasConsignacion(p.id)).length;
+  });
+
+  protected readonly clienteCount = computed(() => {
+    return this.activeProducts().filter((p) => this.movementService.getStock(p.id).cliente > 0).length;
   });
 
   protected readonly showMarcaColumn = computed(() => {
@@ -151,7 +154,7 @@ export class ProductosListComponent implements OnInit {
   }
 
   protected onStockFilterChange(value: string): void {
-    this.stockFilter.set(value as 'all' | 'propio' | 'consignacion');
+    this.stockFilter.set(value as 'all' | 'propio' | 'consignacion' | 'cliente');
   }
 
   protected clearFilters(): void {
@@ -200,9 +203,10 @@ export class ProductosListComponent implements OnInit {
     return n.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   }
 
-  protected stockBadge(product: Product): 'ok' | 'low' | 'zero' | 'consignacion' {
+  protected stockBadge(product: Product): 'ok' | 'low' | 'zero' | 'consignacion' | 'cliente' {
     const stock = this.getStock(product);
     if (stock.propio === 0 && this.hasConsignacion(stock)) return 'consignacion';
+    if (stock.propio === 0 && stock.cliente > 0) return 'cliente';
     if (stock.propio === 0) return 'zero';
     if (stock.propio <= product.stockMinimo) return 'low';
     return 'ok';
@@ -217,6 +221,7 @@ export class ProductosListComponent implements OnInit {
     const consignacionTotal = stock.consignacion.reduce((s, c) => s + c.cantidad, 0);
     if (consignacionTotal > 0) parts.push(`${consignacionTotal} consig.`);
 
+    if (stock.cliente > 0) parts.push(`${stock.cliente} cliente`);
     return parts.length > 0 ? parts.join(' · ') : 'Sin stock';
   }
 

@@ -70,12 +70,14 @@ export class DashboardHomeComponent implements OnInit {
 
     let stockPropio = 0;
     let stockConsignacion = 0;
+    let stockCliente = 0;
     let lowStockCount = 0;
 
     for (const product of products) {
       const stock = this.movementService.getStock(product.id);
       stockPropio += stock.propio;
       stockConsignacion += stock.consignacion.reduce((sum, item) => sum + item.cantidad, 0);
+      stockCliente += stock.cliente;
 
       if (product.stockMinimo > 0 && stock.propio <= product.stockMinimo) {
         lowStockCount++;
@@ -97,10 +99,12 @@ export class DashboardHomeComponent implements OnInit {
       {
         label: 'Stock propio',
         value: String(stockPropio),
-        change:
-          stockConsignacion > 0
-            ? `${stockConsignacion} uds en consignación`
-            : 'Unidades en inventario propio',
+        change: [
+          stockConsignacion > 0 ? `${stockConsignacion} consig.` : null,
+          stockCliente > 0 ? `${stockCliente} cliente` : null,
+        ]
+          .filter(Boolean)
+          .join(' · ') || 'Unidades en inventario propio',
         trend: stockPropio > 0 ? 'up' : 'neutral',
         icon: '📊',
         color: '#10b981',

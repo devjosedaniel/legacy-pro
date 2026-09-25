@@ -146,6 +146,7 @@ export function mapStock(api: ApiStock): ProductStock {
     productId: api.productId,
     propio: api.propio,
     consignacion: api.consignacion,
+    cliente: api.cliente ?? 0,
     total: api.total,
     lotes: api.lotes.map(mapLote),
   };
@@ -214,6 +215,7 @@ export function mapMovimiento(api: ApiMovimiento): Movement {
     stockTotalDespues: api.stock_total_despues ?? undefined,
     stockPropioDespues: api.stock_propio_despues ?? undefined,
     stockConsignacionDespues: api.stock_consignacion_despues ?? undefined,
+    stockClienteDespues: api.stock_cliente_despues ?? undefined,
     materialKardex: api.material_kardex ?? undefined,
     retazosOrigen: api.retazos_origen?.map((retazo) => ({
       id: String(retazo.id),

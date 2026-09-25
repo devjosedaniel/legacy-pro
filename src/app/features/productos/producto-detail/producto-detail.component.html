@@ -40,6 +40,10 @@
           <strong class="stat__value">{{ consignacionTotal() }}</strong>
         </article>
         <article class="stat panel">
+          <span class="stat__label">Stock del cliente</span>
+          <strong class="stat__value">{{ stock()?.cliente ?? 0 }}</strong>
+        </article>
+        <article class="stat panel">
           <span class="stat__label">Stock mínimo</span>
           <strong class="stat__value">{{ p.stockMinimo }}</strong>
         </article>
@@ -75,7 +79,7 @@
             @for (lote of stock()!.lotes; track lote.loteId ?? lote.numeroLote) {
               <tr>
                 <td data-label="Lote"><strong>{{ lote.numeroLote }}</strong></td>
-                <td data-label="Tipo">{{ lote.stockTipo === 'propio' ? 'Propio' : 'Consignación' }}</td>
+                <td data-label="Tipo">{{ loteTipoLabel(lote.stockTipo) }}</td>
                 <td data-label="Proveedor">{{ lote.proveedor ?? '—' }}</td>
                 <td data-label="Cantidad">{{ lote.cantidad }}</td>
                 <td data-label="Ingreso">{{ lote.fechaIngreso }}</td>
