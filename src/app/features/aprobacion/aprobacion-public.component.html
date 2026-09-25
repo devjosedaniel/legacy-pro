@@ -181,9 +181,18 @@
             <div><dt>Cliente / referencia</dt><dd>{{ dato(trabajo()?.referencia) }}</dd></div>
             <div><dt>Producto</dt><dd>{{ dato(trabajo()?.producto?.nombre) }}</dd></div>
             <div><dt>Calibre</dt><dd>{{ dato(trabajo()?.calibre?.nombre) }}</dd></div>
-            <div><dt>Medidas</dt><dd>{{ formatMedidas() }}</dd></div>
-            <div><dt>Repetición</dt><dd>{{ dato(trabajo()?.repeticionancho) }} × {{ dato(trabajo()?.repeticionalto) }}</dd></div>
-            <div><dt>Ancho material</dt><dd>{{ dato(trabajo()?.anchomaterial) }}</dd></div>
+            <div class="aprobacion__meta-row">
+              <div><dt>Ancho</dt><dd>{{ dato(trabajo()?.ancho) }}</dd></div>
+              <div><dt>Alto</dt><dd>{{ dato(trabajo()?.alto) }}</dd></div>
+              <div><dt>Largo</dt><dd>{{ dato(trabajo()?.largo) }}</dd></div>
+            </div>
+            <div class="aprobacion__meta-row aprobacion__meta-row--2">
+              <div>
+                <dt>Repetición</dt>
+                <dd>{{ dato(trabajo()?.repeticionancho) }} × {{ dato(trabajo()?.repeticionalto) }}</dd>
+              </div>
+              <div><dt>Ancho material</dt><dd>{{ dato(trabajo()?.anchomaterial) }}</dd></div>
+            </div>
             <div><dt>Máquina</dt><dd>{{ dato(trabajo()?._maquina?.nombre) }}</dd></div>
             <div><dt>Impresión</dt><dd>{{ dato(trabajo()?.tipoimpresion) }}</dd></div>
           </dl>
@@ -307,8 +316,15 @@
         <dl class="aprobacion__meta">
           <div><dt>Producto</dt><dd>{{ dato(trabajo()?.producto?.nombre) }}</dd></div>
           <div><dt>Calibre</dt><dd>{{ dato(trabajo()?.calibre?.nombre) }}</dd></div>
-          <div><dt>Medidas</dt><dd>{{ formatMedidas() }}</dd></div>
-          <div><dt>Repetición</dt><dd>{{ dato(trabajo()?.repeticionancho) }} × {{ dato(trabajo()?.repeticionalto) }}</dd></div>
+          <div class="aprobacion__meta-row">
+            <div><dt>Ancho</dt><dd>{{ dato(trabajo()?.ancho) }}</dd></div>
+            <div><dt>Alto</dt><dd>{{ dato(trabajo()?.alto) }}</dd></div>
+            <div><dt>Largo</dt><dd>{{ dato(trabajo()?.largo) }}</dd></div>
+          </div>
+          <div>
+            <dt>Repetición</dt>
+            <dd>{{ dato(trabajo()?.repeticionancho) }} × {{ dato(trabajo()?.repeticionalto) }}</dd>
+          </div>
         </dl>
         <form [formGroup]="cotizacionForm" (ngSubmit)="enviarCotizacion()">
           <div class="field">

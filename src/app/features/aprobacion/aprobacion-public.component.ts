@@ -430,14 +430,6 @@ export class AprobacionPublicComponent {
     return String(value);
   }
 
-  formatMedidas(): string {
-    const trabajo = this.trabajo();
-    const parts = [trabajo?.ancho, trabajo?.alto, trabajo?.largo]
-      .map((value) => (value == null || String(value).trim() === '' ? null : String(value).trim()))
-      .filter((value): value is string => value != null);
-    return parts.length ? parts.join(' × ') : '—';
-  }
-
   abrirEnPestana(): void {
     if (!this.previewObjectUrl) return;
     window.open(this.previewObjectUrl, '_blank', 'noopener');
