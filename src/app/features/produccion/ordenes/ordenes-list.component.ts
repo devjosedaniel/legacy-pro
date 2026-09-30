@@ -16,6 +16,14 @@ import {
 } from '../../../shared/components/search-select/search-select.component';
 
 const PAGE_SIZE = 15;
+const FILTERS_STORAGE_KEY = 'inv.produccion.ordenes.filters';
+
+interface OrdenesListSavedFilters {
+  search?: string;
+  clienteId?: string;
+  calibreId?: string;
+  page?: number;
+}
 
 @Component({
   selector: 'app-ordenes-list',
@@ -66,6 +74,8 @@ export class OrdenesListComponent implements OnInit {
   }));
 
   ngOnInit(): void {
+    const savedPage = this.restoreFilters();
+
     this.clienteFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
       this.clienteFilter.set(value);
       this.cargar(1);
@@ -79,11 +89,12 @@ export class OrdenesListComponent implements OnInit {
       next: (calibres) => this.calibres.set(calibres),
       error: () => this.calibres.set([]),
     });
-    this.cargar(1);
+    this.cargar(savedPage);
   }
 
   protected onSearch(value: string): void {
     this.search.set(value);
+    this.persistFilters(this.page());
   }
 
   protected onCalibreChange(value: string): void {
@@ -100,6 +111,7 @@ export class OrdenesListComponent implements OnInit {
     this.clienteFilter.set('');
     this.clienteFilterControl.setValue('', { emitEvent: false });
     this.calibreFilter.set('');
+    this.clearPersistedFilters();
     this.cargar(1);
   }
 
@@ -123,6 +135,7 @@ export class OrdenesListComponent implements OnInit {
   private cargar(nextPage: number): void {
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.persistFilters(nextPage);
 
     const clienteId = this.clienteFilter() ? Number(this.clienteFilter()) : null;
     const calibreId = this.calibreFilter() ? Number(this.calibreFilter()) : null;
@@ -147,5 +160,52 @@ export class OrdenesListComponent implements OnInit {
           this.loading.set(false);
         },
       });
+  }
+
+  private persistFilters(page: number): void {
+    const payload: OrdenesListSavedFilters = {
+      search: this.search(),
+      clienteId: this.clienteFilter(),
+      calibreId: this.calibreFilter(),
+      page,
+    };
+    const hasSomething =
+      !!payload.search?.trim() || !!payload.clienteId || !!payload.calibreId || page > 1;
+
+    try {
+      if (!hasSomething) {
+        localStorage.removeItem(FILTERS_STORAGE_KEY);
+        return;
+      }
+      localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }
+
+  private restoreFilters(): number {
+    try {
+      const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
+      if (!raw) return 1;
+
+      const saved = JSON.parse(raw) as OrdenesListSavedFilters;
+      this.search.set(saved.search ?? '');
+      const clienteId = saved.clienteId ?? '';
+      this.clienteFilter.set(clienteId);
+      this.clienteFilterControl.setValue(clienteId, { emitEvent: false });
+      this.calibreFilter.set(saved.calibreId ?? '');
+      const page = Number(saved.page);
+      return Number.isFinite(page) && page > 0 ? page : 1;
+    } catch {
+      return 1;
+    }
+  }
+
+  private clearPersistedFilters(): void {
+    try {
+      localStorage.removeItem(FILTERS_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }
 }

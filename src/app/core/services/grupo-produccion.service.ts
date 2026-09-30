@@ -17,16 +17,25 @@ export interface GrupoHistorialFilters {
   fechaDesde?: string;
   fechaHasta?: string;
   usuario?: string;
+  orden?: string;
+  grupo?: string;
+  cliente?: string;
+  clienteId?: string;
+  calibre?: string;
+  calibreId?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class GrupoProduccionService {
   private readonly http = inject(HttpClient);
 
-  listActivos(): Observable<GrupoProduccion[]> {
+  listActivos(filters?: GrupoHistorialFilters): Observable<GrupoProduccion[]> {
+    let params = new HttpParams().set('estado', 'registrado');
+    params = this.appendFilters(params, filters, false);
+
     return this.http
       .get<{ ok: boolean; grupos: ApiGrupo[] }>(`${environment.apiUrl}/produccion/grupos`, {
-        params: { estado: 'registrado' },
+        params,
       })
       .pipe(
         map((res) => (res.grupos ?? []).map(mapGrupo)),
@@ -42,16 +51,7 @@ export class GrupoProduccionService {
     let params = new HttpParams()
       .set('pagina', String(page))
       .set('limite', String(pageSize));
-
-    if (filters?.fechaDesde) {
-      params = params.set('fecha_desde', filters.fechaDesde);
-    }
-    if (filters?.fechaHasta) {
-      params = params.set('fecha_hasta', filters.fechaHasta);
-    }
-    if (filters?.usuario) {
-      params = params.set('usuario', filters.usuario);
-    }
+    params = this.appendFilters(params, filters, true);
 
     return this.http
       .get<{
@@ -90,5 +90,27 @@ export class GrupoProduccionService {
         map((res) => mapGrupo(res.grupo)),
         catchError((err) => throwError(() => new Error(extractApiError(err)))),
       );
+  }
+
+  private appendFilters(
+    params: HttpParams,
+    filters: GrupoHistorialFilters | undefined,
+    includeFechasUsuario: boolean,
+  ): HttpParams {
+    if (!filters) return params;
+
+    if (includeFechasUsuario) {
+      if (filters.fechaDesde) params = params.set('fecha_desde', filters.fechaDesde);
+      if (filters.fechaHasta) params = params.set('fecha_hasta', filters.fechaHasta);
+      if (filters.usuario) params = params.set('usuario', filters.usuario);
+    }
+    if (filters.orden) params = params.set('orden', filters.orden);
+    if (filters.grupo) params = params.set('grupo', filters.grupo);
+    if (filters.clienteId) params = params.set('cliente_id', filters.clienteId);
+    else if (filters.cliente) params = params.set('cliente', filters.cliente);
+    if (filters.calibreId) params = params.set('calibre_id', filters.calibreId);
+    else if (filters.calibre) params = params.set('calibre', filters.calibre);
+
+    return params;
   }
 }

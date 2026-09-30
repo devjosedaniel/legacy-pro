@@ -2,7 +2,7 @@
   <header class="grupos__header">
     <div>
       <h2>Grupos de producción</h2>
-      <p>Consulta grupos armados, filtra por fecha o usuario y descarga reportes PDF.</p>
+      <p>Consulta grupos armados y filtra por grupo, orden, cliente, calibre, fecha o usuario.</p>
     </div>
   </header>
 
@@ -14,6 +14,46 @@
           <option value="todos">Todos</option>
           <option value="activos">Armado registrado</option>
           <option value="produccion">En producción</option>
+        </select>
+      </label>
+      <label class="field grupos__filter-field">
+        <span>Grupo</span>
+        <input
+          type="search"
+          placeholder="#829 o 829"
+          [value]="grupo()"
+          (input)="onGrupoChange($event)"
+          (keydown.enter)="aplicarFiltros()"
+        />
+      </label>
+      <label class="field grupos__filter-field">
+        <span>Orden de producción</span>
+        <input
+          type="search"
+          placeholder="OP 85154 o 85154"
+          [value]="orden()"
+          (input)="onOrdenChange($event)"
+          (keydown.enter)="aplicarFiltros()"
+        />
+      </label>
+      <div class="field grupos__filter-field grupos__filter-cliente">
+        <span>Cliente</span>
+        <app-search-select
+          inputId="grupo-cliente"
+          [formControl]="clienteFilterControl"
+          [options]="clienteOptions()"
+          placeholder="Todos los clientes"
+          searchPlaceholder="Buscar cliente…"
+          emptyMessage="Sin clientes con ese criterio"
+        />
+      </div>
+      <label class="field grupos__filter-field">
+        <span>Calibre</span>
+        <select [value]="calibreId()" (change)="onCalibreChange($any($event.target).value)">
+          <option value="">Todos</option>
+          @for (calibre of calibres(); track calibre.id) {
+            <option [value]="calibre.id">{{ calibre.nombre }}</option>
+          }
         </select>
       </label>
       <label class="field grupos__filter-field">

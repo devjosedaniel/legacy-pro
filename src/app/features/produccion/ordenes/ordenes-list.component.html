@@ -2,7 +2,7 @@
   <header class="ordenes__header">
     <div>
       <h2>Órdenes de producción</h2>
-      <p>Historial de órdenes creadas con filtros por cliente, calibre y detalle.</p>
+      <p>Historial de órdenes. Filtra por OP, SIS, detalle, cliente y calibre.</p>
     </div>
     <button type="button" class="btn btn--outline btn--sm" (click)="reload()" [disabled]="loading()">
       Actualizar
@@ -33,21 +33,25 @@
   </section>
 
   <section class="ordenes__filters panel">
-    <div class="ordenes__search">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18" aria-hidden="true">
-        <path
-          fill-rule="evenodd"
-          d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-          clip-rule="evenodd"
+    <div class="field ordenes__search-field">
+      <label for="orden-busqueda">Buscar orden</label>
+      <div class="ordenes__search">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20" aria-hidden="true">
+          <path
+            fill-rule="evenodd"
+            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        <input
+          id="orden-busqueda"
+          type="search"
+          placeholder="Número de OP, SIS o detalle del trabajo"
+          [value]="search()"
+          (input)="onSearch($any($event.target).value)"
+          (keydown.enter)="aplicarFiltros()"
         />
-      </svg>
-      <input
-        type="search"
-        placeholder="Buscar OP, cliente, trabajo, detalle..."
-        [value]="search()"
-        (input)="onSearch($any($event.target).value)"
-        (keydown.enter)="aplicarFiltros()"
-      />
+      </div>
     </div>
 
     <div class="ordenes__filter-row">
@@ -73,9 +77,16 @@
         </select>
       </div>
 
-      @if (tieneFiltros()) {
-        <button type="button" class="btn btn--outline btn--sm" (click)="clearFilters()">Limpiar</button>
-      }
+      <div class="ordenes__filter-actions">
+        <button type="button" class="btn btn--primary btn--sm" [disabled]="loading()" (click)="aplicarFiltros()">
+          Buscar
+        </button>
+        @if (tieneFiltros()) {
+          <button type="button" class="btn btn--outline btn--sm" [disabled]="loading()" (click)="clearFilters()">
+            Limpiar
+          </button>
+        }
+      </div>
     </div>
   </section>
 

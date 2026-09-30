@@ -4,6 +4,22 @@ import { OrdenProduccion } from '../../../core/models/orden-produccion.model';
 import { OrdenProduccionService } from '../../../core/services/orden-produccion.service';
 import { urgenciaLabel } from '../../../core/utils/urgencia.util';
 
+const FILTERS_STORAGE_KEY = 'inv.produccion.planificacion.filters';
+
+interface PlanificacionSavedFilters {
+  search?: string;
+  calibreId?: string;
+  estado?: string;
+}
+
+function normalizeSearch(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^(op|sis)[\s\-]*/i, '')
+    .trim();
+}
+
 @Component({
   selector: 'app-planificacion-list',
   imports: [RouterLink],
@@ -41,7 +57,7 @@ export class PlanificacionListComponent implements OnInit {
   });
 
   protected readonly filtered = computed(() => {
-    const query = this.search().trim().toLowerCase();
+    const query = normalizeSearch(this.search());
     const calibre = this.calibreFilter();
     const estado = this.estadoFilter();
 
@@ -63,9 +79,13 @@ export class PlanificacionListComponent implements OnInit {
         .join(' ')
         .toLowerCase();
 
-      return haystack.includes(query);
+      return haystack.includes(query) || haystack.includes(this.search().trim().toLowerCase());
     });
   });
+
+  protected readonly tieneFiltros = computed(
+    () => !!this.search().trim() || !!this.calibreFilter() || !!this.estadoFilter(),
+  );
 
   protected readonly stats = computed(() => {
     const items = this.filtered();
@@ -77,25 +97,30 @@ export class PlanificacionListComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.restoreFilters();
     this.load();
   }
 
   protected onSearch(value: string): void {
     this.search.set(value);
+    this.persistFilters();
   }
 
   protected onCalibreChange(value: string): void {
     this.calibreFilter.set(value);
+    this.persistFilters();
   }
 
   protected onEstadoChange(value: string): void {
     this.estadoFilter.set(value);
+    this.persistFilters();
   }
 
   protected clearFilters(): void {
     this.search.set('');
     this.calibreFilter.set('');
     this.estadoFilter.set('');
+    this.clearPersistedFilters();
   }
 
   protected reload(): void {
@@ -109,6 +134,47 @@ export class PlanificacionListComponent implements OnInit {
       month: 'short',
       year: 'numeric',
     });
+  }
+
+  private persistFilters(): void {
+    const payload: PlanificacionSavedFilters = {
+      search: this.search(),
+      calibreId: this.calibreFilter(),
+      estado: this.estadoFilter(),
+    };
+    const hasSomething = !!payload.search?.trim() || !!payload.calibreId || !!payload.estado;
+
+    try {
+      if (!hasSomething) {
+        localStorage.removeItem(FILTERS_STORAGE_KEY);
+        return;
+      }
+      localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }
+
+  private restoreFilters(): void {
+    try {
+      const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
+      if (!raw) return;
+
+      const saved = JSON.parse(raw) as PlanificacionSavedFilters;
+      this.search.set(saved.search ?? '');
+      this.calibreFilter.set(saved.calibreId ?? '');
+      this.estadoFilter.set(saved.estado ?? '');
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private clearPersistedFilters(): void {
+    try {
+      localStorage.removeItem(FILTERS_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }
 
   private load(): void {

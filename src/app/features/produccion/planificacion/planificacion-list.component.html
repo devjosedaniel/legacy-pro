@@ -2,7 +2,7 @@
   <header class="planificacion__header">
     <div>
       <h2>Planificación de producción</h2>
-      <p>Órdenes activas pendientes de procesar, ordenadas por prioridad.</p>
+      <p>Órdenes activas pendientes de procesar. Filtra por OP, SIS, detalle, calibre y estado.</p>
     </div>
     <button type="button" class="btn btn--outline btn--sm" (click)="reload()" [disabled]="loading()">
       Actualizar
@@ -33,20 +33,24 @@
   </section>
 
   <section class="planificacion__filters panel">
-    <div class="planificacion__search">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18" aria-hidden="true">
-        <path
-          fill-rule="evenodd"
-          d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-          clip-rule="evenodd"
+    <div class="field planificacion__search-field">
+      <label for="planificacion-busqueda">Buscar orden</label>
+      <div class="planificacion__search">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20" aria-hidden="true">
+          <path
+            fill-rule="evenodd"
+            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        <input
+          id="planificacion-busqueda"
+          type="search"
+          placeholder="Número de OP, SIS o detalle del trabajo"
+          [value]="search()"
+          (input)="onSearch($any($event.target).value)"
         />
-      </svg>
-      <input
-        type="search"
-        placeholder="Buscar OP, cliente, trabajo, detalle..."
-        [value]="search()"
-        (input)="onSearch($any($event.target).value)"
-      />
+      </div>
     </div>
 
     <div class="planificacion__filter-row">
@@ -70,7 +74,7 @@
         </select>
       </div>
 
-      @if (search() || calibreFilter() || estadoFilter()) {
+      @if (tieneFiltros()) {
         <button type="button" class="btn btn--outline btn--sm" (click)="clearFilters()">Limpiar</button>
       }
     </div>
@@ -84,7 +88,7 @@
     <div class="planificacion__empty panel">
       <h3>Sin órdenes</h3>
       <p>
-        @if (search() || calibreFilter() || estadoFilter()) {
+        @if (tieneFiltros()) {
           No hay coincidencias con los filtros actuales.
         } @else {
           No hay órdenes en planificación en este momento.

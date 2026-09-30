@@ -41,7 +41,11 @@
   }
 
   @media (min-width: 960px) {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media (min-width: 1200px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -62,6 +66,10 @@
     font-size: 0.9rem;
     background: var(--color-bg);
   }
+}
+
+.grupos__filter-cliente {
+  min-width: 0;
 }
 
 .grupos__filters-actions {
