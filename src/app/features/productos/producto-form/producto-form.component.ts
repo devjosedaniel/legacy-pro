@@ -2,13 +2,17 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductCategorySlug } from '../../../core/models/category.model';
-import { OTRA_MARCA, Product } from '../../../core/models/product.model';
+import {
+  categoriaEsRollo,
+  OTRA_MARCA,
+  Product,
+} from '../../../core/models/product.model';
 import { CalibreService } from '../../../core/services/calibre.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { MarcaService } from '../../../core/services/marca.service';
 import { ProductService } from '../../../core/services/product.service';
 
-const SUPPORTED_CATEGORIES: ProductCategorySlug[] = ['planchas', 'stickyback'];
+const SUPPORTED_CATEGORIES: ProductCategorySlug[] = ['planchas', 'stickyback', 'flexoback'];
 
 @Component({
   selector: 'app-producto-form',
@@ -62,9 +66,12 @@ export class ProductoFormComponent implements OnInit {
   });
 
   protected readonly isPlanchas = computed(() => this.categorySlug() === 'planchas');
-  protected readonly isStickyback = computed(() => this.categorySlug() === 'stickyback');
+  protected readonly isFlexoback = computed(() => this.categorySlug() === 'flexoback');
+  protected readonly isRollo = computed(() =>
+    this.categorySlug() ? categoriaEsRollo(this.categorySlug() as ProductCategorySlug) : false,
+  );
   protected readonly isInventarioConLote = computed(
-    () => this.isPlanchas() || this.isStickyback(),
+    () => this.isPlanchas() || this.isRollo(),
   );
 
   protected readonly isCategorySupported = computed(() => {
@@ -128,7 +135,7 @@ export class ProductoFormComponent implements OnInit {
       return;
     }
 
-    const needsMarca = slug === 'planchas' || slug === 'stickyback';
+    const needsMarca = slug === 'planchas' || categoriaEsRollo(slug);
     const marcaPayload = needsMarca ? this.resolveMarcaPayload() : {};
     if (needsMarca && !marcaPayload.marcaId && !marcaPayload.marca) {
       this.errorMessage.set('Indica la marca del producto.');
@@ -202,6 +209,11 @@ export class ProductoFormComponent implements OnInit {
         ancho: product.stickyback.medidas.ancho,
         alto: product.stickyback.medidas.largo,
       });
+    } else if (product.categorySlug === 'flexoback' && product.flexoback) {
+      this.patchMarcaMedidas(product, product.flexoback.marcaId, product.flexoback.marca, {
+        ancho: product.flexoback.medidas.ancho,
+        alto: product.flexoback.medidas.largo,
+      });
     }
 
     this.updateCategoryValidators(product.categorySlug);
@@ -236,8 +248,8 @@ export class ProductoFormComponent implements OnInit {
 
   private updateCategoryValidators(slug: ProductCategorySlug | ''): void {
     const isPlanchas = slug === 'planchas';
-    const isStickyback = slug === 'stickyback';
-    const needsMedidas = isPlanchas || isStickyback;
+    const isRollo = slug ? categoriaEsRollo(slug) : false;
+    const needsMedidas = isPlanchas || isRollo;
     const marcaId = this.form.controls.marcaId;
     const calibreId = this.form.controls.calibreId;
     const ancho = this.form.controls.ancho;

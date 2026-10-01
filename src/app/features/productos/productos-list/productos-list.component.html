@@ -133,7 +133,7 @@
                   <td data-label="Calibre">{{ product.plancha?.calibre ?? '—' }}</td>
                 }
                 <td data-label="Medidas">
-                  @if (product.plancha || product.stickyback) {
+                  @if (product.plancha || product.stickyback || product.flexoback) {
                     <span class="productos__medidas">{{ formatMedidas(product) }}</span>
                     <span class="productos__medidas-label">{{ medidasLabel(product) }}</span>
                   } @else {

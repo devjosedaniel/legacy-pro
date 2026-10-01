@@ -9,7 +9,7 @@ import { extractApiError, mapProducto } from '../utils/api.mappers';
 import { CachedLoader } from '../utils/cached-load.util';
 import { MovementService } from './movement.service';
 
-const SUPPORTED_CATEGORIES: ProductCategorySlug[] = ['planchas', 'stickyback'];
+const SUPPORTED_CATEGORIES: ProductCategorySlug[] = ['planchas', 'stickyback', 'flexoback'];
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {

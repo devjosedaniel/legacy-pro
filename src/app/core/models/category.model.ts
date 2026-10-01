@@ -1,4 +1,10 @@
-export type ProductCategorySlug = 'planchas' | 'peliculas' | 'stickyback' | 'cejas' | 'otros';
+export type ProductCategorySlug =
+  | 'planchas'
+  | 'peliculas'
+  | 'stickyback'
+  | 'flexoback'
+  | 'cejas'
+  | 'otros';
 
 export interface Category {
   id: string;

@@ -15,6 +15,9 @@
             @if (p.stickyback) {
               <span>{{ p.stickyback.marca }} · {{ formatStickyback(p.stickyback.medidas.ancho, p.stickyback.medidas.largo) }}</span>
             }
+            @if (p.flexoback) {
+              <span>{{ p.flexoback.marca }} · {{ formatStickyback(p.flexoback.medidas.ancho, p.flexoback.medidas.largo) }}</span>
+            }
           </p>
         </div>
         <a [routerLink]="['/dashboard/productos', p.id, 'editar']" class="btn btn--outline">Editar</a>

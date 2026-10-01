@@ -16,7 +16,13 @@ import {
   TIPOS_SUBIDA,
   loteKey,
 } from '../../../core/models/movement.model';
-import { Product, categoriaUsaLote } from '../../../core/models/product.model';
+import {
+  Product,
+  categoriaEsRollo,
+  categoriaUsaLote,
+  productoMarcaId,
+  productoRollo,
+} from '../../../core/models/product.model';
 import { InventarioDataService } from '../../../core/services/inventario-data.service';
 import { CalibreService } from '../../../core/services/calibre.service';
 import { CategoryService } from '../../../core/services/category.service';
@@ -158,7 +164,7 @@ export class MovementFormComponent implements OnInit {
   protected readonly calibreFilter = signal('');
 
   protected readonly showMarcaFilter = computed(
-    () => this.categorySlug() === 'planchas' || this.categorySlug() === 'stickyback',
+    () => this.categorySlug() === 'planchas' || categoriaEsRollo(this.categorySlug()),
   );
 
   protected readonly showCalibreFilter = computed(() => this.categorySlug() === 'planchas');
@@ -175,7 +181,7 @@ export class MovementFormComponent implements OnInit {
 
     return this.productService.all().filter((p) => {
       if (!p.activo || p.categorySlug !== this.categorySlug()) return false;
-      const productMarcaId = p.plancha?.marcaId ?? p.stickyback?.marcaId;
+      const productMarcaId = productoMarcaId(p);
       if (marcaId && productMarcaId !== marcaId) return false;
       if (calibre && p.plancha?.calibreId !== calibre) return false;
       return true;
@@ -299,9 +305,9 @@ export class MovementFormComponent implements OnInit {
       const m = product.plancha.medidas;
       return formatMedidasCm(m.ancho, m.alto);
     }
-    if (product.stickyback) {
-      const m = product.stickyback.medidas;
-      return formatStickybackMedidas(m.ancho, m.largo);
+    const rollo = productoRollo(product);
+    if (rollo) {
+      return formatStickybackMedidas(rollo.medidas.ancho, rollo.medidas.largo);
     }
     return product.nombre;
   }
@@ -311,9 +317,9 @@ export class MovementFormComponent implements OnInit {
       const m = product.plancha.medidas;
       return `${product.nombre} · ${product.plancha.marca} · ${product.plancha.calibre} · ${formatMedidasCm(m.ancho, m.alto)}`;
     }
-    if (product.stickyback) {
-      const m = product.stickyback.medidas;
-      return `${product.nombre} · ${product.stickyback.marca} · ${formatStickybackMedidas(m.ancho, m.largo)}`;
+    const rollo = productoRollo(product);
+    if (rollo) {
+      return `${product.nombre} · ${rollo.marca} · ${formatStickybackMedidas(rollo.medidas.ancho, rollo.medidas.largo)}`;
     }
     return product.nombre;
   }

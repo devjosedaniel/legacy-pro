@@ -127,22 +127,22 @@
       </section>
     }
 
-    @if (isStickyback()) {
+    @if (isRollo()) {
       <section class="producto-form__section">
-        <h3>Datos de stickyback</h3>
-        <p class="producto-form__section-desc">Ancho en <strong>centímetros (cm)</strong> y largo en <strong>metros (m)</strong>.</p>
+        <h3>{{ isFlexoback() ? 'Datos de flexoback' : 'Datos de stickyback' }}</h3>
+        <p class="producto-form__section-desc">Ancho en <strong>centímetros (cm)</strong> y largo en <strong>metros (m)</strong>. Se consume por unidad.</p>
 
         <div class="field" [class.field--error]="form.controls.nombre.touched && form.controls.nombre.invalid">
-          <label for="nombre-stk">Producto / Descripción *</label>
+          <label for="nombre-stk">{{ isFlexoback() ? 'Modelo *' : 'Producto / Descripción *' }}</label>
           <input
             id="nombre-stk"
             type="text"
             formControlName="nombre"
-            placeholder="Ej: STICKYBACK ORACAL 50x25"
+            [placeholder]="isFlexoback() ? 'Ej: FLEXOBACK 1140' : 'Ej: STICKYBACK ORACAL 50x25'"
           />
-          <span class="field__hint">Nombre completo según ficha técnica</span>
+          <span class="field__hint">{{ isFlexoback() ? 'Modelo según ficha técnica' : 'Nombre completo según ficha técnica' }}</span>
           @if (form.controls.nombre.touched && form.controls.nombre.errors?.['required']) {
-            <span class="field__error">El nombre es requerido</span>
+            <span class="field__error">{{ isFlexoback() ? 'El modelo es requerido' : 'El nombre es requerido' }}</span>
           }
         </div>
 

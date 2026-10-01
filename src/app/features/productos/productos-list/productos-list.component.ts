@@ -3,7 +3,12 @@ import { RouterLink } from '@angular/router';
 import { formatMedidasCm, formatStickybackMedidas } from '../../../core/utils/dimensions.util';
 import { ProductCategorySlug } from '../../../core/models/category.model';
 import { ProductStock } from '../../../core/models/movement.model';
-import { Product } from '../../../core/models/product.model';
+import {
+  categoriaEsRollo,
+  Product,
+  productoMarcaId,
+  productoRollo,
+} from '../../../core/models/product.model';
 import { CalibreService } from '../../../core/services/calibre.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { MarcaService } from '../../../core/services/marca.service';
@@ -67,6 +72,7 @@ export class ProductosListComponent implements OnInit {
           cat?.name,
           p.plancha?.marca,
           p.stickyback?.marca,
+          p.flexoback?.marca,
           p.plancha ? String(p.plancha.calibre) : '',
           this.formatMedidas(p),
         ]
@@ -75,7 +81,7 @@ export class ProductosListComponent implements OnInit {
         if (!haystack.includes(query)) return false;
       }
 
-      const marcaId = p.plancha?.marcaId ?? p.stickyback?.marcaId;
+      const marcaId = productoMarcaId(p);
       if (marca && marcaId !== marca) return false;
 
       if (p.plancha) {
@@ -105,7 +111,7 @@ export class ProductosListComponent implements OnInit {
 
   protected readonly showMarcaColumn = computed(() => {
     const cat = this.categoryFilter();
-    return cat === 'all' || cat === 'planchas' || cat === 'stickyback';
+    return cat === 'all' || cat === 'planchas' || categoriaEsRollo(cat);
   });
 
   protected readonly showCalibreColumn = computed(() => {
@@ -182,21 +188,21 @@ export class ProductosListComponent implements OnInit {
       const m = product.plancha.medidas;
       return formatMedidasCm(m.ancho, m.alto);
     }
-    if (product.stickyback) {
-      const m = product.stickyback.medidas;
-      return formatStickybackMedidas(m.ancho, m.largo);
+    const rollo = productoRollo(product);
+    if (rollo) {
+      return formatStickybackMedidas(rollo.medidas.ancho, rollo.medidas.largo);
     }
     return '—';
   }
 
   protected medidasLabel(product: Product): string {
     if (product.plancha) return 'Ancho × Alto · cm';
-    if (product.stickyback) return 'Ancho × Largo';
+    if (productoRollo(product)) return 'Ancho × Largo';
     return '';
   }
 
   protected productMarca(product: Product): string {
-    return product.plancha?.marca ?? product.stickyback?.marca ?? '—';
+    return product.plancha?.marca ?? productoRollo(product)?.marca ?? '—';
   }
 
   protected formatNumber(n: number): string {
