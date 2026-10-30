@@ -15,6 +15,25 @@ import { MarcaService } from '../../../core/services/marca.service';
 import { MovementService } from '../../../core/services/movement.service';
 import { ProductService } from '../../../core/services/product.service';
 
+const FILTERS_STORAGE_KEY = 'inv.inventario.productos.filters';
+
+const CATEGORY_SLUGS: ProductCategorySlug[] = [
+  'planchas',
+  'peliculas',
+  'stickyback',
+  'flexoback',
+  'cejas',
+  'otros',
+];
+
+interface ProductosSavedFilters {
+  search?: string;
+  category?: ProductCategorySlug | 'all';
+  marcaId?: string;
+  calibreId?: string;
+  stock?: 'all' | 'propio' | 'consignacion' | 'cliente';
+}
+
 @Component({
   selector: 'app-productos-list',
   imports: [RouterLink],
@@ -128,6 +147,8 @@ export class ProductosListComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.restoreFilters();
+
     const message = (history.state as { successMessage?: string } | null)?.successMessage;
     if (message) {
       this.successMessage.set(message);
@@ -138,6 +159,7 @@ export class ProductosListComponent implements OnInit {
 
   protected onSearch(value: string): void {
     this.search.set(value);
+    this.persistFilters();
   }
 
   protected onCategoryChange(value: string): void {
@@ -149,18 +171,22 @@ export class ProductosListComponent implements OnInit {
     if (category !== 'all') {
       this.marcaService.ensureLoaded(category).subscribe();
     }
+    this.persistFilters();
   }
 
   protected onMarcaChange(value: string): void {
     this.marcaFilter.set(value);
+    this.persistFilters();
   }
 
   protected onCalibreChange(value: string): void {
     this.calibreFilter.set(value);
+    this.persistFilters();
   }
 
   protected onStockFilterChange(value: string): void {
     this.stockFilter.set(value as 'all' | 'propio' | 'consignacion' | 'cliente');
+    this.persistFilters();
   }
 
   protected clearFilters(): void {
@@ -169,6 +195,68 @@ export class ProductosListComponent implements OnInit {
     this.marcaFilter.set('');
     this.calibreFilter.set('');
     this.stockFilter.set('all');
+    this.clearPersistedFilters();
+  }
+
+  private persistFilters(): void {
+    const payload: ProductosSavedFilters = {
+      search: this.search(),
+      category: this.categoryFilter(),
+      marcaId: this.marcaFilter(),
+      calibreId: this.calibreFilter(),
+      stock: this.stockFilter(),
+    };
+    const hasSomething =
+      !!payload.search?.trim() ||
+      (payload.category && payload.category !== 'all') ||
+      !!payload.marcaId ||
+      !!payload.calibreId ||
+      (payload.stock && payload.stock !== 'all');
+
+    try {
+      if (!hasSomething) {
+        localStorage.removeItem(FILTERS_STORAGE_KEY);
+        return;
+      }
+      localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }
+
+  private restoreFilters(): void {
+    try {
+      const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
+      if (!raw) return;
+
+      const saved = JSON.parse(raw) as ProductosSavedFilters;
+      this.search.set(saved.search ?? '');
+      const category = saved.category;
+      if (category === 'all' || (category && CATEGORY_SLUGS.includes(category))) {
+        this.categoryFilter.set(category ?? 'all');
+      }
+      this.marcaFilter.set(saved.marcaId ?? '');
+      this.calibreFilter.set(saved.calibreId ?? '');
+      const stock = saved.stock;
+      if (stock === 'all' || stock === 'propio' || stock === 'consignacion' || stock === 'cliente') {
+        this.stockFilter.set(stock);
+      }
+
+      const cat = this.categoryFilter();
+      if (cat !== 'all') {
+        this.marcaService.ensureLoaded(cat).subscribe();
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private clearPersistedFilters(): void {
+    try {
+      localStorage.removeItem(FILTERS_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }
 
   protected getCategoryName(product: Product): string {

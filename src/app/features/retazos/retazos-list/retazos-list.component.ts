@@ -22,8 +22,23 @@ import { formatDimensionCm } from '../../../core/utils/dimensions.util';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 const PAGE_SIZE = 25;
+const FILTERS_STORAGE_KEY = 'inv.inventario.retazos.filters';
 
 type RetazosViewTab = 'retazos' | 'movimientos';
+
+const RETAZO_ESTADOS: RetazoEstado[] = ['disponible', 'consumido', 'inactivo'];
+const HISTORIAL_EVENTOS: RetazoHistorialEvento[] = ['creacion', 'consumo'];
+
+interface RetazosSavedFilters {
+  search?: string;
+  calibreId?: string;
+  productId?: string;
+  estado?: RetazoEstado | 'all';
+  page?: number;
+  viewTab?: RetazosViewTab;
+  historialEvento?: RetazoHistorialEvento | 'all';
+  historialPage?: number;
+}
 
 @Component({
   selector: 'app-retazos-list',
@@ -110,6 +125,8 @@ export class RetazosListComponent implements OnInit {
 RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
 
   ngOnInit(): void {
+    const savedPage = this.restoreFilters();
+
     this.calibreService.ensureLoaded().subscribe({
       error: (err: Error) => this.errorMessage.set(err.message),
     });
@@ -117,7 +134,10 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
     this.productService.ensureLoaded().subscribe({
       next: () => {
         this.productsLoaded.set(true);
-        this.loadPage(1);
+        this.loadPage(savedPage);
+        if (this.viewTab() === 'movimientos') {
+          this.loadHistorialPage(this.historialPage());
+        }
       },
       error: (err: Error) => this.errorMessage.set(err.message),
     });
@@ -125,6 +145,7 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
 
   protected onSearchInput(value: string): void {
     this.search.set(value);
+    this.persistFilters(this.page());
   }
 
   protected onEstadoChange(value: string): void {
@@ -141,6 +162,7 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
         this.productFilter.set('');
       }
     }
+    this.persistFilters(this.page());
   }
 
   protected onProductFilterChange(value: string): void {
@@ -151,6 +173,7 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
         this.calibreFilter.set(product.plancha.calibreId);
       }
     }
+    this.persistFilters(this.page());
   }
 
   protected clearFilters(): void {
@@ -158,6 +181,7 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
     this.calibreFilter.set('');
     this.productFilter.set('');
     this.estadoFilter.set('disponible');
+    this.clearPersistedFilters();
     this.loadPage(1);
   }
 
@@ -175,6 +199,7 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
 
   protected switchTab(tab: RetazosViewTab): void {
     this.viewTab.set(tab);
+    this.persistFilters(this.page());
     if (tab === 'movimientos' && !this.historialLoaded()) {
       this.loadHistorialPage(1);
     }
@@ -203,6 +228,82 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
     return '—';
   }
 
+  private persistFilters(page: number): void {
+    const payload: RetazosSavedFilters = {
+      search: this.search(),
+      calibreId: this.calibreFilter(),
+      productId: this.productFilter(),
+      estado: this.estadoFilter(),
+      page,
+      viewTab: this.viewTab(),
+      historialEvento: this.historialEventoFilter(),
+      historialPage: this.historialPage(),
+    };
+    const hasSomething =
+      !!payload.search?.trim() ||
+      !!payload.calibreId ||
+      !!payload.productId ||
+      payload.estado !== 'disponible' ||
+      page > 1 ||
+      payload.viewTab === 'movimientos' ||
+      (payload.historialEvento && payload.historialEvento !== 'all') ||
+      (payload.historialPage ?? 1) > 1;
+
+    try {
+      if (!hasSomething) {
+        localStorage.removeItem(FILTERS_STORAGE_KEY);
+        return;
+      }
+      localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }
+
+  private restoreFilters(): number {
+    try {
+      const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
+      if (!raw) return 1;
+
+      const saved = JSON.parse(raw) as RetazosSavedFilters;
+      this.search.set(saved.search ?? '');
+      this.calibreFilter.set(saved.calibreId ?? '');
+      this.productFilter.set(saved.productId ?? '');
+
+      const estado = saved.estado;
+      if (estado === 'all' || (estado && RETAZO_ESTADOS.includes(estado))) {
+        this.estadoFilter.set(estado ?? 'disponible');
+      }
+
+      if (saved.viewTab === 'retazos' || saved.viewTab === 'movimientos') {
+        this.viewTab.set(saved.viewTab);
+      }
+
+      const evento = saved.historialEvento;
+      if (evento === 'all' || (evento && HISTORIAL_EVENTOS.includes(evento))) {
+        this.historialEventoFilter.set(evento ?? 'all');
+      }
+
+      const historialPage = Number(saved.historialPage);
+      this.historialPage.set(
+        Number.isFinite(historialPage) && historialPage > 0 ? historialPage : 1,
+      );
+
+      const page = Number(saved.page);
+      return Number.isFinite(page) && page > 0 ? page : 1;
+    } catch {
+      return 1;
+    }
+  }
+
+  private clearPersistedFilters(): void {
+    try {
+      localStorage.removeItem(FILTERS_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+
   private loadPage(page: number): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
@@ -224,6 +325,7 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
           this.total.set(res.total);
           this.page.set(res.page);
           this.isLoading.set(false);
+          this.persistFilters(res.page);
         },
         error: (err: Error) => {
           this.isLoading.set(false);
@@ -251,6 +353,7 @@ RTZ-2025-000100,DEMO-NYLO-112-67X100,30,40,`;
           this.historialPage.set(res.page);
           this.loadingHistorial.set(false);
           this.historialLoaded.set(true);
+          this.persistFilters(this.page());
         },
         error: (err: Error) => {
           this.loadingHistorial.set(false);

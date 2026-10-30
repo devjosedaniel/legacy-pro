@@ -27,6 +27,30 @@ import {
 } from '../../../shared/components/search-select/search-select.component';
 
 const PAGE_SIZE = 25;
+const FILTERS_STORAGE_KEY = 'inv.inventario.movimientos.filters';
+
+const CATEGORY_SLUGS: ProductCategorySlug[] = [
+  'planchas',
+  'peliculas',
+  'stickyback',
+  'flexoback',
+  'cejas',
+  'otros',
+];
+
+const MOVEMENT_DIRECTIONS: MovementDirection[] = ['subida', 'bajada'];
+const STOCK_TIPOS: StockTipo[] = ['propio', 'consignacion', 'cliente'];
+
+interface MovimientosSavedFilters {
+  search?: string;
+  productId?: string;
+  direccion?: MovementDirection | 'all';
+  tipo?: MovementType | 'all';
+  category?: ProductCategorySlug | 'all';
+  stockTipo?: StockTipo | 'all';
+  estado?: MovementEstadoFiltro;
+  page?: number;
+}
 
 interface PendingConfirmAction {
   title: string;
@@ -103,12 +127,15 @@ export class MovimientosListComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    const savedPage = this.restoreFilters();
+    this.page.set(savedPage);
     this.productService.ensureLoaded().subscribe();
 
     this.productFilterControl.valueChanges
       .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.page.set(1);
+        this.persistFilters(1);
         this.reload$.next();
       });
 
@@ -124,6 +151,7 @@ export class MovimientosListComponent implements OnInit {
   protected onEstadoFilterChange(value: string): void {
     this.estadoFilter.set(value as MovementEstadoFiltro);
     this.page.set(1);
+    this.persistFilters(1);
     this.reload$.next();
   }
 
@@ -152,18 +180,21 @@ export class MovimientosListComponent implements OnInit {
   protected onSearchInput(value: string): void {
     this.search.set(value);
     this.page.set(1);
+    this.persistFilters(1);
     this.reload$.next();
   }
 
   protected onDireccionChange(value: string): void {
     this.direccionFilter.set(value as MovementDirection | 'all');
     this.page.set(1);
+    this.persistFilters(1);
     this.reload$.next();
   }
 
   protected onTipoChange(value: string): void {
     this.tipoFilter.set(value as MovementType | 'all');
     this.page.set(1);
+    this.persistFilters(1);
     this.reload$.next();
   }
 
@@ -171,12 +202,14 @@ export class MovimientosListComponent implements OnInit {
     this.categoryFilter.set(value as ProductCategorySlug | 'all');
     this.syncProductFilterWithCategory();
     this.page.set(1);
+    this.persistFilters(1);
     this.reload$.next();
   }
 
   protected onStockTipoChange(value: string): void {
     this.stockTipoFilter.set(value as StockTipo | 'all');
     this.page.set(1);
+    this.persistFilters(1);
     this.reload$.next();
   }
 
@@ -185,6 +218,7 @@ export class MovimientosListComponent implements OnInit {
     this.tipoFilter.set('salida_uso');
     this.stockTipoFilter.set('consignacion');
     this.page.set(1);
+    this.persistFilters(1);
     this.reload$.next();
   }
 
@@ -220,6 +254,7 @@ export class MovimientosListComponent implements OnInit {
     this.stockTipoFilter.set('all');
     this.estadoFilter.set('activos');
     this.page.set(1);
+    this.clearPersistedFilters();
     this.reload$.next();
   }
 
@@ -389,6 +424,7 @@ export class MovimientosListComponent implements OnInit {
           this.page.set(res.page);
           this.anulacionHorasLimite.set(res.anulacionHorasLimite ?? 120);
           this.isLoading.set(false);
+          this.persistFilters(res.page);
         },
         error: (err: Error) => {
           this.isLoading.set(false);
@@ -425,6 +461,86 @@ export class MovimientosListComponent implements OnInit {
       return items.filter((m) => isMovimientoAnulado(m));
     }
     return items.filter((m) => m.activo);
+  }
+
+  private persistFilters(page: number): void {
+    const payload: MovimientosSavedFilters = {
+      search: this.search(),
+      productId: this.productFilterControl.value.trim(),
+      direccion: this.direccionFilter(),
+      tipo: this.tipoFilter(),
+      category: this.categoryFilter(),
+      stockTipo: this.stockTipoFilter(),
+      estado: this.estadoFilter(),
+      page,
+    };
+    const hasSomething =
+      !!payload.search?.trim() ||
+      !!payload.productId ||
+      (payload.direccion && payload.direccion !== 'all') ||
+      (payload.tipo && payload.tipo !== 'all') ||
+      (payload.category && payload.category !== 'all') ||
+      (payload.stockTipo && payload.stockTipo !== 'all') ||
+      payload.estado === 'anulados' ||
+      page > 1;
+
+    try {
+      if (!hasSomething) {
+        localStorage.removeItem(FILTERS_STORAGE_KEY);
+        return;
+      }
+      localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }
+
+  private restoreFilters(): number {
+    try {
+      const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
+      if (!raw) return 1;
+
+      const saved = JSON.parse(raw) as MovimientosSavedFilters;
+      this.search.set(saved.search ?? '');
+      this.productFilterControl.setValue(saved.productId ?? '', { emitEvent: false });
+
+      const direccion = saved.direccion;
+      if (direccion === 'all' || (direccion && MOVEMENT_DIRECTIONS.includes(direccion))) {
+        this.direccionFilter.set(direccion ?? 'all');
+      }
+
+      const tipo = saved.tipo;
+      if (tipo === 'all' || (tipo && tipo in MOVEMENT_LABELS)) {
+        this.tipoFilter.set(tipo ?? 'all');
+      }
+
+      const category = saved.category;
+      if (category === 'all' || (category && CATEGORY_SLUGS.includes(category))) {
+        this.categoryFilter.set(category ?? 'all');
+      }
+
+      const stockTipo = saved.stockTipo;
+      if (stockTipo === 'all' || (stockTipo && STOCK_TIPOS.includes(stockTipo))) {
+        this.stockTipoFilter.set(stockTipo ?? 'all');
+      }
+
+      if (saved.estado === 'activos' || saved.estado === 'anulados') {
+        this.estadoFilter.set(saved.estado);
+      }
+
+      const page = Number(saved.page);
+      return Number.isFinite(page) && page > 0 ? page : 1;
+    } catch {
+      return 1;
+    }
+  }
+
+  private clearPersistedFilters(): void {
+    try {
+      localStorage.removeItem(FILTERS_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }
 
   private syncProductFilterWithCategory(): void {
