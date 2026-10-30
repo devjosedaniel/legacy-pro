@@ -108,7 +108,7 @@ export class MovementService {
           total: res.cantidad,
           page: res.pagina,
           pageSize: res.limite,
-          anulacionHorasLimite: res.anulacion_horas_limite ?? 72,
+          anulacionHorasLimite: res.anulacion_horas_limite ?? 120,
         })),
         catchError((error) => throwError(() => new Error(extractApiError(error)))),
       );
@@ -154,7 +154,7 @@ export class MovementService {
           `${environment.apiUrl}/inv/movimientos/config`,
         )
         .pipe(
-          map((res) => ({ anulacionHorasLimite: res.anulacion_horas_limite ?? 72 })),
+          map((res) => ({ anulacionHorasLimite: res.anulacion_horas_limite ?? 120 })),
           catchError((error) => throwError(() => new Error(extractApiError(error)))),
         ),
     );

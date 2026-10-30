@@ -62,7 +62,7 @@ export class MovimientosListComponent implements OnInit {
   protected readonly categoryFilter = signal<ProductCategorySlug | 'all'>('all');
   protected readonly stockTipoFilter = signal<StockTipo | 'all'>('all');
   protected readonly estadoFilter = signal<MovementEstadoFiltro>('activos');
-  protected readonly anulacionHorasLimite = signal(72);
+  protected readonly anulacionHorasLimite = signal(120);
 
   protected readonly movements = signal<Movement[]>([]);
   protected readonly visibleMovements = computed(() =>
@@ -387,7 +387,7 @@ export class MovimientosListComponent implements OnInit {
           this.movements.set(res.items);
           this.total.set(res.total);
           this.page.set(res.page);
-          this.anulacionHorasLimite.set(res.anulacionHorasLimite ?? 72);
+          this.anulacionHorasLimite.set(res.anulacionHorasLimite ?? 120);
           this.isLoading.set(false);
         },
         error: (err: Error) => {
