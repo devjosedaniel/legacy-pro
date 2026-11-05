@@ -1,0 +1,166 @@
+<div class="guias">
+  <header class="guias__header">
+    <div>
+      <h2>Guías de remisión</h2>
+      <p>Consulta las guías por número, detalle, orden o documento, y por cliente.</p>
+    </div>
+    <button type="button" class="btn btn--outline btn--sm" (click)="reload()" [disabled]="loading()">
+      Actualizar
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error">{{ errorMessage() }}</div>
+  }
+
+  <section class="guias__filters panel">
+    <div class="field guias__search-field">
+      <label for="guia-busqueda">Búsqueda</label>
+      <div class="guias__search">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20" aria-hidden="true">
+          <path
+            fill-rule="evenodd"
+            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        <input
+          id="guia-busqueda"
+          type="search"
+          placeholder="Número o detalle"
+          [value]="search()"
+          (input)="onSearch($any($event.target).value)"
+          (keydown.enter)="aplicarFiltros()"
+        />
+      </div>
+    </div>
+
+    <div class="guias__filter-row">
+      <div class="field field--inline guias__filter-cliente">
+        <label for="guia-cliente">Cliente</label>
+        <app-search-select
+          inputId="guia-cliente"
+          [formControl]="clienteFilterControl"
+          [options]="clienteOptions()"
+          placeholder="Seleccione un cliente"
+          searchPlaceholder="Buscar cliente…"
+          emptyMessage="Sin clientes con ese criterio"
+        />
+      </div>
+
+      <div class="field field--inline">
+        <label for="guia-sri">Estado SRI</label>
+        <select id="guia-sri" [value]="sriFilter()" (change)="onSriChange($any($event.target).value)">
+          <option value="">Todos</option>
+          @for (estado of sriEstados; track estado.value) {
+            <option [value]="estado.value">{{ estado.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="guias__filter-actions">
+        <button type="button" class="btn btn--primary btn--sm" [disabled]="loading()" (click)="aplicarFiltros()">
+          Buscar
+        </button>
+        @if (tieneFiltros()) {
+          <button type="button" class="btn btn--outline btn--sm" [disabled]="loading()" (click)="clearFilters()">
+            Limpiar
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+
+  @if (loading() && guias().length === 0) {
+    <div class="guias__empty panel">
+      <p>Cargando guías de remisión...</p>
+    </div>
+  } @else if (guias().length === 0) {
+    <div class="guias__empty panel">
+      <h3>Sin guías</h3>
+      <p>
+        @if (tieneFiltros()) {
+          No hay coincidencias con los filtros actuales.
+        } @else {
+          No hay guías de remisión registradas.
+        }
+      </p>
+    </div>
+  } @else {
+    <div class="guias__table-wrap panel">
+      <table class="guias__table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Guía</th>
+            <th>SRI</th>
+            <th>Orden</th>
+            <th>Cliente</th>
+            <th>Detalle</th>
+            <th>Creado</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (guia of guias(); track guia.id) {
+            <tr>
+              <td data-label="Fecha">{{ formatDate(guia.fecha) }}</td>
+              <td data-label="Guía">
+                <a [routerLink]="['/dashboard/produccion/guias-remision', guia.id]" class="guias__link">
+                  <strong>{{ guia.numeroDocumento || guia.secuencia }}</strong>
+                </a>
+                @if (guia.numeroDocumento && guia.secuencia) {
+                  <small>{{ guia.secuencia }}</small>
+                }
+              </td>
+              <td data-label="SRI">
+                @if (guia.estadoComprobante) {
+                  <span class="badge {{ sriBadgeClass(guia.estadoComprobante) }}">
+                    {{ sriEstadoLabel(guia.estadoComprobante) }}
+                  </span>
+                } @else {
+                  <span class="guias__sri-empty">—</span>
+                }
+              </td>
+              <td data-label="Orden">{{ guia.ordenProduccionSecuencia || guia.orden || '—' }}</td>
+              <td data-label="Cliente">{{ guia.clienteNombre }}</td>
+              <td data-label="Detalle" class="guias__detalle">{{ guia.detalle }}</td>
+              <td data-label="Creado">{{ guia.creadoPor || '—' }}</td>
+              <td data-label="Estado">
+                <div class="guias__estado">
+                  @if (guia.anulado) {
+                    <span class="badge badge--anulado">Anulado</span>
+                  }
+                  @if (guia.facturado) {
+                    <span class="badge badge--facturado">Facturado</span>
+                  }
+                  @if (guia.noSeFactura) {
+                    <span class="badge badge--nofactura">No se factura</span>
+                  }
+                  @if (!guia.anulado && !guia.facturado && !guia.noSeFactura) {
+                    <span>—</span>
+                  }
+                </div>
+              </td>
+              <td class="guias__actions" data-label="">
+                <a [routerLink]="['/dashboard/produccion/guias-remision', guia.id]" class="btn btn--outline btn--sm">
+                  Ver
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination
+      [page]="page()"
+      [pageSize]="pageSize"
+      [total]="total()"
+      [disabled]="loading()"
+      itemLabel="guías"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+</div>

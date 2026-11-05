@@ -81,6 +81,13 @@ export const PERMISO_MODULOS: PermisoModulo[] = [
         route: '/dashboard/produccion/reportes',
         available: true,
       },
+      {
+        id: 208,
+        slug: 'produccion-guias-remision',
+        nombre: 'Guías de remisión',
+        route: '/dashboard/produccion/guias-remision',
+        available: true,
+      },
     ],
   },
   {

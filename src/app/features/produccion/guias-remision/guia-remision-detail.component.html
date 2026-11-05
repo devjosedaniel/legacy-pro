@@ -1,0 +1,297 @@
+<div class="guia-detail">
+  <header class="guia-detail__header">
+    <a [routerLink]="listRoute" class="guia-detail__back">← Volver a guías de remisión</a>
+
+    @if (guia(); as g) {
+      <div class="guia-detail__hero panel">
+        <div class="guia-detail__hero-main">
+          <div class="guia-detail__badges">
+            @if (g.anulado) {
+              <span class="badge badge--anulado">Anulada</span>
+            }
+            @if (g.facturado) {
+              <span class="badge badge--facturado">Facturado</span>
+            }
+            @if (g.noSeFactura) {
+              <span class="badge badge--nofactura">No se factura</span>
+            }
+            @if (g.calibreNombre) {
+              <span class="badge badge--calibre">Cal. {{ g.calibreNombre }}</span>
+            }
+          </div>
+          <h2>{{ g.numeroDocumento || g.secuencia }}</h2>
+          <p class="guia-detail__meta">
+            <span>{{ g.clienteNombre }}</span>
+            @if (g.ordenProduccionSecuencia) {
+              <span>{{ g.ordenProduccionSecuencia }}</span>
+            }
+            @if (g.bitacora) {
+              <span>{{ g.bitacora }}</span>
+            }
+          </p>
+          @if (g.detalle) {
+            <p class="guia-detail__detalle">{{ g.detalle }}</p>
+          }
+        </div>
+
+        <aside class="guia-detail__highlight" aria-label="Estado SRI">
+          <span class="guia-detail__highlight-label">SRI</span>
+          @if (g.estadoComprobante) {
+            <strong class="guia-detail__highlight-sri {{ sriBadgeClass(g.estadoComprobante) }}">
+              {{ sriEstadoLabel(g.estadoComprobante) }}
+            </strong>
+          } @else {
+            <strong class="guia-detail__highlight-sri guia-detail__highlight-sri--empty">Sin estado</strong>
+          }
+          <span class="guia-detail__highlight-doc">{{ g.secuencia }}</span>
+        </aside>
+      </div>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error">{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="alert alert--success">{{ successMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <p class="guia-detail__loading panel">Cargando guía de remisión...</p>
+  } @else if (guia(); as g) {
+    @if (g.anulado) {
+      <div class="alert alert--error">Esta guía está anulada.</div>
+    }
+    @if (g.estadoComprobante === 'DEVUELTA' && g.mensajeError) {
+      <div class="alert alert--warning">
+        <strong>DEVUELTA.</strong>
+        {{ g.mensajeError }}
+      </div>
+    }
+    @if (g.estadoComprobante === 'RECHAZADO' && g.mensajeError) {
+      <div class="alert alert--error">
+        <strong>RECHAZADO.</strong>
+        {{ g.mensajeError }}
+      </div>
+    }
+
+    <section class="guia-detail__stats">
+      <article class="stat panel">
+        <span class="stat__label">Fecha</span>
+        <strong class="stat__value stat__value--text">{{ formatDate(g.fecha) }}</strong>
+        @if (g.creadoPor) {
+          <small>{{ g.creadoPor }}</small>
+        }
+      </article>
+      <article class="stat panel">
+        <span class="stat__label">Documento</span>
+        <strong class="stat__value stat__value--text">{{ display(g.numeroDocumento) }}</strong>
+      </article>
+      <article class="stat panel">
+        <span class="stat__label">Orden</span>
+        <strong class="stat__value stat__value--text">{{ display(g.ordenProduccionSecuencia || g.orden) }}</strong>
+      </article>
+      <article class="stat panel">
+        <span class="stat__label">Total cms</span>
+        <strong class="stat__value">{{ g.totalCms ?? g.lineas.length }}</strong>
+        <small>{{ g.lineas.length }} {{ g.lineas.length === 1 ? 'línea' : 'líneas' }}</small>
+      </article>
+    </section>
+
+    @if (!g.anulado) {
+      <section class="guia-detail__actions panel">
+        @if (g.tieneProduccion) {
+          <a class="btn btn--primary btn--sm" [href]="pdfUrl(g.id)" target="_blank" rel="noopener">Ver PDF</a>
+          <a class="btn btn--outline btn--sm" [href]="certificadoUrl(g.id)" target="_blank" rel="noopener">
+            Ver certificado
+          </a>
+        }
+        @if (g.urlRide) {
+          <a class="btn btn--outline btn--sm" [href]="g.urlRide" target="_blank" rel="noopener">Guía electrónica</a>
+        }
+        @if (g.estadoComprobante === 'AUTORIZADO') {
+          <a class="btn btn--outline btn--sm" [href]="pdfRideUrl(g.id)" target="_blank" rel="noopener">PDF guía</a>
+        }
+        @if (!g.numeroAutorizacion) {
+          <button type="button" class="btn btn--primary btn--sm" [disabled]="generando()" (click)="generar()">
+            {{ generando() ? 'Generando…' : 'Generar autorización' }}
+          </button>
+        }
+        @if (g.estadoComprobante === 'DEVUELTA' || g.estadoComprobante === 'RECHAZADO') {
+          <button type="button" class="btn btn--primary btn--sm" [disabled]="generando()" (click)="generar()">
+            {{ generando() ? 'Generando…' : 'Volver a generar' }}
+          </button>
+        }
+        <button type="button" class="btn btn--outline btn--sm" [disabled]="enviando()" (click)="enviar()">
+          {{ enviando() ? 'Enviando…' : 'Enviar' }}
+        </button>
+        <button type="button" class="btn btn--danger btn--sm" (click)="pedirAnular()">Anular</button>
+      </section>
+    }
+
+    <div class="guia-detail__grid">
+      <section class="panel guia-detail__section">
+        <h3>Información de trabajo</h3>
+        <dl class="field-grid">
+          <div class="field-grid__item">
+            <dt>Cliente</dt>
+            <dd>{{ display(g.clienteNombre) }}</dd>
+          </div>
+          <div class="field-grid__item">
+            <dt>Ciudad</dt>
+            <dd>{{ display(g.ciudad) }}</dd>
+          </div>
+          <div class="field-grid__item field-grid__item--full">
+            <dt>Detalle</dt>
+            <dd>{{ display(g.detalle) }}</dd>
+          </div>
+          <div class="field-grid__item">
+            <dt>Orden de trabajo</dt>
+            <dd>{{ display(g.ordenProduccionSecuencia || g.orden) }}</dd>
+          </div>
+          <div class="field-grid__item">
+            <dt>Bitácora</dt>
+            <dd>{{ display(g.bitacora) }}</dd>
+          </div>
+          <div class="field-grid__item">
+            <dt>Plancha y calibre</dt>
+            <dd>{{ display(g.informacion) }}</dd>
+          </div>
+          <div class="field-grid__item">
+            <dt>Calibre</dt>
+            <dd>{{ display(g.calibreNombre) }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="panel guia-detail__section">
+        <div class="guia-detail__section-head">
+          <h3>Hoja de seguridad</h3>
+          @if (!g.anulado && g.puedeEditarHoja && !editandoHoja()) {
+            <button type="button" class="btn btn--outline btn--sm" (click)="editarHoja()">Actualizar</button>
+          }
+        </div>
+
+        @if (editandoHoja()) {
+          <form [formGroup]="hojaForm" (ngSubmit)="guardarHoja()" class="guia-detail__hoja-form">
+            <div class="field">
+              <label for="lineatura">Lineatura</label>
+              <input id="lineatura" type="text" formControlName="lineatura" />
+            </div>
+            <div class="field">
+              <label for="reposo">Tiempo reposo (H)</label>
+              <input id="reposo" type="text" formControlName="reposo" />
+            </div>
+            <div class="field">
+              <label for="shorea">Shore A</label>
+              <input id="shorea" type="text" formControlName="shorea" />
+            </div>
+            <div class="field">
+              <label for="alturarelieve">Altura del relieve</label>
+              <input id="alturarelieve" type="text" formControlName="alturarelieve" />
+            </div>
+            <div class="field">
+              <label for="espesorpiso">Espesor de piso</label>
+              <input id="espesorpiso" type="text" formControlName="espesorpiso" />
+            </div>
+            <div class="field">
+              <label for="espesorrelieve">Espesor de relieve</label>
+              <input id="espesorrelieve" type="text" formControlName="espesorrelieve" />
+            </div>
+            <div class="guia-detail__hoja-actions">
+              <button type="submit" class="btn btn--primary btn--sm" [disabled]="guardandoHoja()">
+                {{ guardandoHoja() ? 'Guardando…' : 'Guardar' }}
+              </button>
+              <button type="button" class="btn btn--outline btn--sm" [disabled]="guardandoHoja()" (click)="cancelarHoja()">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        } @else {
+          <dl class="field-grid">
+            <div class="field-grid__item">
+              <dt>Lineatura</dt>
+              <dd>{{ display(g.lineatura) }}</dd>
+            </div>
+            <div class="field-grid__item">
+              <dt>Tiempo reposo (H)</dt>
+              <dd>{{ display(g.reposo) }}</dd>
+            </div>
+            <div class="field-grid__item">
+              <dt>Shore A</dt>
+              <dd>{{ display(g.shorea) }}</dd>
+            </div>
+            <div class="field-grid__item">
+              <dt>Altura del relieve</dt>
+              <dd>{{ display(g.alturaRelieve) }}</dd>
+            </div>
+            <div class="field-grid__item">
+              <dt>Espesor de piso</dt>
+              <dd>{{ display(g.espesorPiso) }}</dd>
+            </div>
+            <div class="field-grid__item">
+              <dt>Espesor de relieve</dt>
+              <dd>{{ display(g.espesorRelieve) }}</dd>
+            </div>
+          </dl>
+        }
+
+        @if (g.archivo) {
+          <div class="guia-detail__preview">
+            <img [src]="previewUrl(g.id)" alt="Imagen de la guía" />
+          </div>
+        }
+      </section>
+    </div>
+
+    <section class="panel guia-detail__section">
+      <div class="guia-detail__section-head">
+        <h3>Detalles de guía</h3>
+        <span class="guia-detail__count">{{ g.lineas.length }} {{ g.lineas.length === 1 ? 'línea' : 'líneas' }}</span>
+      </div>
+
+      @if (g.lineas.length === 0) {
+        <p class="guia-detail__empty">Sin líneas registradas.</p>
+      } @else {
+        <div class="detail-table-wrap">
+          <table class="detail-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Producto</th>
+                <th>Descripción</th>
+                <th>Ancho</th>
+                <th>Alto</th>
+                <th>Cantidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (linea of g.lineas; track linea.id; let i = $index) {
+                <tr>
+                  <td data-label="#">{{ i + 1 }}</td>
+                  <td data-label="Producto"><strong>{{ linea.productoNombre }}</strong></td>
+                  <td data-label="Descripción">{{ display(linea.descripcion) }}</td>
+                  <td data-label="Ancho">{{ linea.ancho }}</td>
+                  <td data-label="Alto">{{ linea.alto }}</td>
+                  <td data-label="Cantidad">{{ linea.cantidad }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>
+
+<app-confirm-dialog
+  [open]="confirmAnularOpen()"
+  title="Anular guía de remisión"
+  message="¿Seguro que quieres anular este registro? Solo se puede anular dentro del primer día."
+  [highlight]="guia()?.secuencia ?? null"
+  confirmLabel="Sí, anular"
+  variant="danger"
+  [loading]="anularLoading()"
+  (confirmed)="confirmarAnular()"
+  (cancelled)="cancelarAnular()"
+/>

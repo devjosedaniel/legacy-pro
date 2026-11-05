@@ -1,0 +1,287 @@
+@use '../../../shared/styles/forms';
+
+:host {
+  display: block;
+}
+
+.guias__header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+
+  @media (min-width: 640px) {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  p {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+}
+
+.guias__filters {
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.guias__search-field {
+  width: 100%;
+
+  label {
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+}
+
+.guias__search {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.15rem 0.9rem;
+  min-height: 3rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fff;
+
+  svg {
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 500;
+    min-width: 0;
+    padding: 0.7rem 0;
+    color: var(--color-text);
+
+    &::placeholder {
+      color: var(--color-text-muted);
+      font-weight: 400;
+    }
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  &:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.16);
+  }
+}
+
+.guias__filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.65rem;
+}
+
+.field--inline {
+  min-width: 8rem;
+
+  label {
+    font-size: 0.72rem;
+  }
+
+  select {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.88rem;
+    min-width: 11rem;
+  }
+}
+
+.guias__filter-cliente {
+  flex: 1.4;
+  min-width: min(100%, 16rem);
+}
+
+.guias__filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.guias__empty {
+  padding: 2rem 1.25rem;
+  text-align: center;
+
+  h3 {
+    margin-bottom: 0.35rem;
+  }
+
+  p {
+    color: var(--color-text-muted);
+  }
+}
+
+.guias__table-wrap {
+  overflow-x: auto;
+}
+
+.guias__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th,
+  td {
+    padding: 0.75rem 0.85rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+  }
+
+  th {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    background: var(--color-surface-muted);
+  }
+
+  td small {
+    display: block;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    margin-top: 0.15rem;
+  }
+
+  tbody tr:hover {
+    background: var(--color-surface-muted);
+  }
+}
+
+.guias__link {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover strong {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+  }
+}
+
+.guias__detalle {
+  max-width: 22rem;
+  word-break: break-word;
+}
+
+.guias__estado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.guias__sri-empty {
+  color: var(--color-text-muted);
+}
+
+.badge--sri-ok {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.badge--sri-warn {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fdba74;
+}
+
+.badge--sri-error {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.badge--sri-info {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #7dd3fc;
+}
+
+.badge--sri-muted {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+
+.guias__actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.badge--anulado {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.badge--facturado {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.badge--nofactura {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.badge + .badge {
+  margin-left: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .guias__table thead {
+    display: none;
+  }
+
+  .guias__table tr {
+    display: block;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .guias__table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border: none;
+    padding: 0.35rem 0.85rem;
+
+    &::before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+    }
+  }
+
+  .guias__actions::before {
+    display: none;
+  }
+
+  .guias__detalle {
+    max-width: none;
+  }
+}

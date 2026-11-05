@@ -212,6 +212,22 @@ export const routes: Routes = [
           ),
         canActivate: [permisoGuard('produccion-grupos')],
       },
+      {
+        path: 'produccion/guias-remision',
+        loadComponent: () =>
+          import('./features/produccion/guias-remision/guias-remision-list.component').then(
+            (m) => m.GuiasRemisionListComponent,
+          ),
+        canActivate: [permisoGuard('produccion-guias-remision')],
+      },
+      {
+        path: 'produccion/guias-remision/:id',
+        loadComponent: () =>
+          import('./features/produccion/guias-remision/guia-remision-detail.component').then(
+            (m) => m.GuiaRemisionDetailComponent,
+          ),
+        canActivate: [permisoGuard('produccion-guias-remision')],
+      },
     ],
   },
   { path: '', redirectTo: 'dashboard/inventario', pathMatch: 'full' },

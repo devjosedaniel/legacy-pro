@@ -103,6 +103,12 @@ export class DashboardComponent implements OnInit {
           route: '/dashboard/produccion/reportes',
           permiso: 'produccion-reportes',
         },
+        {
+          label: 'Guías de remisión',
+          icon: 'grid',
+          route: '/dashboard/produccion/guias-remision',
+          permiso: 'produccion-guias-remision',
+        },
       ],
     },
     { id: 'compras', label: 'Compras', icon: 'purchase', comingSoon: true },
@@ -148,6 +154,8 @@ export class DashboardComponent implements OnInit {
       items.push({ label: 'Producción', icon: 'production', route: '/dashboard/produccion/planificacion' });
     } else if (this.permisos.can('produccion-reportes')) {
       items.push({ label: 'Producción', icon: 'production', route: '/dashboard/produccion/reportes' });
+    } else if (this.permisos.can('produccion-guias-remision')) {
+      items.push({ label: 'Producción', icon: 'production', route: '/dashboard/produccion/guias-remision' });
     } else {
       items.push({ label: 'Producción', icon: 'production', route: '/dashboard/produccion', disabled: true });
     }
@@ -349,6 +357,14 @@ export class DashboardComponent implements OnInit {
     }
     if (path.startsWith('/dashboard/produccion/reportes')) {
       this.pageHeader.set({ module: 'Producción', title: 'Reportes' });
+      return;
+    }
+    if (path.startsWith('/dashboard/produccion/guias-remision/') && path !== '/dashboard/produccion/guias-remision') {
+      this.pageHeader.set({ module: 'Producción', title: 'Detalle de guía' });
+      return;
+    }
+    if (path.startsWith('/dashboard/produccion/guias-remision')) {
+      this.pageHeader.set({ module: 'Producción', title: 'Guías de remisión' });
       return;
     }
     if (path.startsWith('/dashboard/produccion')) {
