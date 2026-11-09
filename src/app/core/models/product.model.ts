@@ -43,6 +43,12 @@ export interface Product {
 
 export const CATEGORIAS_CON_LOTE: ProductCategorySlug[] = ['planchas', 'stickyback', 'flexoback'];
 export const CATEGORIAS_ROLLO: ProductCategorySlug[] = ['stickyback', 'flexoback'];
+export const CATEGORIAS_FORMULARIO: ProductCategorySlug[] = [
+  'planchas',
+  'stickyback',
+  'flexoback',
+  'otros',
+];
 
 export function categoriaEsRollo(slug: ProductCategorySlug): boolean {
   return CATEGORIAS_ROLLO.includes(slug);

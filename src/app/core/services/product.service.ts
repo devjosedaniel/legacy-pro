@@ -4,12 +4,10 @@ import { catchError, map, Observable, of, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiProducto } from '../models/api.model';
 import { ProductCategorySlug } from '../models/category.model';
-import { ProductoFormData, Product } from '../models/product.model';
+import { CATEGORIAS_FORMULARIO, ProductoFormData, Product } from '../models/product.model';
 import { extractApiError, mapProducto } from '../utils/api.mappers';
 import { CachedLoader } from '../utils/cached-load.util';
 import { MovementService } from './movement.service';
-
-const SUPPORTED_CATEGORIES: ProductCategorySlug[] = ['planchas', 'stickyback', 'flexoback'];
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
@@ -71,7 +69,7 @@ export class ProductService {
   }
 
   createProduct(data: ProductoFormData): Observable<Product> {
-    if (!SUPPORTED_CATEGORIES.includes(data.categorySlug)) {
+    if (!CATEGORIAS_FORMULARIO.includes(data.categorySlug)) {
       return throwError(
         () => new Error('El formulario para esta categoría estará disponible próximamente.'),
       );
@@ -80,11 +78,17 @@ export class ProductService {
     const body: Record<string, unknown> = {
       categoria_slug: data.categorySlug,
       nombre: data.nombre.trim().toUpperCase(),
-      ancho: data.ancho,
-      alto: data.alto,
       stock_minimo: data.stockMinimo,
       notas: data.notas,
+      unidad: data.categorySlug === 'otros' ? 'unidad' : undefined,
     };
+
+    if (data.ancho != null) {
+      body['ancho'] = data.ancho;
+    }
+    if (data.alto != null) {
+      body['alto'] = data.alto;
+    }
 
     if (data.categorySlug === 'planchas' && data.calibreId) {
       body['calibre_id'] = Number(data.calibreId);

@@ -280,12 +280,16 @@ export class ProductosListComponent implements OnInit {
     if (rollo) {
       return formatStickybackMedidas(rollo.medidas.ancho, rollo.medidas.largo);
     }
+    if (product.categorySlug === 'otros') {
+      return product.unidad === 'unidad' ? '1 envase' : product.unidad;
+    }
     return '—';
   }
 
   protected medidasLabel(product: Product): string {
     if (product.plancha) return 'Ancho × Alto · cm';
     if (productoRollo(product)) return 'Ancho × Largo';
+    if (product.categorySlug === 'otros') return 'Baja por unidad';
     return '';
   }
 

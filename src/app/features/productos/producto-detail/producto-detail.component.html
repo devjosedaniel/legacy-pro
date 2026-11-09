@@ -18,6 +18,9 @@
             @if (p.flexoback) {
               <span>{{ p.flexoback.marca }} · {{ formatStickyback(p.flexoback.medidas.ancho, p.flexoback.medidas.largo) }}</span>
             }
+            @if (p.categorySlug === 'otros') {
+              <span>Baja por unidad · {{ p.unidad === 'unidad' ? '1 envase' : p.unidad }}</span>
+            }
           </p>
         </div>
         <a [routerLink]="['/dashboard/productos', p.id, 'editar']" class="btn btn--outline">Editar</a>

@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductCategorySlug } from '../../../core/models/category.model';
 import {
+  CATEGORIAS_FORMULARIO,
   categoriaEsRollo,
   OTRA_MARCA,
   Product,
@@ -12,7 +13,7 @@ import { CategoryService } from '../../../core/services/category.service';
 import { MarcaService } from '../../../core/services/marca.service';
 import { ProductService } from '../../../core/services/product.service';
 
-const SUPPORTED_CATEGORIES: ProductCategorySlug[] = ['planchas', 'stickyback', 'flexoback'];
+const SUPPORTED_CATEGORIES = CATEGORIAS_FORMULARIO;
 
 @Component({
   selector: 'app-producto-form',
@@ -73,6 +74,7 @@ export class ProductoFormComponent implements OnInit {
   protected readonly isInventarioConLote = computed(
     () => this.isPlanchas() || this.isRollo(),
   );
+  protected readonly isSimpleUnidad = computed(() => this.categorySlug() === 'otros');
 
   protected readonly isCategorySupported = computed(() => {
     const slug = this.categorySlug();
@@ -117,6 +119,7 @@ export class ProductoFormComponent implements OnInit {
 
   protected selectCategory(slug: ProductCategorySlug): void {
     if (this.isEdit()) return;
+    if (!SUPPORTED_CATEGORIES.includes(slug)) return;
     this.form.controls.categorySlug.setValue(slug);
     this.form.controls.categorySlug.markAsTouched();
   }
@@ -213,6 +216,12 @@ export class ProductoFormComponent implements OnInit {
       this.patchMarcaMedidas(product, product.flexoback.marcaId, product.flexoback.marca, {
         ancho: product.flexoback.medidas.ancho,
         alto: product.flexoback.medidas.largo,
+      });
+    } else if (product.categorySlug === 'otros') {
+      this.form.patchValue({
+        nombre: product.nombre,
+        stockMinimo: product.stockMinimo,
+        notas: product.notas ?? '',
       });
     }
 
