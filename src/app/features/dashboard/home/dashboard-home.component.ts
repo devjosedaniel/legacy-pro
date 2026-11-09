@@ -163,6 +163,8 @@ export class DashboardHomeComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.productService.refresh().subscribe();
+
     const today = this.todayKey;
     this.movementService.fetchDashboardStats(today).subscribe({
       next: ({ hoy, entradas, salidas, recientes }) => {

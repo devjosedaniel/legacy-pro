@@ -52,14 +52,7 @@ export class ProductService {
       .get<{ ok: boolean; producto: ApiProducto }>(`${environment.apiUrl}/inv/productos/${id}`)
       .pipe(
         map((res) => mapProducto(res.producto)),
-        tap((product) => {
-          this.products.update((list) => {
-            const exists = list.some((p) => p.id === product.id);
-            return exists
-              ? list.map((p) => (p.id === product.id ? product : p))
-              : [...list, product];
-          });
-        }),
+        tap((product) => this.upsertProduct(product)),
         catchError((error) => throwError(() => new Error(extractApiError(error)))),
       );
   }
@@ -104,7 +97,7 @@ export class ProductService {
       .post<{ ok: boolean; producto: ApiProducto }>(`${environment.apiUrl}/inv/productos`, body)
       .pipe(
         map((res) => mapProducto(res.producto)),
-        tap((product) => this.products.update((list) => [...list, product])),
+        tap((product) => this.upsertProduct(product)),
         catchError((error) => throwError(() => new Error(extractApiError(error)))),
       );
   }
@@ -133,22 +126,19 @@ export class ProductService {
       .put<{ ok: boolean; producto: ApiProducto }>(`${environment.apiUrl}/inv/productos/${id}`, body)
       .pipe(
         map((res) => mapProducto(res.producto)),
-        tap((product) =>
-          this.products.update((list) => list.map((p) => (p.id === id ? product : p))),
-        ),
+        tap((product) => this.upsertProduct(product)),
         catchError((error) => throwError(() => new Error(extractApiError(error)))),
       );
   }
 
   delete(id: string): Observable<void> {
     return this.http.delete<{ ok: boolean }>(`${environment.apiUrl}/inv/productos/${id}`).pipe(
-      tap(() =>
-        this.products.update((list) =>
-          list.map((p) =>
-            p.id === id ? { ...p, activo: false, updatedAt: new Date().toISOString() } : p,
-          ),
-        ),
-      ),
+      tap(() => {
+        const next = this.products().map((p) =>
+          p.id === id ? { ...p, activo: false, updatedAt: new Date().toISOString() } : p,
+        );
+        this.commitCatalog(next);
+      }),
       map(() => void 0),
       catchError((error) => throwError(() => new Error(extractApiError(error)))),
     );
@@ -166,6 +156,19 @@ export class ProductService {
       .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { numeric: true }));
   }
 
+  private upsertProduct(product: Product): void {
+    const list = this.products();
+    const exists = list.some((p) => p.id === product.id);
+    const next = exists ? list.map((p) => (p.id === product.id ? product : p)) : [...list, product];
+    this.commitCatalog(next);
+  }
+
+  private commitCatalog(list: Product[]): void {
+    this.products.set(list);
+    this.loaded.set(true);
+    this.catalogLoader.set(list);
+  }
+
   private fetchProducts(force = false): Observable<Product[]> {
     return this.catalogLoader.load(
       () => {
@@ -176,12 +179,12 @@ export class ProductService {
             params,
           })
           .pipe(
-            tap((res) => this.movementService.syncStockFromApi(res.productos)),
-            map((res) => res.productos.map(mapProducto)),
-            tap((items) => {
-              this.products.set(items);
-              this.loaded.set(true);
+            tap((res) => {
+              this.movementService.invalidateStockRefreshCache();
+              this.movementService.syncStockFromApi(res.productos);
             }),
+            map((res) => res.productos.map(mapProducto)),
+            tap((items) => this.commitCatalog(items)),
             catchError((error) => throwError(() => new Error(extractApiError(error)))),
           );
       },

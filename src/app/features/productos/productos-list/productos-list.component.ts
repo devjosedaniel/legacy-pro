@@ -148,6 +148,7 @@ export class ProductosListComponent implements OnInit {
 
   ngOnInit(): void {
     this.restoreFilters();
+    this.productService.refresh().subscribe();
 
     const message = (history.state as { successMessage?: string } | null)?.successMessage;
     if (message) {

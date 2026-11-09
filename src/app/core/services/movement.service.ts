@@ -201,6 +201,10 @@ export class MovementService {
     this.consumoLoader.invalidate();
   }
 
+  invalidateStockRefreshCache(): void {
+    this.stockRefreshLoader.invalidate();
+  }
+
   syncStockFromApi(productos: ApiProducto[]): void {
     const map: Record<string, ProductStock> = {};
     for (const producto of productos) {

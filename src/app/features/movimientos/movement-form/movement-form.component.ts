@@ -421,6 +421,7 @@ export class MovementFormComponent implements OnInit {
 
     this.movementService.registerBatchMovement(data).subscribe({
       next: ({ ingresoNumero, movements }) => {
+        this.productService.refresh().subscribe();
         this.isSaving.set(false);
         this.successMessage.set(
           `Ingreso ${ingresoNumero} registrado con ${movements.length} producto${movements.length !== 1 ? 's' : ''}.`,
@@ -491,6 +492,7 @@ export class MovementFormComponent implements OnInit {
 
     this.movementService.registerMovement(data).subscribe({
       next: ({ movement, retazo }) => {
+        this.productService.refresh().subscribe();
         this.isSaving.set(false);
         let msg = `Movimiento ${movement.numero} registrado correctamente.`;
         if (retazo) {

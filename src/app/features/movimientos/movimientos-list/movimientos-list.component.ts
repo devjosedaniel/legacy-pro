@@ -355,7 +355,7 @@ export class MovimientosListComponent implements OnInit {
         this.annullingId.set(null);
         this.closeConfirm();
         this.actionMessage.set(`Movimiento ${movement.numero} anulado.`);
-        this.movementService.refreshStock(movement.productId, true).subscribe();
+        this.productService.refresh().subscribe();
         this.movementService.invalidateConsumoConsignacionCache();
         this.loadSummaryCounts();
         this.reload$.next();
