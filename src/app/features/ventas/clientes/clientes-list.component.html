@@ -1,0 +1,115 @@
+<div class="ventas-page">
+  <header class="ventas-page__header">
+    <div>
+      <h2>Clientes</h2>
+      <p>{{ filtered().length }} de {{ clientes().length }} clientes activos.</p>
+    </div>
+    <div class="ventas-page__header-actions">
+      <label class="btn btn--outline">
+        @if (uploading()) { Subiendo… } @else { Subir Excel }
+        <input type="file" accept=".xls,.xlsx" hidden (change)="onExcelSelected($event)" [disabled]="uploading()" />
+      </label>
+      <a routerLink="/dashboard/ventas/clientes/nuevo" class="btn btn--primary">+ Agregar</a>
+    </div>
+  </header>
+
+  @if (successMessage()) {
+    <div class="alert alert--success" role="status">{{ successMessage() }}</div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <section class="ventas-page__filters panel">
+    <div class="ventas-page__search">
+      <input
+        type="search"
+        placeholder="Buscar nombre, RUC, ciudad o teléfono..."
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+      />
+    </div>
+    <div class="field field--inline">
+      <label for="empresaFilter">Empresa</label>
+      <select id="empresaFilter" [value]="empresaFilter()" (change)="onEmpresa($any($event.target).value)">
+        <option value="all">Todas</option>
+        @for (empresa of empresas; track empresa.id) {
+          <option [value]="empresa.id">{{ empresa.nombre }}</option>
+        }
+      </select>
+    </div>
+  </section>
+
+  @if (isLoading()) {
+    <div class="ventas-page__empty panel"><p>Cargando clientes...</p></div>
+  } @else if (filtered().length === 0) {
+    <div class="ventas-page__empty panel">
+      <h3>No se encontraron clientes</h3>
+      <p>Prueba con otra búsqueda o registra un cliente nuevo.</p>
+      <a routerLink="/dashboard/ventas/clientes/nuevo" class="btn btn--primary">+ Agregar</a>
+    </div>
+  } @else {
+    <div class="ventas-page__table-wrap panel">
+      <table class="ventas-page__table">
+        <thead>
+          <tr>
+            <th>Nombres</th>
+            <th>Cédula/RUC</th>
+            <th>Empresa</th>
+            <th>Ciudad</th>
+            <th>Teléfono</th>
+            <th>Enlaces</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (cliente of filtered(); track cliente.id) {
+            <tr>
+              <td data-label="Nombres">
+                <strong>{{ cliente.nombres }}</strong>
+                @if (cliente.contacto) {
+                  <span class="ventas-page__muted">{{ cliente.contacto }}</span>
+                }
+              </td>
+              <td data-label="Identificador">{{ cliente.identificador || '—' }}</td>
+              <td data-label="Empresa">{{ empresaNombre(cliente.empresaId) }}</td>
+              <td data-label="Ciudad">{{ cliente.ciudad || '—' }}</td>
+              <td data-label="Teléfono">{{ cliente.telefono || cliente.movil || '—' }}</td>
+              <td data-label="Enlaces">
+                <div class="ventas-page__links">
+                  @if (cliente.encid) {
+                    <a [href]="cliente.encid" target="_blank" rel="noopener">Solicitud</a>
+                    <button type="button" class="btn btn--outline btn--sm" (click)="copyLink(cliente.encid)">Copiar</button>
+                  }
+                  @if (cliente.cotizid) {
+                    <a [href]="cliente.cotizid" target="_blank" rel="noopener">Cotizaciones</a>
+                  }
+                  @if (!cliente.encid && !cliente.cotizid) {
+                    —
+                  }
+                </div>
+              </td>
+              <td class="ventas-page__actions" data-label="">
+                <a [routerLink]="['/dashboard/ventas/clientes', cliente.id]" class="btn btn--outline btn--sm">Ver</a>
+                <button type="button" class="btn btn--outline btn--sm ventas-page__danger" (click)="confirmDelete(cliente)">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <app-confirm-dialog
+    [open]="confirmOpen()"
+    [loading]="confirmLoading()"
+    title="Eliminar cliente"
+    message="El cliente se desactivará y dejará de aparecer en el listado."
+    [highlight]="pendingDelete()?.nombres ?? ''"
+    confirmLabel="Sí, eliminar"
+    (confirmed)="onConfirmDelete()"
+    (cancelled)="onCancelDelete()"
+  />
+</div>

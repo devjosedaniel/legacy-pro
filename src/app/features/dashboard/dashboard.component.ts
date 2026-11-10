@@ -31,6 +31,7 @@ const INVENTARIO_ROUTE_PREFIXES = [
 
 const SISTEMA_ROUTE_PREFIXES = ['/dashboard/usuarios', '/dashboard/perfiles'] as const;
 const PRODUCCION_ROUTE_PREFIXES = ['/dashboard/produccion'] as const;
+const VENTAS_ROUTE_PREFIXES = ['/dashboard/ventas'] as const;
 
 interface PageHeader {
   module: string;
@@ -72,7 +73,15 @@ export class DashboardComponent implements OnInit {
         { label: 'Reportes', icon: 'chart', route: '/dashboard/reportes', permiso: 'reportes-inventario' },
       ],
     },
-    { id: 'ventas', label: 'Ventas', icon: 'sales', comingSoon: true },
+    {
+      id: 'ventas',
+      label: 'Ventas',
+      icon: 'sales',
+      items: [
+        { label: 'Clientes', icon: 'users', route: '/dashboard/ventas/clientes', permiso: 'clientes' },
+        { label: 'Cotizaciones', icon: 'chart', route: '/dashboard/ventas/cotizaciones', permiso: 'cotizaciones' },
+      ],
+    },
     { id: 'trabajos', label: 'Trabajos', icon: 'work', comingSoon: true },
     {
       id: 'produccion',
@@ -144,7 +153,13 @@ export class DashboardComponent implements OnInit {
       items.push({ label: 'Inventario', icon: 'inventory', route: '/dashboard/inventario', exact: true });
     }
 
-    items.push({ label: 'Ventas', icon: 'sales', route: '/dashboard/ventas', disabled: true });
+    if (this.permisos.can('clientes')) {
+      items.push({ label: 'Ventas', icon: 'sales', route: '/dashboard/ventas/clientes' });
+    } else if (this.permisos.can('cotizaciones')) {
+      items.push({ label: 'Ventas', icon: 'sales', route: '/dashboard/ventas/cotizaciones' });
+    } else {
+      items.push({ label: 'Ventas', icon: 'sales', route: '/dashboard/ventas', disabled: true });
+    }
 
     if (this.permisos.can('produccion-ordenes')) {
       items.push({ label: 'Producción', icon: 'production', route: '/dashboard/produccion/ordenes' });
@@ -207,6 +222,9 @@ export class DashboardComponent implements OnInit {
     if (this.isProduccionRoute(item.route)) {
       return this.isProduccionRoute(url);
     }
+    if (this.isVentasRoute(item.route)) {
+      return this.isVentasRoute(url);
+    }
     return url.startsWith(item.route);
   }
 
@@ -237,6 +255,7 @@ export class DashboardComponent implements OnInit {
 
   private groupIdForUrl(url: string): string | null {
     if (this.isInventarioRoute(url)) return 'inventario';
+    if (this.isVentasRoute(url)) return 'ventas';
     if (this.isProduccionRoute(url)) return 'produccion';
     if (this.isSistemaRoute(url)) return 'sistema';
     return null;
@@ -252,6 +271,10 @@ export class DashboardComponent implements OnInit {
 
   private isProduccionRoute(url: string): boolean {
     return PRODUCCION_ROUTE_PREFIXES.some((prefix) => url.startsWith(prefix));
+  }
+
+  private isVentasRoute(url: string): boolean {
+    return VENTAS_ROUTE_PREFIXES.some((prefix) => url.startsWith(prefix));
   }
 
   private syncDataLoad(url: string): void {
@@ -369,6 +392,30 @@ export class DashboardComponent implements OnInit {
     }
     if (path.startsWith('/dashboard/produccion')) {
       this.pageHeader.set({ module: 'Producción', title: 'Inicio' });
+      return;
+    }
+    if (path.startsWith('/dashboard/ventas/clientes/nuevo')) {
+      this.pageHeader.set({ module: 'Ventas', title: 'Nuevo cliente' });
+      return;
+    }
+    if (path.startsWith('/dashboard/ventas/clientes/') && path !== '/dashboard/ventas/clientes') {
+      this.pageHeader.set({ module: 'Ventas', title: 'Cliente' });
+      return;
+    }
+    if (path.startsWith('/dashboard/ventas/clientes')) {
+      this.pageHeader.set({ module: 'Ventas', title: 'Clientes' });
+      return;
+    }
+    if (path.startsWith('/dashboard/ventas/cotizaciones/nueva')) {
+      this.pageHeader.set({ module: 'Ventas', title: 'Nueva cotización' });
+      return;
+    }
+    if (path.startsWith('/dashboard/ventas/cotizaciones/') && path !== '/dashboard/ventas/cotizaciones') {
+      this.pageHeader.set({ module: 'Ventas', title: 'Cotización' });
+      return;
+    }
+    if (path.startsWith('/dashboard/ventas/cotizaciones')) {
+      this.pageHeader.set({ module: 'Ventas', title: 'Cotizaciones' });
       return;
     }
 

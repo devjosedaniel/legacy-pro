@@ -1,0 +1,180 @@
+<div class="cliente-form">
+  <header class="cliente-form__header">
+    <a routerLink="/dashboard/ventas/clientes" class="cliente-form__back">← Volver</a>
+    <div>
+      <h2>{{ pageTitle }}</h2>
+      <p>Los datos se guardan en el mismo sistema de Serflex.</p>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <div class="panel cliente-form__card"><p>Cargando cliente...</p></div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="cliente-form__grid" novalidate>
+      <section class="panel cliente-form__card">
+        <h3>Datos generales</h3>
+        <div class="field" [class.field--error]="form.controls.nombres.touched && form.controls.nombres.invalid">
+          <label for="nombres">Nombres *</label>
+          <input id="nombres" type="text" formControlName="nombres" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="tipoIdentificador">Tipo de ident. *</label>
+            <select id="tipoIdentificador" formControlName="tipoIdentificador">
+              <option value="RUC">RUC</option>
+              <option value="Cedula">Cédula</option>
+            </select>
+          </div>
+          <div class="field" [class.field--error]="form.controls.identificador.touched && form.controls.identificador.invalid">
+            <label for="identificador">Identificador *</label>
+            <input id="identificador" type="text" formControlName="identificador" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="empresaId">Empresa *</label>
+          <select id="empresaId" formControlName="empresaId">
+            @for (empresa of empresas; track empresa.id) {
+              <option [ngValue]="empresa.id">{{ empresa.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="pais">País *</label>
+            <select id="pais" formControlName="pais" (change)="onPaisChange()">
+              @for (pais of paises; track pais) {
+                <option [value]="pais">{{ pais }}</option>
+              }
+            </select>
+          </div>
+          <div class="field" [class.field--error]="form.controls.ciudad.touched && form.controls.ciudad.invalid">
+            <label for="ciudad">Ciudad *</label>
+            <select id="ciudad" formControlName="ciudad">
+              <option value="">Seleccione</option>
+              @for (ciudad of ciudades(); track ciudad) {
+                <option [value]="ciudad">{{ ciudad }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="direccion">Dirección</label>
+          <textarea id="direccion" rows="3" formControlName="direccion"></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="telefono">Teléfono</label>
+            <input id="telefono" type="text" formControlName="telefono" />
+          </div>
+          <div class="field">
+            <label for="movil">Móvil</label>
+            <input id="movil" type="text" formControlName="movil" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="contacto">Contacto</label>
+          <input id="contacto" type="text" formControlName="contacto" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="maxFechaFact">Máx. día facturación</label>
+            <input id="maxFechaFact" type="number" min="1" max="200" formControlName="maxFechaFact" />
+          </div>
+          <div class="field">
+            <label for="credito">Días de crédito</label>
+            <input id="credito" type="number" min="0" max="200" formControlName="credito" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="vendedorId">Vendedor</label>
+          <select id="vendedorId" formControlName="vendedorId">
+            <option [ngValue]="null">Sin asignar</option>
+            @for (usuario of usuarios(); track usuario.id) {
+              <option [ngValue]="asNumber(usuario.id)">{{ usuario.nombre || usuario.usuario }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label for="valorMinimo">Valor mínimo</label>
+          <input id="valorMinimo" type="number" min="0" step="0.01" formControlName="valorMinimo" />
+        </div>
+        <label class="checkbox">
+          <input type="checkbox" formControlName="agenteRetencion" />
+          <span class="checkbox__mark"></span>
+          Es agente de retención
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" formControlName="verPrecios" />
+          <span class="checkbox__mark"></span>
+          Mostrar precios
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" formControlName="montaje" />
+          <span class="checkbox__mark"></span>
+          Requiere proceso de montaje
+        </label>
+      </section>
+
+      <div class="cliente-form__side">
+        <section class="panel cliente-form__card">
+          <h3>Correos</h3>
+          <p class="field__hint">Separe varios correos con coma.</p>
+          <div class="field">
+            <label for="email1">E-mail diseño</label>
+            <textarea id="email1" rows="3" formControlName="email1"></textarea>
+          </div>
+          <div class="field">
+            <label for="email2">E-mail ventas</label>
+            <textarea id="email2" rows="3" formControlName="email2"></textarea>
+          </div>
+          <div class="field">
+            <label for="email3">E-mail facturación</label>
+            <textarea id="email3" rows="3" formControlName="email3"></textarea>
+          </div>
+          <div class="field">
+            <label for="email4">E-mail producción</label>
+            <textarea id="email4" rows="3" formControlName="email4"></textarea>
+          </div>
+          <div class="field">
+            <label for="emailCobranza">E-mail cobranzas</label>
+            <textarea id="emailCobranza" rows="3" formControlName="emailCobranza"></textarea>
+          </div>
+        </section>
+
+        <section class="panel cliente-form__card">
+          <h3>Credenciales portal</h3>
+          <div class="field">
+            <label for="usuario">Usuario</label>
+            <input id="usuario" type="text" formControlName="usuario" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="password">Contraseña</label>
+            <div class="cliente-form__password">
+              <input
+                id="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="password"
+                autocomplete="new-password"
+              />
+              <button type="button" class="btn btn--outline btn--sm" (click)="showPassword.set(!showPassword())">
+                {{ showPassword() ? 'Ocultar' : 'Ver' }}
+              </button>
+              <button type="button" class="btn btn--outline btn--sm" (click)="generarClave()">Generar</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="cliente-form__footer">
+        <a routerLink="/dashboard/ventas/clientes" class="btn btn--outline">Cancelar</a>
+        <button type="submit" class="btn btn--primary" [disabled]="isSaving()">
+          @if (isSaving()) { Guardando... } @else { Guardar }
+        </button>
+      </footer>
+    </form>
+  }
+</div>

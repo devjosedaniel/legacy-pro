@@ -220,6 +220,49 @@ export const routes: Routes = [
           ),
         canActivate: [permisoGuard('produccion-guias-remision')],
       },
+      { path: 'ventas', redirectTo: 'ventas/clientes', pathMatch: 'full' },
+      {
+        path: 'ventas/clientes',
+        loadComponent: () =>
+          import('./features/ventas/clientes/clientes-list.component').then((m) => m.ClientesListComponent),
+        canActivate: [permisoGuard('clientes')],
+      },
+      {
+        path: 'ventas/clientes/nuevo',
+        loadComponent: () =>
+          import('./features/ventas/clientes/cliente-form.component').then((m) => m.ClienteFormComponent),
+        canActivate: [permisoGuard('clientes')],
+      },
+      {
+        path: 'ventas/clientes/:id',
+        loadComponent: () =>
+          import('./features/ventas/clientes/cliente-form.component').then((m) => m.ClienteFormComponent),
+        canActivate: [permisoGuard('clientes')],
+      },
+      {
+        path: 'ventas/cotizaciones',
+        loadComponent: () =>
+          import('./features/ventas/cotizaciones/cotizaciones-list.component').then(
+            (m) => m.CotizacionesListComponent,
+          ),
+        canActivate: [permisoGuard('cotizaciones')],
+      },
+      {
+        path: 'ventas/cotizaciones/nueva',
+        loadComponent: () =>
+          import('./features/ventas/cotizaciones/cotizacion-form.component').then(
+            (m) => m.CotizacionFormComponent,
+          ),
+        canActivate: [permisoGuard('cotizaciones')],
+      },
+      {
+        path: 'ventas/cotizaciones/:id',
+        loadComponent: () =>
+          import('./features/ventas/cotizaciones/cotizacion-detail.component').then(
+            (m) => m.CotizacionDetailComponent,
+          ),
+        canActivate: [permisoGuard('cotizaciones')],
+      },
       {
         path: 'produccion/guias-remision/:id',
         loadComponent: () =>

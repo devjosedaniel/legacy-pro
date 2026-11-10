@@ -1,0 +1,86 @@
+@use '../../../shared/styles/forms';
+
+:host {
+  display: block;
+}
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.cliente-form__header {
+  margin-bottom: 1.25rem;
+}
+
+.cliente-form__back {
+  display: inline-block;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.cliente-form__header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.cliente-form__header p,
+.alert {
+  margin-bottom: 1rem;
+  color: var(--color-text-muted);
+}
+
+.cliente-form__grid {
+  display: grid;
+  gap: 1rem;
+
+  @media (min-width: 960px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.cliente-form__side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cliente-form__card {
+  padding: 1.25rem;
+
+  h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+
+.checkbox {
+  margin-top: 0.35rem;
+}
+
+.checkbox + .checkbox {
+  margin-top: 0.65rem;
+}
+
+.cliente-form__password {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  input {
+    flex: 1 1 12rem;
+  }
+}
+
+.cliente-form__footer {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}

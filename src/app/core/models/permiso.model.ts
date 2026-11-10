@@ -95,8 +95,8 @@ export const PERMISO_MODULOS: PermisoModulo[] = [
     nombre: 'Ventas',
     icon: 'sales',
     paginas: [
-      { id: 300, slug: 'cotizaciones', nombre: 'Cotizaciones', available: false },
-      { id: 301, slug: 'clientes', nombre: 'Clientes', available: false },
+      { id: 300, slug: 'cotizaciones', nombre: 'Cotizaciones', route: '/dashboard/ventas/cotizaciones', available: true },
+      { id: 301, slug: 'clientes', nombre: 'Clientes', route: '/dashboard/ventas/clientes', available: true },
     ],
   },
   {
