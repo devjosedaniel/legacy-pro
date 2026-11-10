@@ -26,7 +26,25 @@
     <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
   }
   @if (successMessage()) {
-    <div class="alert alert--success" role="status">{{ successMessage() }}</div>
+    <div class="alert alert--success" role="status">
+      <p>{{ successMessage() }}</p>
+      @if (savedDevolucion(); as saved) {
+        <p class="movement-form__success-hint">Descarga la nota para entregar al proveedor.</p>
+        <div class="movement-form__success-actions">
+          <button
+            type="button"
+            class="btn btn--primary btn--sm"
+            [disabled]="downloadingDevolucion()"
+            (click)="downloadDevolucionSaved()"
+          >
+            @if (downloadingDevolucion()) { Generando PDF… } @else { Descargar PDF {{ saved.numero }} }
+          </button>
+          <button type="button" class="btn btn--outline btn--sm" (click)="irAListado()">
+            Ir al listado
+          </button>
+        </div>
+      }
+    </div>
   }
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="movement-form__card panel" novalidate>

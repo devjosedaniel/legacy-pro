@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { debounceTime, Subject } from 'rxjs';
 import { ProductCategorySlug } from '../../../core/models/category.model';
 import {
+  isDevolucionPdfTipo,
   isMovimientoAnulado,
   MOVEMENT_LABELS,
   Movement,
@@ -101,6 +102,7 @@ export class MovimientosListComponent implements OnInit {
   protected readonly annullingId = signal<string | null>(null);
   protected readonly annullingGrupoId = signal<string | null>(null);
   protected readonly downloadingGrupoId = signal<string | null>(null);
+  protected readonly downloadingDevolucionId = signal<string | null>(null);
   protected readonly confirmOpen = signal(false);
   protected readonly confirmLoading = signal(false);
   protected readonly confirmTitle = signal('');
@@ -271,6 +273,28 @@ export class MovimientosListComponent implements OnInit {
     const items = this.visibleMovements();
     const prev = index > 0 ? items[index - 1] : null;
     return !prev || prev.ingresoNumero !== movement.ingresoNumero || prev.grupoId !== movement.grupoId;
+  }
+
+  protected canDownloadDevolucionPdf(movement: Movement): boolean {
+    return isDevolucionPdfTipo(movement.tipo);
+  }
+
+  protected downloadDevolucionPdf(movement: Movement): void {
+    this.actionError.set(null);
+    this.downloadingDevolucionId.set(movement.id);
+
+    this.reporteService.downloadDevolucionPdf(movement.id).subscribe({
+      next: (blob) => {
+        const label = movement.numero || movement.id;
+        this.reporteService.saveBlob(blob, `devolucion-${label}.pdf`);
+        this.actionMessage.set(`Nota de devolución ${label} descargada.`);
+        this.downloadingDevolucionId.set(null);
+      },
+      error: (err: Error) => {
+        this.actionError.set(err.message);
+        this.downloadingDevolucionId.set(null);
+      },
+    });
   }
 
   protected downloadIngresoPdf(movement: Movement): void {

@@ -34,6 +34,18 @@
 
 .alert { margin-bottom: 1rem; }
 
+.movement-form__success-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.82rem;
+}
+
+.movement-form__success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
 .movement-form__card {
   padding: 1.5rem;
   @media (min-width: 768px) { padding: 2rem; }

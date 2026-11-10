@@ -11,11 +11,13 @@ import {
   MovementDirection,
   MovementFormData,
   MovementType,
+  isDevolucionPdfTipo,
   requiresProveedor,
   TIPOS_BAJADA,
   TIPOS_SUBIDA,
   loteKey,
 } from '../../../core/models/movement.model';
+import { ReporteService } from '../../../core/services/reporte.service';
 import {
   Product,
   categoriaEsRollo,
@@ -49,6 +51,7 @@ export class MovementFormComponent implements OnInit {
   private readonly marcaService = inject(MarcaService);
   private readonly proveedorService = inject(ProveedorService);
   private readonly categoryService = inject(CategoryService);
+  private readonly reporteService = inject(ReporteService);
   private readonly router = inject(Router);
 
   protected readonly categories = this.categoryService.getActive();
@@ -59,6 +62,8 @@ export class MovementFormComponent implements OnInit {
   protected readonly isSaving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly successMessage = signal<string | null>(null);
+  protected readonly savedDevolucion = signal<{ id: string; numero: string } | null>(null);
+  protected readonly downloadingDevolucion = signal(false);
   protected readonly availableLotes = signal<LoteStock[]>([]);
   protected readonly loadingLotes = signal(false);
   protected readonly selectedProduct = signal<Product | null>(null);
@@ -418,6 +423,7 @@ export class MovementFormComponent implements OnInit {
     this.isSaving.set(true);
     this.errorMessage.set(null);
     this.successMessage.set(null);
+    this.savedDevolucion.set(null);
 
     this.movementService.registerBatchMovement(data).subscribe({
       next: ({ ingresoNumero, movements }) => {
@@ -489,6 +495,7 @@ export class MovementFormComponent implements OnInit {
     this.isSaving.set(true);
     this.errorMessage.set(null);
     this.successMessage.set(null);
+    this.savedDevolucion.set(null);
 
     this.movementService.registerMovement(data).subscribe({
       next: ({ movement, retazo }) => {
@@ -499,6 +506,10 @@ export class MovementFormComponent implements OnInit {
           msg += ` Retazo ${retazo.codigo} creado.`;
         }
         this.successMessage.set(msg);
+        if (isDevolucionPdfTipo(movement.tipo)) {
+          this.savedDevolucion.set({ id: movement.id, numero: movement.numero });
+          return;
+        }
         setTimeout(() => this.router.navigate(['/dashboard/movimientos']), 900);
       },
       error: (err: Error) => {
@@ -506,6 +517,28 @@ export class MovementFormComponent implements OnInit {
         this.errorMessage.set(err.message ?? 'Error al registrar.');
       },
     });
+  }
+
+  protected downloadDevolucionSaved(): void {
+    const saved = this.savedDevolucion();
+    if (!saved || this.downloadingDevolucion()) return;
+
+    this.downloadingDevolucion.set(true);
+    this.errorMessage.set(null);
+    this.reporteService.downloadDevolucionPdf(saved.id).subscribe({
+      next: (blob) => {
+        this.reporteService.saveBlob(blob, `devolucion-${saved.numero}.pdf`);
+        this.downloadingDevolucion.set(false);
+      },
+      error: (err: Error) => {
+        this.downloadingDevolucion.set(false);
+        this.errorMessage.set(err.message);
+      },
+    });
+  }
+
+  protected irAListado(): void {
+    this.router.navigate(['/dashboard/movimientos']);
   }
 
   private createLineaGroup() {

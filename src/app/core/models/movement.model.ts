@@ -176,6 +176,17 @@ export function requiresProveedor(tipo: MovementType): boolean {
   return tipo === 'entrada_consignacion' || tipo === 'devolucion_consignacion' || tipo === 'compra_consignacion';
 }
 
+/** Tipos que generan nota de devolución para entregar al proveedor o cliente. */
+export const TIPOS_DEVOLUCION_PDF: MovementType[] = [
+  'devolucion_consignacion',
+  'devolucion_cliente',
+  'ajuste_salida',
+];
+
+export function isDevolucionPdfTipo(tipo: MovementType): boolean {
+  return TIPOS_DEVOLUCION_PDF.includes(tipo);
+}
+
 export function requiresFechaIngreso(direccion: MovementDirection): boolean {
   return direccion === 'subida';
 }

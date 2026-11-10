@@ -22,6 +22,11 @@ export class ReporteService {
     return this.fetchPdfBlob(url);
   }
 
+  downloadDevolucionPdf(movimientoId: string): Observable<Blob> {
+    const url = `${environment.apiUrl}/inv/reportes/devolucion/${encodeURIComponent(movimientoId)}/pdf`;
+    return this.fetchPdfBlob(url);
+  }
+
   fetchRetazosDisponibles(): Observable<RetazosDisponiblesReporte> {
     return this.http
       .get<{

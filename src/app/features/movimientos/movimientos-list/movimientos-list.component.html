@@ -457,6 +457,16 @@
               <td data-label="Usuario">{{ m.usuario || '—' }}</td>
 
               <td class="movimientos__actions" [attr.data-label]="isAnuladoReal(m) ? 'Anulación' : 'Acciones'">
+                @if (canDownloadDevolucionPdf(m)) {
+                  <button
+                    type="button"
+                    class="btn btn--outline btn--sm movimientos__btn-pdf"
+                    [disabled]="downloadingDevolucionId() === m.id"
+                    (click)="downloadDevolucionPdf(m)"
+                  >
+                    @if (downloadingDevolucionId() === m.id) { PDF… } @else { PDF devolución }
+                  </button>
+                }
                 @if (isAnuladoReal(m)) {
                   <div class="movimientos__anulacion-info">
                     <span class="movimientos__anulado-badge">Anulado</span>
