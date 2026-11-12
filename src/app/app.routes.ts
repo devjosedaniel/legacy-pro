@@ -271,6 +271,63 @@ export const routes: Routes = [
           ),
         canActivate: [permisoGuard('produccion-guias-remision')],
       },
+      { path: 'compras', redirectTo: 'compras/proveedores', pathMatch: 'full' },
+      {
+        path: 'compras/proveedores',
+        loadComponent: () =>
+          import('./features/compras/proveedores/proveedores-list.component').then(
+            (m) => m.ProveedoresListComponent,
+          ),
+        canActivate: [permisoGuard('compras-proveedores')],
+      },
+      {
+        path: 'compras/proveedores/nuevo',
+        loadComponent: () =>
+          import('./features/compras/proveedores/proveedor-form.component').then(
+            (m) => m.ProveedorFormComponent,
+          ),
+        canActivate: [permisoGuard('compras-proveedores')],
+      },
+      {
+        path: 'compras/proveedores/:id',
+        loadComponent: () =>
+          import('./features/compras/proveedores/proveedor-form.component').then(
+            (m) => m.ProveedorFormComponent,
+          ),
+        canActivate: [permisoGuard('compras-proveedores')],
+      },
+      {
+        path: 'compras/tipos',
+        loadComponent: () =>
+          import('./features/compras/tipos/transferencia-tipos.component').then(
+            (m) => m.TransferenciaTiposComponent,
+          ),
+        canActivate: [permisoGuard('compras-transferencias')],
+      },
+      {
+        path: 'compras/transferencias',
+        loadComponent: () =>
+          import('./features/compras/transferencias/transferencias-list.component').then(
+            (m) => m.TransferenciasListComponent,
+          ),
+        canActivate: [permisoGuard('compras-transferencias')],
+      },
+      {
+        path: 'compras/transferencias/nueva',
+        loadComponent: () =>
+          import('./features/compras/transferencias/transferencia-form.component').then(
+            (m) => m.TransferenciaFormComponent,
+          ),
+        canActivate: [permisoGuard('compras-transferencias')],
+      },
+      {
+        path: 'compras/transferencias/:id',
+        loadComponent: () =>
+          import('./features/compras/transferencias/transferencia-detail.component').then(
+            (m) => m.TransferenciaDetailComponent,
+          ),
+        canActivate: [permisoGuard('compras-transferencias')],
+      },
     ],
   },
   { path: '', redirectTo: 'dashboard/inventario', pathMatch: 'full' },

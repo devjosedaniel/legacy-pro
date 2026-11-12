@@ -1,0 +1,98 @@
+@use '../../shared/styles/forms';
+
+:host { display: block; }
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.compras-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+
+  @media (min-width: 640px) {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; }
+  p { font-size: 0.875rem; color: var(--color-text-muted); }
+}
+
+.compras-page__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.alert { margin-bottom: 1rem; }
+
+.compras-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.compras-page__search {
+  flex: 1 1 14rem;
+  input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+}
+
+.compras-page__table-wrap { overflow-x: auto; }
+
+.compras-page__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th {
+    text-align: left;
+    padding: 0.875rem 1.1rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  td {
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+  }
+}
+
+.compras-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.compras-page__muted { display: block; font-size: 0.75rem; color: var(--color-text-light); }
+
+.compras-page__empty {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  h3 { margin-bottom: 0.5rem; }
+  p { color: var(--color-text-muted); margin-bottom: 1rem; }
+}
+
+.badge--anulado { background: #fee2e2; color: #b91c1c; }
+.badge--cxp { background: #e0e7ff; color: #3730a3; }
+.badge--otro { background: #f1f5f9; color: var(--color-text-muted); }

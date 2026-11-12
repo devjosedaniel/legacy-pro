@@ -1,0 +1,84 @@
+<div class="transferencia-detail">
+  <header class="transferencia-detail__header">
+    <a routerLink="/dashboard/compras/transferencias" class="transferencia-detail__back">← Volver</a>
+    <div>
+      <h2>{{ item()?.numero || 'Transferencia' }}</h2>
+      <p>{{ item()?.tipoLabel }}</p>
+    </div>
+  </header>
+
+  @if (successMessage()) {
+    <div class="alert alert--success">{{ successMessage() }}</div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert--error">{{ errorMessage() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="panel transferencia-detail__card"><p>Cargando...</p></div>
+  } @else if (item(); as t) {
+    <div class="transferencia-detail__actions">
+      @if (t.activo && t.valorAplicado === 0) {
+        <button type="button" class="btn btn--outline btn--sm transferencia-detail__danger" (click)="showAnular.set(true)">
+          Anular
+        </button>
+      }
+    </div>
+
+    @if (showAnular()) {
+      <section class="panel transferencia-detail__card">
+        <h3>Anular transferencia</h3>
+        <div class="field">
+          <label for="motivoAnula">Motivo *</label>
+          <textarea id="motivoAnula" rows="3" [(ngModel)]="motivoAnula"></textarea>
+        </div>
+        <div class="transferencia-detail__actions">
+          <button type="button" class="btn btn--outline" (click)="showAnular.set(false)">Cancelar</button>
+          <button type="button" class="btn btn--primary" [disabled]="anulating()" (click)="confirmarAnular()">
+            Confirmar
+          </button>
+        </div>
+      </section>
+    }
+
+    <section class="panel transferencia-detail__card">
+      <div class="transferencia-detail__meta">
+        <div><span>Fecha</span><strong>{{ t.fecha }}</strong></div>
+        <div><span>Tipo</span><strong>{{ t.tipoLabel }}</strong></div>
+        <div><span>Beneficiario</span><strong>{{ t.beneficiario }}</strong></div>
+        <div><span>Banco</span><strong>{{ t.bancoNombre || '—' }}</strong></div>
+        <div><span>Referencia</span><strong>{{ t.referenciaBanco || '—' }}</strong></div>
+        <div><span>Estado</span>
+          @if (!t.activo) { <strong class="badge badge--anulado">Anulada</strong> }
+          @else { <strong>Activa</strong> }
+        </div>
+      </div>
+      <p class="transferencia-detail__motivo"><strong>Motivo:</strong> {{ t.motivo || '—' }}</p>
+      @if (t.motivoAnula) {
+        <p class="transferencia-detail__anula">Anulación: {{ t.motivoAnula }}</p>
+      }
+    </section>
+
+    <section class="panel transferencia-detail__card">
+      <div class="transferencia-detail__totales">
+        <div><span>Monto</span><strong>{{ t.valor | currency:'USD':'symbol':'1.2-2' }}</strong></div>
+        <div><span>Aplicado a CxP</span><strong>{{ t.valorAplicado | currency:'USD':'symbol':'1.2-2' }}</strong></div>
+        <div>
+          <span>Saldo</span>
+          @if (t.aplicaCxp) {
+            <strong>{{ t.saldo | currency:'USD':'symbol':'1.2-2' }}</strong>
+          } @else {
+            <strong>No aplica a CxP</strong>
+          }
+        </div>
+      </div>
+      <p class="field__hint">
+        @if (t.aplicaCxp) {
+          Cuando existan cuentas por pagar, este saldo se podrá imputar a facturas del proveedor.
+        } @else {
+          Caja chica, adelantos y otros no se cruzan con CxP.
+        }
+      </p>
+    </section>
+  }
+</div>

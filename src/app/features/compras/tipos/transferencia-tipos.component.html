@@ -1,0 +1,104 @@
+<div class="compras-page">
+  <header class="compras-page__header">
+    <div>
+      <a routerLink="/dashboard/compras/transferencias" class="transferencia-form__back">← Transferencias</a>
+      <h2>Tipos de transferencia</h2>
+      <p>Nombre y banderas: si pide proveedor y si aplica a cuentas por pagar.</p>
+    </div>
+  </header>
+
+  @if (successMessage()) {
+    <div class="alert alert--success" role="status">{{ successMessage() }}</div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="guardar()" class="panel transferencia-tipos__form" novalidate>
+    <h3>{{ editingId() ? 'Editar tipo' : 'Nuevo tipo' }}</h3>
+    <div class="field-row">
+      <div class="field" [class.field--error]="form.controls.nombre.touched && form.controls.nombre.invalid">
+        <label for="tipoNombre">Nombre *</label>
+        <input id="tipoNombre" type="text" formControlName="nombre" maxlength="80" />
+      </div>
+    </div>
+    <div class="transferencia-tipos__flags">
+      <label class="checkbox">
+        <input type="checkbox" formControlName="requiereProveedor" />
+        <span class="checkbox__mark"></span>
+        Requiere proveedor
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" formControlName="aplicaCxp" />
+        <span class="checkbox__mark"></span>
+        Aplica a CxP
+      </label>
+    </div>
+    <p class="field__hint">
+      Si marcas proveedor, la transferencia pedirá un proveedor. Si marcas CxP, el monto quedará para aplicar a facturas.
+    </p>
+    <footer class="transferencia-tipos__form-actions">
+      @if (editingId()) {
+        <button type="button" class="btn btn--outline" (click)="cancelarEdicion()">Cancelar</button>
+      }
+      <button type="submit" class="btn btn--primary" [disabled]="saving()">
+        @if (saving()) { Guardando... } @else if (editingId()) { Guardar cambios } @else { Crear tipo }
+      </button>
+    </footer>
+  </form>
+
+  @if (loading()) {
+    <div class="compras-page__empty panel"><p>Cargando tipos...</p></div>
+  } @else {
+    <div class="compras-page__table-wrap panel">
+      <table class="compras-page__table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Proveedor</th>
+            <th>CxP</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (tipo of tipos(); track tipo.id) {
+            <tr>
+              <td data-label="Nombre">
+                <strong>{{ tipo.nombre }}</strong>
+                @if (tipo.enUso) {
+                  <span class="compras-page__muted">En uso</span>
+                }
+              </td>
+              <td data-label="Proveedor">
+                <span class="badge" [class.badge--cxp]="tipo.requiereProveedor" [class.badge--otro]="!tipo.requiereProveedor">
+                  {{ tipo.requiereProveedor ? 'Sí' : 'No' }}
+                </span>
+              </td>
+              <td data-label="CxP">
+                <span class="badge" [class.badge--cxp]="tipo.aplicaCxp" [class.badge--otro]="!tipo.aplicaCxp">
+                  {{ tipo.aplicaCxp ? 'Sí' : 'No' }}
+                </span>
+              </td>
+              <td data-label="Estado">
+                @if (tipo.activo) { Activo } @else { <span class="compras-page__muted">Inactivo</span> }
+              </td>
+              <td class="compras-page__actions">
+                <button type="button" class="btn btn--outline btn--sm" (click)="editar(tipo)">Editar</button>
+                @if (tipo.activo) {
+                  <button type="button" class="btn btn--outline btn--sm" (click)="setEstado(tipo, false)">
+                    Desactivar
+                  </button>
+                } @else {
+                  <button type="button" class="btn btn--outline btn--sm" (click)="setEstado(tipo, true)">
+                    Activar
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

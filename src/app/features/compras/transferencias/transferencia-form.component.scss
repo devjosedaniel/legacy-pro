@@ -1,0 +1,23 @@
+@use '../../../shared/styles/forms';
+
+:host { display: block; }
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.transferencia-form__header { margin-bottom: 1.25rem; }
+.transferencia-form__back { display: inline-block; margin-bottom: 0.5rem; color: var(--color-text-muted); }
+.transferencia-form__header h2 { font-size: 1.5rem; font-weight: 700; }
+.transferencia-form__header p { color: var(--color-text-muted); font-size: 0.9rem; }
+.transferencia-form__card { padding: 1.5rem; }
+.transferencia-form__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.alert { margin-bottom: 1rem; }

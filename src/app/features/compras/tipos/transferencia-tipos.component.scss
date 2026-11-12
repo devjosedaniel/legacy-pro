@@ -1,0 +1,31 @@
+@use '../compras-page';
+@use '../../../shared/styles/forms';
+
+.transferencia-form__back {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-muted);
+}
+
+.transferencia-tipos__form {
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+
+  h3 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.transferencia-tipos__flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.transferencia-tipos__form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

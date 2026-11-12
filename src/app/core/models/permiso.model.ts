@@ -103,7 +103,22 @@ export const PERMISO_MODULOS: PermisoModulo[] = [
     id: 'compras',
     nombre: 'Compras',
     icon: 'purchase',
-    paginas: [],
+    paginas: [
+      {
+        id: 711,
+        slug: 'compras-proveedores',
+        nombre: 'Proveedores',
+        route: '/dashboard/compras/proveedores',
+        available: true,
+      },
+      {
+        id: 710,
+        slug: 'compras-transferencias',
+        nombre: 'Transferencias',
+        route: '/dashboard/compras/transferencias',
+        available: true,
+      },
+    ],
   },
   {
     id: 'contabilidad',

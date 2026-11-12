@@ -1,0 +1,87 @@
+<div class="transferencia-form">
+  <header class="transferencia-form__header">
+    <a routerLink="/dashboard/compras/transferencias" class="transferencia-form__back">← Volver</a>
+    <div>
+      <h2>Nueva transferencia</h2>
+      <p>Registra el egreso del banco. Más adelante podrás aplicar pagos, anticipos y abonos a CxP.</p>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="panel transferencia-form__card" novalidate>
+    <div class="field-row">
+      <div class="field" [class.field--error]="form.controls.fecha.touched && form.controls.fecha.invalid">
+        <label for="fecha">Fecha *</label>
+        <input id="fecha" type="date" formControlName="fecha" />
+      </div>
+      <div class="field">
+        <label for="tipo">Tipo *</label>
+        <select id="tipo" formControlName="tipoId" (change)="onTipoChange()">
+          @for (tipo of tipos(); track tipo.id) {
+            <option [value]="tipo.id">{{ tipo.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="field" [class.field--error]="form.controls.valor.touched && form.controls.valor.invalid">
+        <label for="valor">Monto *</label>
+        <input id="valor" type="number" min="0.01" step="0.01" formControlName="valor" />
+      </div>
+    </div>
+
+    @if (requiereProveedor()) {
+      <div class="field" [class.field--error]="form.controls.proveedorId.touched && form.controls.proveedorId.invalid">
+        <label>Proveedor (beneficiario) *</label>
+        <app-search-select
+          formControlName="proveedorId"
+          [options]="proveedorOptions()"
+          placeholder="Seleccionar proveedor"
+          emptyMessage="Sin proveedores"
+        />
+      </div>
+    } @else {
+      <div class="field" [class.field--error]="form.controls.beneficiario.touched && form.controls.beneficiario.invalid">
+        <label for="beneficiario">Beneficiario *</label>
+        <input id="beneficiario" type="text" formControlName="beneficiario" placeholder="Persona, fondo o tercero" />
+      </div>
+    }
+
+    <div class="field">
+      <label for="motivo">Descripción / motivo</label>
+      <textarea id="motivo" rows="3" formControlName="motivo" placeholder="Ej. Anticipo planchas abril, reposición caja chica..."></textarea>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="bancoId">Banco origen</label>
+        <select id="bancoId" formControlName="bancoId">
+          <option value="">Sin especificar</option>
+          @for (banco of bancos(); track banco.id) {
+            <option [value]="banco.id">{{ banco.nombre }}@if (banco.cuenta) { · {{ banco.cuenta }} }</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label for="referenciaBanco">Nº comprobante / referencia</label>
+        <input id="referenciaBanco" type="text" formControlName="referenciaBanco" />
+      </div>
+    </div>
+
+    <p class="field__hint">
+      @if (tipoSeleccionado()?.aplicaCxp) {
+        Este tipo podrá aplicarse a cuentas por pagar cuando exista ese módulo.
+      } @else {
+        Este tipo no se aplica a CxP: queda como egreso libre.
+      }
+    </p>
+
+    <footer class="transferencia-form__footer">
+      <a routerLink="/dashboard/compras/transferencias" class="btn btn--outline">Cancelar</a>
+      <button type="submit" class="btn btn--primary" [disabled]="isSaving()">
+        @if (isSaving()) { Guardando... } @else { Guardar }
+      </button>
+    </footer>
+  </form>
+</div>

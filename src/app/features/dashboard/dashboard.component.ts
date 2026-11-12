@@ -32,6 +32,7 @@ const INVENTARIO_ROUTE_PREFIXES = [
 const SISTEMA_ROUTE_PREFIXES = ['/dashboard/usuarios', '/dashboard/perfiles'] as const;
 const PRODUCCION_ROUTE_PREFIXES = ['/dashboard/produccion'] as const;
 const VENTAS_ROUTE_PREFIXES = ['/dashboard/ventas'] as const;
+const COMPRAS_ROUTE_PREFIXES = ['/dashboard/compras'] as const;
 
 interface PageHeader {
   module: string;
@@ -120,7 +121,25 @@ export class DashboardComponent implements OnInit {
         },
       ],
     },
-    { id: 'compras', label: 'Compras', icon: 'purchase', comingSoon: true },
+    {
+      id: 'compras',
+      label: 'Compras',
+      icon: 'purchase',
+      items: [
+        {
+          label: 'Proveedores',
+          icon: 'users',
+          route: '/dashboard/compras/proveedores',
+          permiso: 'compras-proveedores',
+        },
+        {
+          label: 'Transferencias',
+          icon: 'arrows',
+          route: '/dashboard/compras/transferencias',
+          permiso: 'compras-transferencias',
+        },
+      ],
+    },
     { id: 'contabilidad', label: 'Contabilidad', icon: 'accounting', comingSoon: true },
     { id: 'configuracion', label: 'Configuración', icon: 'settings', comingSoon: true },
     {
@@ -225,6 +244,9 @@ export class DashboardComponent implements OnInit {
     if (this.isVentasRoute(item.route)) {
       return this.isVentasRoute(url);
     }
+    if (this.isComprasRoute(item.route)) {
+      return this.isComprasRoute(url);
+    }
     return url.startsWith(item.route);
   }
 
@@ -256,6 +278,7 @@ export class DashboardComponent implements OnInit {
   private groupIdForUrl(url: string): string | null {
     if (this.isInventarioRoute(url)) return 'inventario';
     if (this.isVentasRoute(url)) return 'ventas';
+    if (this.isComprasRoute(url)) return 'compras';
     if (this.isProduccionRoute(url)) return 'produccion';
     if (this.isSistemaRoute(url)) return 'sistema';
     return null;
@@ -275,6 +298,10 @@ export class DashboardComponent implements OnInit {
 
   private isVentasRoute(url: string): boolean {
     return VENTAS_ROUTE_PREFIXES.some((prefix) => url.startsWith(prefix));
+  }
+
+  private isComprasRoute(url: string): boolean {
+    return COMPRAS_ROUTE_PREFIXES.some((prefix) => url.startsWith(prefix));
   }
 
   private syncDataLoad(url: string): void {
@@ -416,6 +443,34 @@ export class DashboardComponent implements OnInit {
     }
     if (path.startsWith('/dashboard/ventas/cotizaciones')) {
       this.pageHeader.set({ module: 'Ventas', title: 'Cotizaciones' });
+      return;
+    }
+    if (path.startsWith('/dashboard/compras/proveedores/nuevo')) {
+      this.pageHeader.set({ module: 'Compras', title: 'Nuevo proveedor' });
+      return;
+    }
+    if (path.startsWith('/dashboard/compras/proveedores/') && path !== '/dashboard/compras/proveedores') {
+      this.pageHeader.set({ module: 'Compras', title: 'Proveedor' });
+      return;
+    }
+    if (path.startsWith('/dashboard/compras/proveedores')) {
+      this.pageHeader.set({ module: 'Compras', title: 'Proveedores' });
+      return;
+    }
+    if (path.startsWith('/dashboard/compras/tipos')) {
+      this.pageHeader.set({ module: 'Compras', title: 'Tipos de transferencia' });
+      return;
+    }
+    if (path.startsWith('/dashboard/compras/transferencias/nueva')) {
+      this.pageHeader.set({ module: 'Compras', title: 'Nueva transferencia' });
+      return;
+    }
+    if (path.startsWith('/dashboard/compras/transferencias/') && path !== '/dashboard/compras/transferencias') {
+      this.pageHeader.set({ module: 'Compras', title: 'Transferencia' });
+      return;
+    }
+    if (path.startsWith('/dashboard/compras/transferencias') || path.startsWith('/dashboard/compras')) {
+      this.pageHeader.set({ module: 'Compras', title: 'Transferencias' });
       return;
     }
 

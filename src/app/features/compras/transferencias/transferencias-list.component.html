@@ -1,0 +1,136 @@
+<div class="compras-page">
+  <header class="compras-page__header">
+    <div>
+      <h2>Transferencias</h2>
+      <p>Egresos bancarios: pagos, anticipos, adelantos y caja chica.</p>
+    </div>
+    <div class="compras-page__header-actions">
+      <a routerLink="/dashboard/compras/tipos" class="btn btn--outline">Tipos</a>
+      <button type="button" class="btn btn--outline" [disabled]="downloading()" (click)="descargar('pdf')">
+        @if (downloading() === 'pdf') { Generando PDF... } @else { Descargar PDF }
+      </button>
+      <button type="button" class="btn btn--outline" [disabled]="downloading()" (click)="descargar('excel')">
+        @if (downloading() === 'excel') { Generando Excel... } @else { Descargar Excel }
+      </button>
+      <a routerLink="/dashboard/compras/transferencias/nueva" class="btn btn--primary">+ Registrar</a>
+    </div>
+  </header>
+
+  @if (successMessage()) {
+    <div class="alert alert--success" role="status">{{ successMessage() }}</div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <section class="compras-page__filters panel">
+    <div class="compras-page__search">
+      <input
+        type="search"
+        placeholder="Número, motivo o beneficiario"
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+        (keyup.enter)="buscar()"
+      />
+    </div>
+    <div class="field field--inline">
+      <label for="tipoFilter">Tipo</label>
+      <select id="tipoFilter" [value]="tipoFilter()" (change)="onTipo($any($event.target).value)">
+        <option value="">Todos</option>
+        @for (tipo of tipos(); track tipo.id) {
+          <option [value]="tipo.id">{{ tipo.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="field field--inline" style="min-width: 14rem">
+      <label>Proveedor</label>
+      <app-search-select
+        [formControl]="proveedorControl"
+        [options]="proveedorOptions()"
+        placeholder="Todos"
+        emptyMessage="Sin proveedores"
+      />
+    </div>
+    <div class="field field--inline">
+      <label for="estadoFilter">Estado</label>
+      <select id="estadoFilter" [value]="estadoFilter()" (change)="onEstado($any($event.target).value)">
+        <option value="activos">Activas</option>
+        <option value="anulados">Anuladas</option>
+      </select>
+    </div>
+    <div class="field field--inline">
+      <label for="fechaDesde">Desde</label>
+      <input id="fechaDesde" type="date" [value]="fechaDesde()" (change)="onFechaDesde($any($event.target).value)" />
+    </div>
+    <div class="field field--inline">
+      <label for="fechaHasta">Hasta</label>
+      <input id="fechaHasta" type="date" [value]="fechaHasta()" (change)="onFechaHasta($any($event.target).value)" />
+    </div>
+    <button type="button" class="btn btn--outline" (click)="buscar()">Buscar</button>
+  </section>
+
+  @if (loading()) {
+    <div class="compras-page__empty panel"><p>Cargando transferencias...</p></div>
+  } @else if (items().length === 0) {
+    <div class="compras-page__empty panel">
+      <h3>No hay transferencias</h3>
+      <p>Registra un egreso bancario para verlo aquí.</p>
+      <a routerLink="/dashboard/compras/transferencias/nueva" class="btn btn--primary">+ Registrar</a>
+    </div>
+  } @else {
+    <div class="compras-page__table-wrap panel">
+      <table class="compras-page__table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Número</th>
+            <th>Tipo</th>
+            <th>Beneficiario</th>
+            <th>Motivo</th>
+            <th>Monto</th>
+            <th>Saldo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.id) {
+            <tr>
+              <td data-label="Fecha">{{ formatFecha(item.fecha) }}</td>
+              <td data-label="Número">
+                <strong>{{ item.numero }}</strong>
+                @if (!item.activo) {
+                  <span class="compras-page__muted">Anulada</span>
+                }
+              </td>
+              <td data-label="Tipo">
+                <span class="badge" [class.badge--cxp]="item.aplicaCxp" [class.badge--otro]="!item.aplicaCxp">
+                  {{ item.tipoLabel }}
+                </span>
+              </td>
+              <td data-label="Beneficiario">{{ item.beneficiario || item.proveedorNombre || '—' }}</td>
+              <td data-label="Motivo">{{ item.motivo || '—' }}</td>
+              <td data-label="Monto">{{ item.valor | currency:'USD':'symbol':'1.2-2' }}</td>
+              <td data-label="Saldo">
+                @if (item.aplicaCxp) {
+                  {{ item.saldo | currency:'USD':'symbol':'1.2-2' }}
+                } @else {
+                  <span class="compras-page__muted">No aplica a CxP</span>
+                }
+              </td>
+              <td class="compras-page__actions">
+                <a [routerLink]="['/dashboard/compras/transferencias', item.id]" class="btn btn--outline btn--sm">Ver</a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [page]="page()"
+      [pageSize]="pageSize"
+      [total]="total()"
+      itemLabel="transferencias"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+</div>
