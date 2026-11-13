@@ -445,6 +445,10 @@ export class DashboardComponent implements OnInit {
       this.pageHeader.set({ module: 'Ventas', title: 'Cotizaciones' });
       return;
     }
+    if (path.startsWith('/dashboard/compras/proveedores/categorias')) {
+      this.pageHeader.set({ module: 'Compras', title: 'Categorías' });
+      return;
+    }
     if (path.startsWith('/dashboard/compras/proveedores/nuevo')) {
       this.pageHeader.set({ module: 'Compras', title: 'Nuevo proveedor' });
       return;

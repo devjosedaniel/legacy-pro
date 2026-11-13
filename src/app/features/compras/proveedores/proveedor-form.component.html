@@ -1,0 +1,115 @@
+<div class="proveedor-form">
+  <header class="proveedor-form__header">
+    <a routerLink="/dashboard/compras/proveedores" class="proveedor-form__back">← Volver</a>
+    <div>
+      <h2>{{ pageTitle }}</h2>
+      <p>Los datos se guardan en el mismo catálogo de Serflex.</p>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (isLoading()) {
+    <div class="panel proveedor-form__card"><p>Cargando proveedor...</p></div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="proveedor-form__grid" novalidate>
+      <section class="panel proveedor-form__card">
+        <h3>Datos generales</h3>
+        <div class="field" [class.field--error]="form.controls.nombre.touched && form.controls.nombre.invalid">
+          <label for="nombre">Nombre *</label>
+          <input id="nombre" type="text" formControlName="nombre" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="tipoPersona">Tipo de persona *</label>
+            <select id="tipoPersona" formControlName="tipoPersona">
+              @for (tipo of tiposPersona; track tipo.id) {
+                <option [ngValue]="tipo.id">{{ tipo.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label for="identificador">RUC / cédula</label>
+            <input id="identificador" type="text" formControlName="identificador" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="contacto">Contacto</label>
+          <input id="contacto" type="text" formControlName="contacto" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="telefonos">Teléfonos</label>
+            <input id="telefonos" type="text" formControlName="telefonos" />
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" formControlName="email" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="direccion">Dirección</label>
+          <textarea id="direccion" rows="3" formControlName="direccion"></textarea>
+        </div>
+        <div class="field">
+          <label for="descripcion">Descripción</label>
+          <textarea id="descripcion" rows="3" formControlName="descripcion"></textarea>
+        </div>
+      </section>
+
+      <section class="panel proveedor-form__card">
+        <h3>Categorías</h3>
+        <div class="proveedor-form__cats">
+          @for (categoria of categorias(); track categoria.id) {
+            <label class="checkbox">
+              <input
+                type="checkbox"
+                [checked]="isCategoriaSelected(categoria.id)"
+                (change)="toggleCategoria(categoria.id, $any($event.target).checked)"
+              />
+              <span class="checkbox__mark"></span>
+              {{ categoria.nombre }}
+            </label>
+          }
+        </div>
+        @if (categorias().length === 0) {
+          <p class="field__hint">No hay categorías. Puedes crear una abajo.</p>
+        }
+        <div class="field-row proveedor-form__nueva">
+          <div class="field">
+            <label for="nuevaCategoria">Nueva categoría</label>
+            <input
+              id="nuevaCategoria"
+              type="text"
+              [(ngModel)]="nuevaCategoria"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="Ej. Insumos, Planchas..."
+            />
+          </div>
+          <button type="button" class="btn btn--outline" (click)="agregarCategoria()">Agregar</button>
+        </div>
+        @if (nuevasCategorias().length) {
+          <ul class="proveedor-form__nuevas">
+            @for (nombre of nuevasCategorias(); track nombre) {
+              <li>
+                {{ nombre }}
+                <button type="button" class="btn btn--outline btn--sm" (click)="quitarNuevaCategoria(nombre)">
+                  Quitar
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <footer class="proveedor-form__footer">
+        <a routerLink="/dashboard/compras/proveedores" class="btn btn--outline">Cancelar</a>
+        <button type="submit" class="btn btn--primary" [disabled]="isSaving()">
+          @if (isSaving()) { Guardando... } @else { Guardar }
+        </button>
+      </footer>
+    </form>
+  }
+</div>

@@ -281,6 +281,14 @@ export const routes: Routes = [
         canActivate: [permisoGuard('compras-proveedores')],
       },
       {
+        path: 'compras/proveedores/categorias',
+        loadComponent: () =>
+          import('./features/compras/categorias/categorias-list.component').then(
+            (m) => m.CategoriasListComponent,
+          ),
+        canActivate: [permisoGuard('compras-proveedores')],
+      },
+      {
         path: 'compras/proveedores/nuevo',
         loadComponent: () =>
           import('./features/compras/proveedores/proveedor-form.component').then(

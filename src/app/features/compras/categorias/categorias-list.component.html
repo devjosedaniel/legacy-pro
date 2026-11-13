@@ -1,0 +1,80 @@
+<div class="compras-page">
+  <header class="compras-page__header">
+    <div>
+      <a routerLink="/dashboard/compras/proveedores" class="categorias-page__back">← Proveedores</a>
+      <h2>Categorías de proveedor</h2>
+      <p>Clasifican a los proveedores. Si se usan, solo se desactivan.</p>
+    </div>
+  </header>
+
+  @if (successMessage()) {
+    <div class="alert alert--success" role="status">{{ successMessage() }}</div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="guardar()" class="panel categorias-page__form" novalidate>
+    <h3>{{ editingId() ? 'Editar categoría' : 'Nueva categoría' }}</h3>
+    <div class="field" [class.field--error]="form.controls.nombre.touched && form.controls.nombre.invalid">
+      <label for="categoriaNombre">Nombre *</label>
+      <input id="categoriaNombre" type="text" formControlName="nombre" maxlength="80" />
+    </div>
+    <footer class="categorias-page__actions">
+      @if (editingId()) {
+        <button type="button" class="btn btn--outline" (click)="cancelarEdicion()">Cancelar</button>
+      }
+      <button type="submit" class="btn btn--primary" [disabled]="saving()">
+        @if (saving()) { Guardando... } @else if (editingId()) { Guardar cambios } @else { Crear categoría }
+      </button>
+    </footer>
+  </form>
+
+  @if (loading()) {
+    <div class="compras-page__empty panel"><p>Cargando categorías...</p></div>
+  } @else if (categorias().length === 0) {
+    <div class="compras-page__empty panel">
+      <h3>No hay categorías</h3>
+      <p>Crea la primera para clasificar proveedores.</p>
+    </div>
+  } @else {
+    <div class="compras-page__table-wrap panel">
+      <table class="compras-page__table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (categoria of categorias(); track categoria.id) {
+            <tr>
+              <td data-label="Nombre">
+                <strong>{{ categoria.nombre }}</strong>
+                @if (categoria.enUso) {
+                  <span class="compras-page__muted">En uso</span>
+                }
+              </td>
+              <td data-label="Estado">
+                @if (categoria.activo) { Activo } @else { <span class="compras-page__muted">Inactivo</span> }
+              </td>
+              <td class="compras-page__actions">
+                <button type="button" class="btn btn--outline btn--sm" (click)="editar(categoria)">Editar</button>
+                @if (categoria.activo) {
+                  <button type="button" class="btn btn--outline btn--sm" (click)="setEstado(categoria, false)">
+                    Desactivar
+                  </button>
+                } @else {
+                  <button type="button" class="btn btn--outline btn--sm" (click)="setEstado(categoria, true)">
+                    Activar
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

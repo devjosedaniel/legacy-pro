@@ -1,0 +1,92 @@
+<div class="compras-page">
+  <header class="compras-page__header">
+    <div>
+      <h2>Proveedores</h2>
+      <p>{{ filtered().length }} de {{ proveedores().length }} proveedores activos.</p>
+    </div>
+    <div class="compras-page__header-actions">
+      <a routerLink="/dashboard/compras/proveedores/categorias" class="btn btn--outline">Categorías</a>
+      <a routerLink="/dashboard/compras/proveedores/nuevo" class="btn btn--primary">+ Agregar</a>
+    </div>
+  </header>
+
+  @if (successMessage()) {
+    <div class="alert alert--success" role="status">{{ successMessage() }}</div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <section class="compras-page__filters panel">
+    <div class="compras-page__search">
+      <input
+        type="search"
+        placeholder="Buscar nombre, RUC, contacto o teléfono..."
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+      />
+    </div>
+  </section>
+
+  @if (isLoading()) {
+    <div class="compras-page__empty panel"><p>Cargando proveedores...</p></div>
+  } @else if (filtered().length === 0) {
+    <div class="compras-page__empty panel">
+      <h3>No se encontraron proveedores</h3>
+      <p>Prueba con otra búsqueda o registra un proveedor nuevo.</p>
+      <a routerLink="/dashboard/compras/proveedores/nuevo" class="btn btn--primary">+ Agregar</a>
+    </div>
+  } @else {
+    <div class="compras-page__table-wrap panel">
+      <table class="compras-page__table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Identificación</th>
+            <th>Tipo</th>
+            <th>Contacto</th>
+            <th>Teléfono</th>
+            <th>Email</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (proveedor of filtered(); track proveedor.id) {
+            <tr>
+              <td data-label="Nombre">
+                <strong>{{ proveedor.nombre }}</strong>
+                @if (proveedor.descripcion) {
+                  <span class="compras-page__muted">{{ proveedor.descripcion }}</span>
+                }
+              </td>
+              <td data-label="Identificación">{{ proveedor.identificador || '—' }}</td>
+              <td data-label="Tipo">{{ tipoPersonaNombre(proveedor.tipoPersona) }}</td>
+              <td data-label="Contacto">{{ proveedor.contacto || '—' }}</td>
+              <td data-label="Teléfono">{{ proveedor.telefonos || '—' }}</td>
+              <td data-label="Email">{{ proveedor.email || '—' }}</td>
+              <td class="compras-page__actions">
+                <a [routerLink]="['/dashboard/compras/proveedores', proveedor.id]" class="btn btn--outline btn--sm">
+                  Editar
+                </a>
+                <button type="button" class="btn btn--outline btn--sm" (click)="confirmDelete(proveedor)">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <app-confirm-dialog
+    [open]="confirmOpen()"
+    [loading]="confirmLoading()"
+    title="Eliminar proveedor"
+    message="El proveedor se desactivará y dejará de aparecer en el listado."
+    [highlight]="pendingDelete()?.nombre ?? ''"
+    confirmLabel="Sí, eliminar"
+    (confirmed)="onConfirmDelete()"
+    (cancelled)="onCancelDelete()"
+  />
+</div>

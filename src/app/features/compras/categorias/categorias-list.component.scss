@@ -1,0 +1,24 @@
+@use '../compras-page';
+@use '../../../shared/styles/forms';
+
+.categorias-page__back {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-muted);
+}
+
+.categorias-page__form {
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+
+  h3 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.categorias-page__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
