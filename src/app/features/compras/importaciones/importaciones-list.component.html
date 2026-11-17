@@ -1,0 +1,106 @@
+<div class="compras-page">
+  <header class="compras-page__header">
+    <div>
+      <h2>Importaciones</h2>
+      <p>Costos de nacionalización, gastos y detalle de mercadería.</p>
+    </div>
+    <div class="compras-page__header-actions">
+      <a routerLink="/dashboard/compras/importaciones/nueva" class="btn btn--primary">+ Agregar</a>
+    </div>
+  </header>
+
+  @if (successMessage()) {
+    <div class="alert alert--success" role="status">{{ successMessage() }}</div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <section class="compras-page__filters panel">
+    <div class="field field--inline compras-page__search">
+      <label for="buscarImportacion">Buscar</label>
+      <input
+        id="buscarImportacion"
+        type="search"
+        placeholder="Número, documento o compra"
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+        (keyup.enter)="buscar()"
+      />
+    </div>
+    <button type="button" class="btn btn--outline" (click)="buscar()">Buscar</button>
+  </section>
+
+  @if (loading()) {
+    <div class="compras-page__empty panel"><p>Cargando importaciones...</p></div>
+  } @else if (items().length === 0) {
+    <div class="compras-page__empty panel">
+      <p>No hay importaciones.</p>
+      <a routerLink="/dashboard/compras/importaciones/nueva" class="btn btn--primary">+ Agregar</a>
+    </div>
+  } @else {
+    <div class="compras-page__table-wrap panel">
+      <table class="compras-page__table">
+        <thead>
+          <tr>
+            <th>Importación</th>
+            <th>Fecha arribo</th>
+            <th>Documento</th>
+            <th>Total compra</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.id) {
+            <tr>
+              <td>{{ pad(item.secuencia) }}</td>
+              <td>{{ item.fecha || '—' }}</td>
+              <td>
+                {{ item.docCompra || '—' }}
+                <span class="compras-page__muted">{{ item.compra }}</span>
+              </td>
+              <td>
+                {{ item.totalCompra != null ? (item.totalCompra | currency: 'USD' : 'symbol' : '1.2-2') : '—' }}
+              </td>
+              <td class="compras-page__actions">
+                <a [routerLink]="['/dashboard/compras/importaciones', item.id]" class="btn btn--outline btn--sm">
+                  Ver
+                </a>
+                <button
+                  type="button"
+                  class="btn btn--outline btn--sm"
+                  [disabled]="downloadingId() === item.id"
+                  (click)="downloadPdf(item)"
+                >
+                  {{ downloadingId() === item.id ? 'PDF…' : 'PDF' }}
+                </button>
+                <button type="button" class="btn btn--outline btn--sm" (click)="confirmDelete(item)">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [page]="page()"
+      [pageSize]="pageSize"
+      [total]="total()"
+      itemLabel="importaciones"
+      (pageChange)="cargar($event)"
+    />
+  }
+
+  <app-confirm-dialog
+    [open]="confirmOpen()"
+    [loading]="confirmLoading()"
+    title="Eliminar importación"
+    message="La importación se anulará y dejará de aparecer en el listado."
+    [highlight]="pendingDelete() ? pad(pendingDelete()!.secuencia) : ''"
+    confirmLabel="Sí, eliminar"
+    variant="danger"
+    (confirmed)="onConfirmDelete()"
+    (cancelled)="onCancelDelete()"
+  />
+</div>

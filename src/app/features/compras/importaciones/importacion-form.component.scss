@@ -1,0 +1,68 @@
+@use '../compras-page';
+
+.compras-page__back {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-muted);
+}
+
+.importacion-form__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  @media (min-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.importacion-form__card {
+  padding: 1.25rem 1.5rem;
+
+  h3 {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+  }
+}
+
+.importacion-form__block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+
+  h3 { margin: 0; font-size: 1rem; }
+}
+
+.importacion-form__linea {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem 0.75rem;
+  align-items: end;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--color-border);
+
+  @media (min-width: 900px) {
+    grid-template-columns: minmax(12rem, 1.6fr) 6.5rem 6.5rem 7rem 8rem auto;
+  }
+}
+
+.importacion-form__total-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.9rem;
+}
+
+.importacion-form__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  position: sticky;
+  bottom: 0;
+  padding: 0.85rem 0 0.25rem;
+  background: var(--color-bg);
+}

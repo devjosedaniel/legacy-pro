@@ -1,0 +1,282 @@
+<div class="compras-page importacion-form">
+  <header class="compras-page__header">
+    <div>
+      <a routerLink="/dashboard/compras/importaciones" class="compras-page__back">← Importaciones</a>
+      <h2>
+        @if (editId()) {
+          Importación {{ pad(secuencia()) }}
+        } @else {
+          Nueva importación
+        }
+      </h2>
+      <p>Costos de compra, nacionalización y mercadería. El producto se escribe a mano.</p>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="panel importacion-form__card"><p>Cargando importación...</p></div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="importacion-form__grid">
+        <section class="panel importacion-form__card">
+          <h3>Datos de compra</h3>
+          <div class="field">
+            <label for="fecha">Fecha arribo *</label>
+            <input id="fecha" type="date" formControlName="fecha" />
+          </div>
+          <div class="field">
+            <label for="doc_compra">Doc *</label>
+            <input id="doc_compra" type="text" formControlName="doc_compra" />
+          </div>
+          <div class="field">
+            <label for="compra">Compra *</label>
+            <input id="compra" type="text" formControlName="compra" />
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="valorcompra">Valor compra *</label>
+              <input id="valorcompra" type="number" min="0" step="0.01" formControlName="valorcompra" />
+            </div>
+            <div class="field">
+              <label for="porcentajeisd">ISD %</label>
+              <input id="porcentajeisd" type="number" min="0" step="0.01" formControlName="porcentajeisd" />
+            </div>
+            <div class="field">
+              <label for="valorisd">Valor ISD</label>
+              <input id="valorisd" type="number" formControlName="valorisd" readonly />
+            </div>
+          </div>
+          <div class="field">
+            <label for="comision">Comisión *</label>
+            <input id="comision" type="number" min="0" step="0.01" formControlName="comision" />
+          </div>
+        </section>
+
+        <section class="panel importacion-form__card">
+          <h3>Seguro</h3>
+          <div class="field">
+            <label for="doc_seguro">Doc</label>
+            <input id="doc_seguro" type="text" formControlName="doc_seguro" />
+          </div>
+          <div class="field">
+            <label for="seguro">Seguro</label>
+            <input id="seguro" type="text" formControlName="seguro" />
+          </div>
+          <div class="field">
+            <label for="valorseguro">Valor</label>
+            <input id="valorseguro" type="number" min="0" step="0.01" formControlName="valorseguro" />
+          </div>
+        </section>
+
+        <section class="panel importacion-form__card">
+          <h3>Transporte internacional 1</h3>
+          <div class="field">
+            <label for="doc_transint1">Doc</label>
+            <input id="doc_transint1" type="text" formControlName="doc_transint1" />
+          </div>
+          <div class="field">
+            <label for="transint1">Transporte</label>
+            <input id="transint1" type="text" formControlName="transint1" />
+          </div>
+          <div class="field">
+            <label for="valortransint1">Valor</label>
+            <input id="valortransint1" type="number" min="0" step="0.01" formControlName="valortransint1" />
+          </div>
+        </section>
+
+        <section class="panel importacion-form__card">
+          <h3>Transporte internacional 2</h3>
+          <div class="field">
+            <label for="doc_transint2">Doc</label>
+            <input id="doc_transint2" type="text" formControlName="doc_transint2" />
+          </div>
+          <div class="field">
+            <label for="transint2">Transporte</label>
+            <input id="transint2" type="text" formControlName="transint2" />
+          </div>
+          <div class="field">
+            <label for="valortransint2">Valor</label>
+            <input id="valortransint2" type="number" min="0" step="0.01" formControlName="valortransint2" />
+          </div>
+        </section>
+
+        <section class="panel importacion-form__card">
+          <h3>Aduana</h3>
+          <div class="field">
+            <label for="doc_arancel">Doc</label>
+            <input id="doc_arancel" type="text" formControlName="doc_arancel" />
+          </div>
+          <div class="field">
+            <label for="info_arancel">Información</label>
+            <input id="info_arancel" type="text" formControlName="info_arancel" />
+          </div>
+          <div class="field">
+            <label for="arancel">Arancel</label>
+            <input id="arancel" type="number" min="0" step="0.01" formControlName="arancel" />
+          </div>
+        </section>
+
+        <section class="panel importacion-form__card">
+          <h3>Almacenaje 1</h3>
+          <div class="field">
+            <label for="doc_almacenaje1">Doc</label>
+            <input id="doc_almacenaje1" type="text" formControlName="doc_almacenaje1" />
+          </div>
+          <div class="field">
+            <label for="almacenaje1">Almacenaje</label>
+            <input id="almacenaje1" type="text" formControlName="almacenaje1" />
+          </div>
+          <div class="field">
+            <label for="valoralmacenaje1">Valor</label>
+            <input id="valoralmacenaje1" type="number" min="0" step="0.01" formControlName="valoralmacenaje1" />
+          </div>
+        </section>
+
+        <section class="panel importacion-form__card">
+          <h3>Almacenaje 2</h3>
+          <div class="field">
+            <label for="doc_almacenaje2">Doc</label>
+            <input id="doc_almacenaje2" type="text" formControlName="doc_almacenaje2" />
+          </div>
+          <div class="field">
+            <label for="almacenaje2">Almacenaje</label>
+            <input id="almacenaje2" type="text" formControlName="almacenaje2" />
+          </div>
+          <div class="field">
+            <label for="valoralmacenaje2">Valor</label>
+            <input id="valoralmacenaje2" type="number" min="0" step="0.01" formControlName="valoralmacenaje2" />
+          </div>
+        </section>
+
+        <section class="panel importacion-form__card">
+          <h3>Transporte nacional</h3>
+          <div class="field">
+            <label for="doc_transnac">Doc</label>
+            <input id="doc_transnac" type="text" formControlName="doc_transnac" />
+          </div>
+          <div class="field">
+            <label for="transnac">Transporte</label>
+            <input id="transnac" type="text" formControlName="transnac" />
+          </div>
+          <div class="field">
+            <label for="valortransnac">Valor</label>
+            <input id="valortransnac" type="number" min="0" step="0.01" formControlName="valortransnac" />
+          </div>
+        </section>
+
+        <section class="panel importacion-form__card">
+          <h3>Agente aduana</h3>
+          <div class="field">
+            <label for="doc_agente">Doc</label>
+            <input id="doc_agente" type="text" formControlName="doc_agente" />
+          </div>
+          <div class="field">
+            <label for="agente">Agente</label>
+            <input id="agente" type="text" formControlName="agente" />
+          </div>
+          <div class="field">
+            <label for="valoragente">Valor</label>
+            <input id="valoragente" type="number" min="0" step="0.01" formControlName="valoragente" />
+          </div>
+        </section>
+      </div>
+
+      <section class="panel importacion-form__card">
+        <div class="importacion-form__block-head">
+          <h3>Detalles</h3>
+          <button type="button" class="btn btn--outline btn--sm" (click)="agregarDetalle()">+ Línea</button>
+        </div>
+        <p class="field__hint">Escribe el producto o plancha. Ya no se elige de un catálogo.</p>
+        @for (linea of detalles.controls; track $index; let i = $index) {
+          <div class="importacion-form__linea" [formGroup]="lineaGroup(i)">
+            <div class="field importacion-form__desc">
+              <label>Producto / descripción *</label>
+              <input type="text" formControlName="descripcion" placeholder="Ej. Plancha 2.5 mm" />
+            </div>
+            <div class="field">
+              <label>Ancho</label>
+              <input type="number" min="0" step="0.01" formControlName="ancho" />
+            </div>
+            <div class="field">
+              <label>Alto</label>
+              <input type="number" min="0" step="0.01" formControlName="alto" />
+            </div>
+            <div class="field">
+              <label>Unidades</label>
+              <input type="number" min="0" step="1" formControlName="unidades" />
+            </div>
+            <div class="field">
+              <label>Valor FOB</label>
+              <input type="number" min="0" step="0.01" formControlName="valorfob" />
+            </div>
+            <button
+              type="button"
+              class="btn btn--ghost btn--sm"
+              [disabled]="detalles.length === 1"
+              (click)="quitarDetalle(i)"
+            >
+              Quitar
+            </button>
+          </div>
+        }
+      </section>
+
+      <div class="importacion-form__grid">
+        <section class="panel importacion-form__card">
+          <h3>Totales</h3>
+          <p class="importacion-form__total-line">
+            Total compra
+            <strong>{{ form.controls.total_compra.value | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
+          </p>
+          <p class="importacion-form__total-line">
+            Total ctas por pagar
+            <strong>{{ form.controls.total_ctacobrar.value | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
+          </p>
+          <p class="importacion-form__total-line">
+            Gastos
+            <strong>{{ form.controls.gastos.value | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
+          </p>
+          <p class="importacion-form__total-line">
+            % gastos
+            <strong>{{ form.controls.porcentaje_gastos.value }}%</strong>
+          </p>
+        </section>
+
+        <section class="panel importacion-form__card">
+          <h3>Pagos</h3>
+          <div class="field">
+            <label for="pago1">{{ form.controls.almacenaje1.value || 'Pago 1' }}</label>
+            <input id="pago1" type="number" min="0" step="0.01" formControlName="pago1" />
+          </div>
+          <div class="field">
+            <label for="pago2">{{ form.controls.transnac.value || 'Pago 2' }}</label>
+            <input id="pago2" type="number" min="0" step="0.01" formControlName="pago2" />
+          </div>
+          <div class="field">
+            <label for="pago3">{{ form.controls.agente.value || 'Pago 3' }}</label>
+            <input id="pago3" type="number" min="0" step="0.01" formControlName="pago3" />
+          </div>
+          <div class="field">
+            <label for="transferencia">Transferencia</label>
+            <input id="transferencia" type="number" min="0" step="0.01" formControlName="transferencia" />
+          </div>
+        </section>
+      </div>
+
+      <footer class="importacion-form__footer">
+        <a routerLink="/dashboard/compras/importaciones" class="btn btn--outline">Cancelar</a>
+        <button type="submit" class="btn btn--primary" [disabled]="saving()">
+          @if (saving()) {
+            Guardando...
+          } @else {
+            Guardar
+          }
+        </button>
+      </footer>
+    </form>
+  }
+</div>
