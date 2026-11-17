@@ -16,7 +16,7 @@
             Registra un ingreso del proveedor con uno o varios productos.
           }
         } @else {
-          Registra salidas, consignación y devolución de planchas del cliente.
+          Registra salidas, devolución al proveedor, consignación y planchas del cliente.
         }
       </p>
     </div>
@@ -101,7 +101,7 @@
 
       @if (showProveedorSelect()) {
         <div class="field" [class.field--error]="form.controls.proveedorId.touched && form.controls.proveedorId.invalid">
-          <label for="proveedor">Proveedor *</label>
+          <label for="proveedor">{{ tipoSeleccionado() === 'devolucion_proveedor' ? 'Proveedor a devolver *' : 'Proveedor *' }}</label>
           <app-search-select
             inputId="proveedor"
             formControlName="proveedorId"
@@ -112,6 +112,9 @@
           />
           @if (form.controls.proveedorId.touched && form.controls.proveedorId.invalid) {
             <span class="field__error">Selecciona un proveedor</span>
+          }
+          @if (tipoSeleccionado() === 'devolucion_proveedor') {
+            <span class="field__hint">Sale de stock propio. Luego puedes descargar la nota para el proveedor.</span>
           }
         </div>
       }

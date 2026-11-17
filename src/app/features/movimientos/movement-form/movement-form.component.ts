@@ -101,13 +101,15 @@ export class MovementFormComponent implements OnInit {
   );
 
   protected readonly showProveedorSelect = computed(() => {
-    if (this.direccion() !== 'subida') return false;
-    return this.tipoSeleccionado() !== 'entrada_cliente';
+    const tipo = this.tipoSeleccionado();
+    if (tipo === 'entrada_cliente') return false;
+    if (this.direccion() === 'subida') return true;
+    return tipo === 'devolucion_proveedor';
   });
 
   protected readonly showProveedorReadonly = computed(() => {
     const tipo = this.form.controls.tipo.value;
-    return this.isBajada() && !!tipo && requiresProveedor(tipo);
+    return this.isBajada() && !!tipo && requiresProveedor(tipo) && tipo !== 'devolucion_proveedor';
   });
 
   protected readonly proveedoresDisponibles = this.proveedorService.all;
@@ -479,6 +481,7 @@ export class MovementFormComponent implements OnInit {
       cantidad: raw.cantidad,
       numeroLote: raw.numeroLote || selectedLote?.numeroLote || 'S/N',
       loteId: selectedLote?.loteId,
+      proveedorId: raw.proveedorId || undefined,
       proveedor: raw.proveedor || undefined,
       documentoRef: raw.documentoRef || undefined,
       motivo: raw.motivo || undefined,
@@ -669,6 +672,10 @@ export class MovementFormComponent implements OnInit {
     } else if (!requiresProveedor(this.form.controls.tipo.value)) {
       this.form.controls.proveedor.reset('', this.silentValidity);
     }
+
+    if (this.form.controls.tipo.value === 'devolucion_proveedor' && lote.proveedorId) {
+      this.form.controls.proveedorId.setValue(lote.proveedorId, this.silentValidity);
+    }
   }
 
   private updateValidators(): void {
@@ -708,8 +715,12 @@ export class MovementFormComponent implements OnInit {
     }
 
     fecha.setValidators(isSubida && this.lineasRequierenLote() ? [Validators.required] : []);
-    proveedorId.setValidators(isSubida && tipo !== 'entrada_cliente' ? [Validators.required] : []);
-    proveedor.setValidators(isBajada && tipo && requiresProveedor(tipo) ? [Validators.required] : []);
+    proveedorId.setValidators(
+      (isSubida && tipo !== 'entrada_cliente') || tipo === 'devolucion_proveedor' ? [Validators.required] : [],
+    );
+    proveedor.setValidators(
+      isBajada && tipo && requiresProveedor(tipo) && tipo !== 'devolucion_proveedor' ? [Validators.required] : [],
+    );
 
     for (let i = 0; i < this.lineas.length; i++) {
       const linea = this.lineas.at(i);

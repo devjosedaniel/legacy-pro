@@ -280,6 +280,10 @@ export class MovementService {
       return lotes.filter((l) => l.stockTipo === 'consignacion');
     }
 
+    if (tipo === 'devolucion_proveedor') {
+      return lotes.filter((l) => l.stockTipo === 'propio');
+    }
+
     if (tipo === 'devolucion_cliente') {
       return lotes.filter((l) => l.stockTipo === 'cliente');
     }

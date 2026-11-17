@@ -10,6 +10,7 @@ export type MovementType =
   | 'entrada_consignacion'
   | 'entrada_cliente'
   | 'devolucion_consignacion'
+  | 'devolucion_proveedor'
   | 'devolucion_cliente'
   | 'compra_consignacion'
   | 'ajuste_entrada'
@@ -127,6 +128,7 @@ export const MOVEMENT_LABELS: Record<MovementType, string> = {
   entrada_consignacion: 'Entrada en consignación',
   entrada_cliente: 'Entrada planchas del cliente',
   devolucion_consignacion: 'Devolución de consignación',
+  devolucion_proveedor: 'Devolución a proveedor',
   devolucion_cliente: 'Devolución planchas del cliente',
   compra_consignacion: 'Compra de consignación',
   ajuste_entrada: 'Ajuste positivo',
@@ -140,6 +142,7 @@ export const MOVEMENT_DIRECTION: Record<MovementType, MovementDirection> = {
   ajuste_entrada: 'subida',
   salida_uso: 'bajada',
   devolucion_consignacion: 'bajada',
+  devolucion_proveedor: 'bajada',
   devolucion_cliente: 'bajada',
   compra_consignacion: 'bajada',
   ajuste_salida: 'bajada',
@@ -154,6 +157,7 @@ export const TIPOS_SUBIDA: MovementType[] = [
 
 export const TIPOS_BAJADA: MovementType[] = [
   'salida_uso',
+  'devolucion_proveedor',
   'devolucion_consignacion',
   'devolucion_cliente',
   'compra_consignacion',
@@ -167,18 +171,25 @@ export const STOCK_TIPO_BY_TYPE: Record<MovementType, StockTipo> = {
   entrada_cliente: 'cliente',
   salida_uso: 'propio',
   ajuste_salida: 'propio',
+  devolucion_proveedor: 'propio',
   devolucion_consignacion: 'consignacion',
   devolucion_cliente: 'cliente',
   compra_consignacion: 'consignacion',
 };
 
 export function requiresProveedor(tipo: MovementType): boolean {
-  return tipo === 'entrada_consignacion' || tipo === 'devolucion_consignacion' || tipo === 'compra_consignacion';
+  return (
+    tipo === 'entrada_consignacion' ||
+    tipo === 'devolucion_consignacion' ||
+    tipo === 'devolucion_proveedor' ||
+    tipo === 'compra_consignacion'
+  );
 }
 
 /** Tipos que generan nota de devolución para entregar al proveedor o cliente. */
 export const TIPOS_DEVOLUCION_PDF: MovementType[] = [
   'devolucion_consignacion',
+  'devolucion_proveedor',
   'devolucion_cliente',
   'ajuste_salida',
 ];

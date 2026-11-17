@@ -168,6 +168,7 @@ export function mapLote(api: ApiLoteStock): LoteStock {
     fechaExpiracion: api.fechaExpiracion,
     stockTipo: api.stockTipo,
     proveedor: api.proveedor,
+    proveedorId: api.proveedorId ?? undefined,
     cantidad: api.cantidad,
     loteId: api.loteId,
   };

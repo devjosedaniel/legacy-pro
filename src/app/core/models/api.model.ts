@@ -38,6 +38,7 @@ export interface ApiLoteStock {
   fechaExpiracion?: string;
   stockTipo: StockTipo;
   proveedor?: string;
+  proveedorId?: string | null;
   cantidad: number;
   loteId?: number;
 }
