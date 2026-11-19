@@ -1,0 +1,43 @@
+@use '../../../shared/styles/forms';
+
+:host { display: block; }
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.sri-detail__header { margin-bottom: 1rem; }
+.sri-detail__back { display: inline-block; margin-bottom: 0.5rem; color: var(--color-text-muted); }
+.sri-detail__header h2 { font-size: 1.5rem; font-weight: 700; }
+.sri-detail__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.sri-detail__card { padding: 1.25rem; margin-bottom: 1rem; }
+.sri-detail__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  span { display: block; font-size: 0.75rem; color: var(--color-text-muted); }
+}
+.sri-detail__clave { margin-top: 1rem; font-size: 0.8rem; word-break: break-all; color: var(--color-text-muted); }
+.sri-detail__hint { margin: 0.25rem 0 0.75rem; font-size: 0.8rem; color: var(--color-text-muted); }
+.sri-detail__clave-cell { font-size: 0.75rem; word-break: break-all; max-width: 18rem; }
+.sri-detail__error { margin-top: 0.5rem; color: #b91c1c; }
+.sri-detail__table-wrap { overflow-x: auto; }
+.sri-detail__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  th, td { padding: 0.5rem; border-bottom: 1px solid var(--color-border); text-align: left; }
+}
+.sri-detail__total { margin-top: 1rem; text-align: right; font-weight: 600; }
+.sri-detail__factura-row { cursor: pointer; }
+.sri-detail__factura-row--sel td { background: #ecfdf5; }
+.alert { margin-bottom: 1rem; }
+.badge { display: inline-block; padding: 0.15rem 0.4rem; border-radius: 4px; }
+.badge[data-sri='autorizado'] { background: #d1fae5; color: #047857; }
+.badge[data-sri='pendiente'] { background: #fef3c7; color: #b45309; }
+.badge[data-sri='no-encontrado'] { background: #e0e7ff; color: #3730a3; }
+.badge[data-sri='no-autorizado'],
+.badge[data-sri='error'] { background: #fee2e2; color: #b91c1c; }

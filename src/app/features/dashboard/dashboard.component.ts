@@ -33,6 +33,7 @@ const SISTEMA_ROUTE_PREFIXES = ['/dashboard/usuarios', '/dashboard/perfiles'] as
 const PRODUCCION_ROUTE_PREFIXES = ['/dashboard/produccion'] as const;
 const VENTAS_ROUTE_PREFIXES = ['/dashboard/ventas'] as const;
 const COMPRAS_ROUTE_PREFIXES = ['/dashboard/compras'] as const;
+const CONTABILIDAD_ROUTE_PREFIXES = ['/dashboard/contabilidad'] as const;
 
 interface PageHeader {
   module: string;
@@ -127,6 +128,12 @@ export class DashboardComponent implements OnInit {
       icon: 'purchase',
       items: [
         {
+          label: 'Órdenes de compra',
+          icon: 'purchase',
+          route: '/dashboard/compras/ordenes',
+          permiso: 'compras-ordenes',
+        },
+        {
           label: 'Proveedores',
           icon: 'users',
           route: '/dashboard/compras/proveedores',
@@ -138,9 +145,27 @@ export class DashboardComponent implements OnInit {
           route: '/dashboard/compras/transferencias',
           permiso: 'compras-transferencias',
         },
+        {
+          label: 'Importaciones',
+          icon: 'purchase',
+          route: '/dashboard/compras/importaciones',
+          permiso: 'compras-importaciones',
+        },
       ],
     },
-    { id: 'contabilidad', label: 'Contabilidad', icon: 'accounting', comingSoon: true },
+    {
+      id: 'contabilidad',
+      label: 'Contabilidad',
+      icon: 'accounting',
+      items: [
+        {
+          label: 'Comprobantes recibidos',
+          icon: 'chart',
+          route: '/dashboard/contabilidad/recibidos',
+          permiso: 'sri-recibidos',
+        },
+      ],
+    },
     { id: 'configuracion', label: 'Configuración', icon: 'settings', comingSoon: true },
     {
       id: 'sistema',
@@ -279,6 +304,7 @@ export class DashboardComponent implements OnInit {
     if (this.isInventarioRoute(url)) return 'inventario';
     if (this.isVentasRoute(url)) return 'ventas';
     if (this.isComprasRoute(url)) return 'compras';
+    if (this.isContabilidadRoute(url)) return 'contabilidad';
     if (this.isProduccionRoute(url)) return 'produccion';
     if (this.isSistemaRoute(url)) return 'sistema';
     return null;
@@ -302,6 +328,10 @@ export class DashboardComponent implements OnInit {
 
   private isComprasRoute(url: string): boolean {
     return COMPRAS_ROUTE_PREFIXES.some((prefix) => url.startsWith(prefix));
+  }
+
+  private isContabilidadRoute(url: string): boolean {
+    return CONTABILIDAD_ROUTE_PREFIXES.some((prefix) => url.startsWith(prefix));
   }
 
   private syncDataLoad(url: string): void {
@@ -445,6 +475,22 @@ export class DashboardComponent implements OnInit {
       this.pageHeader.set({ module: 'Ventas', title: 'Cotizaciones' });
       return;
     }
+    if (path.startsWith('/dashboard/compras/ordenes/nueva')) {
+      this.pageHeader.set({ module: 'Compras', title: 'Nueva orden de compra' });
+      return;
+    }
+    if (path.includes('/compras/ordenes/') && path.endsWith('/editar')) {
+      this.pageHeader.set({ module: 'Compras', title: 'Editar orden de compra' });
+      return;
+    }
+    if (path.startsWith('/dashboard/compras/ordenes/') && path !== '/dashboard/compras/ordenes') {
+      this.pageHeader.set({ module: 'Compras', title: 'Orden de compra' });
+      return;
+    }
+    if (path.startsWith('/dashboard/compras/ordenes')) {
+      this.pageHeader.set({ module: 'Compras', title: 'Órdenes de compra' });
+      return;
+    }
     if (path.startsWith('/dashboard/compras/proveedores/categorias')) {
       this.pageHeader.set({ module: 'Compras', title: 'Categorías' });
       return;
@@ -465,6 +511,18 @@ export class DashboardComponent implements OnInit {
       this.pageHeader.set({ module: 'Compras', title: 'Tipos de transferencia' });
       return;
     }
+    if (path.startsWith('/dashboard/compras/importaciones/nueva')) {
+      this.pageHeader.set({ module: 'Compras', title: 'Nueva importación' });
+      return;
+    }
+    if (path.startsWith('/dashboard/compras/importaciones/') && path !== '/dashboard/compras/importaciones') {
+      this.pageHeader.set({ module: 'Compras', title: 'Importación' });
+      return;
+    }
+    if (path.startsWith('/dashboard/compras/importaciones')) {
+      this.pageHeader.set({ module: 'Compras', title: 'Importaciones' });
+      return;
+    }
     if (path.startsWith('/dashboard/compras/transferencias/nueva')) {
       this.pageHeader.set({ module: 'Compras', title: 'Nueva transferencia' });
       return;
@@ -475,6 +533,18 @@ export class DashboardComponent implements OnInit {
     }
     if (path.startsWith('/dashboard/compras/transferencias') || path.startsWith('/dashboard/compras')) {
       this.pageHeader.set({ module: 'Compras', title: 'Transferencias' });
+      return;
+    }
+    if (path.startsWith('/dashboard/contabilidad/recibidos/importar')) {
+      this.pageHeader.set({ module: 'Contabilidad', title: 'Importar comprobantes' });
+      return;
+    }
+    if (path.match(/^\/dashboard\/contabilidad\/recibidos\/\d+/)) {
+      this.pageHeader.set({ module: 'Contabilidad', title: 'Comprobante recibido' });
+      return;
+    }
+    if (path.startsWith('/dashboard/contabilidad')) {
+      this.pageHeader.set({ module: 'Contabilidad', title: 'Comprobantes recibidos' });
       return;
     }
 

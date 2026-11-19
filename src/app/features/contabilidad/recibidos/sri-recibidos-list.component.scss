@@ -1,0 +1,27 @@
+@use '../../compras/compras-page';
+
+.sri-list__filter--sm {
+  flex-basis: 11rem;
+  max-width: 13rem;
+}
+
+.sri-list__row {
+  cursor: pointer;
+
+  &:hover td {
+    background: var(--color-bg);
+  }
+}
+
+.sri-list__ingresar {
+  display: inline-block;
+  margin-left: 0.5rem;
+}
+
+.badge { display: inline-block; padding: 0.15rem 0.4rem; border-radius: 4px; }
+.badge[data-sri='autorizado'] { background: #d1fae5; color: #047857; }
+.badge[data-sri='pendiente'],
+.badge[data-sri='consultando'] { background: #fef3c7; color: #b45309; }
+.badge[data-sri='no-encontrado'] { background: #e0e7ff; color: #3730a3; }
+.badge[data-sri='no-autorizado'],
+.badge[data-sri='error'] { background: #fee2e2; color: #b91c1c; }

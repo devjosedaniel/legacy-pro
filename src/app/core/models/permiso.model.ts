@@ -105,6 +105,13 @@ export const PERMISO_MODULOS: PermisoModulo[] = [
     icon: 'purchase',
     paginas: [
       {
+        id: 712,
+        slug: 'compras-ordenes',
+        nombre: 'Órdenes de compra',
+        route: '/dashboard/compras/ordenes',
+        available: true,
+      },
+      {
         id: 711,
         slug: 'compras-proveedores',
         nombre: 'Proveedores',
@@ -118,13 +125,28 @@ export const PERMISO_MODULOS: PermisoModulo[] = [
         route: '/dashboard/compras/transferencias',
         available: true,
       },
+      {
+        id: 405,
+        slug: 'compras-importaciones',
+        nombre: 'Importaciones',
+        route: '/dashboard/compras/importaciones',
+        available: true,
+      },
     ],
   },
   {
     id: 'contabilidad',
     nombre: 'Contabilidad',
     icon: 'accounting',
-    paginas: [],
+    paginas: [
+      {
+        id: 720,
+        slug: 'sri-recibidos',
+        nombre: 'Comprobantes recibidos',
+        route: '/dashboard/contabilidad/recibidos',
+        available: true,
+      },
+    ],
   },
   {
     id: 'talento-humano',

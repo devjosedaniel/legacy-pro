@@ -85,6 +85,7 @@
 }
 
 .checkbox {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -96,8 +97,10 @@
   input {
     position: absolute;
     opacity: 0;
-    width: 0;
-    height: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    appearance: none;
   }
 }
 

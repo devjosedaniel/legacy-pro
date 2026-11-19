@@ -271,7 +271,39 @@ export const routes: Routes = [
           ),
         canActivate: [permisoGuard('produccion-guias-remision')],
       },
-      { path: 'compras', redirectTo: 'compras/proveedores', pathMatch: 'full' },
+      { path: 'compras', redirectTo: 'compras/ordenes', pathMatch: 'full' },
+      {
+        path: 'compras/ordenes',
+        loadComponent: () =>
+          import('./features/compras/ordenes/ordenes-compra-list.component').then(
+            (m) => m.OrdenesCompraListComponent,
+          ),
+        canActivate: [permisoGuard('compras-ordenes')],
+      },
+      {
+        path: 'compras/ordenes/nueva',
+        loadComponent: () =>
+          import('./features/compras/ordenes/orden-compra-form.component').then(
+            (m) => m.OrdenCompraFormComponent,
+          ),
+        canActivate: [permisoGuard('compras-ordenes')],
+      },
+      {
+        path: 'compras/ordenes/:id/editar',
+        loadComponent: () =>
+          import('./features/compras/ordenes/orden-compra-form.component').then(
+            (m) => m.OrdenCompraFormComponent,
+          ),
+        canActivate: [permisoGuard('compras-ordenes')],
+      },
+      {
+        path: 'compras/ordenes/:id',
+        loadComponent: () =>
+          import('./features/compras/ordenes/orden-compra-detail.component').then(
+            (m) => m.OrdenCompraDetailComponent,
+          ),
+        canActivate: [permisoGuard('compras-ordenes')],
+      },
       {
         path: 'compras/proveedores',
         loadComponent: () =>
@@ -335,6 +367,55 @@ export const routes: Routes = [
             (m) => m.TransferenciaDetailComponent,
           ),
         canActivate: [permisoGuard('compras-transferencias')],
+      },
+      {
+        path: 'compras/importaciones',
+        loadComponent: () =>
+          import('./features/compras/importaciones/importaciones-list.component').then(
+            (m) => m.ImportacionesListComponent,
+          ),
+        canActivate: [permisoGuard('compras-importaciones')],
+      },
+      {
+        path: 'compras/importaciones/nueva',
+        loadComponent: () =>
+          import('./features/compras/importaciones/importacion-form.component').then(
+            (m) => m.ImportacionFormComponent,
+          ),
+        canActivate: [permisoGuard('compras-importaciones')],
+      },
+      {
+        path: 'compras/importaciones/:id',
+        loadComponent: () =>
+          import('./features/compras/importaciones/importacion-form.component').then(
+            (m) => m.ImportacionFormComponent,
+          ),
+        canActivate: [permisoGuard('compras-importaciones')],
+      },
+      { path: 'contabilidad', redirectTo: 'contabilidad/recibidos', pathMatch: 'full' },
+      {
+        path: 'contabilidad/recibidos',
+        loadComponent: () =>
+          import('./features/contabilidad/recibidos/sri-recibidos-list.component').then(
+            (m) => m.SriRecibidosListComponent,
+          ),
+        canActivate: [permisoGuard('sri-recibidos')],
+      },
+      {
+        path: 'contabilidad/recibidos/importar',
+        loadComponent: () =>
+          import('./features/contabilidad/recibidos/sri-recibido-import.component').then(
+            (m) => m.SriRecibidoImportComponent,
+          ),
+        canActivate: [permisoGuard('sri-recibidos')],
+      },
+      {
+        path: 'contabilidad/recibidos/:id',
+        loadComponent: () =>
+          import('./features/contabilidad/recibidos/sri-recibido-detail.component').then(
+            (m) => m.SriRecibidoDetailComponent,
+          ),
+        canActivate: [permisoGuard('sri-recibidos')],
       },
     ],
   },

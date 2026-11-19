@@ -1,0 +1,224 @@
+<div class="sri-detail">
+  <header class="sri-detail__header">
+    <a routerLink="/dashboard/contabilidad/recibidos" class="sri-detail__back">← Comprobantes recibidos</a>
+    <div>
+      <h2>{{ item()?.tipoNombre || 'Comprobante' }} {{ item()?.numero || '' }}</h2>
+      <p>{{ item()?.razonSocialEmisor || 'Consulta el SRI para ver el emisor' }}</p>
+    </div>
+  </header>
+
+  @if (successMessage()) {
+    <div class="alert alert--success" role="status">{{ successMessage() }}</div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="panel sri-detail__card"><p>Cargando comprobante...</p></div>
+  } @else if (item(); as doc) {
+    <div class="sri-detail__actions">
+      <button type="button" class="btn btn--outline btn--sm" [disabled]="consulting()" (click)="consultar()">
+        {{ consulting() ? 'Consultando…' : 'Volver a consultar SRI' }}
+      </button>
+      <button type="button" class="btn btn--outline btn--sm" [disabled]="!doc.tieneXml || downloading() === 'xml'" (click)="download('xml')">
+        {{ downloading() === 'xml' ? 'Descargando…' : 'Descargar XML' }}
+      </button>
+      <button type="button" class="btn btn--primary btn--sm" [disabled]="downloading() === 'pdf'" (click)="download('pdf')">
+        {{ downloading() === 'pdf' ? 'Generando…' : 'Descargar PDF' }}
+      </button>
+      @if (esRetencion(doc)) {
+        <button type="button" class="btn btn--primary btn--sm" [disabled]="!puedeIngresar(doc) || ingresando()" (click)="ingresar()">
+          {{ ingresando() ? 'Ingresando…' : 'Ingresar retención' }}
+        </button>
+      }
+    </div>
+
+    <section class="panel sri-detail__card">
+      <div class="sri-detail__meta">
+        <div>
+          <span>Estado</span>
+          <strong class="badge" [attr.data-sri]="estadoSlug(doc.estado)">{{ doc.estado }}</strong>
+        </div>
+        <div>
+          <span>Fecha emisión</span>
+          <strong>{{ doc.fechaEmision || '—' }}</strong>
+        </div>
+        <div>
+          <span>RUC emisor</span>
+          <strong>{{ doc.rucEmisor || '—' }}</strong>
+        </div>
+        <div>
+          <span>Receptor</span>
+          <strong>{{ doc.rucReceptor || '—' }}</strong>
+        </div>
+        <div>
+          <span>Total</span>
+          <strong>{{ doc.total != null ? (doc.total | currency: 'USD' : 'symbol' : '1.2-2') : '—' }}</strong>
+        </div>
+      </div>
+      <p class="sri-detail__clave">Clave de acceso: {{ doc.claveAcceso }}</p>
+      @if (doc.mensajeError) {
+        <p class="sri-detail__error">{{ doc.mensajeError }}</p>
+      }
+    </section>
+
+    @if (esRetencion(doc) && doc.docsSustento.length) {
+      <section class="panel sri-detail__card">
+        <h3>Documentos de sustento</h3>
+        <p class="sri-detail__hint">Factura o comprobante sobre el que se retuvo. Se busca en Serflex por este número y el RUC del emisor.</p>
+        <div class="sri-detail__table-wrap">
+          <table class="sri-detail__table">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Número</th>
+                <th>Fecha</th>
+                <th>Importe</th>
+                <th>Clave / autorización</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (sustento of doc.docsSustento; track sustento.claveAccesoDoc || sustento.numero) {
+                <tr>
+                  <td>{{ sustento.tipoDoc || '—' }}</td>
+                  <td>{{ sustento.numero || '—' }}</td>
+                  <td>{{ sustento.fecha || '—' }}</td>
+                  <td>{{ sustento.importeTotal != null ? (sustento.importeTotal | currency: 'USD' : 'symbol' : '1.2-2') : '—' }}</td>
+                  <td class="sri-detail__clave-cell">{{ sustento.claveAccesoDoc || sustento.numAutDoc || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    @if (esRetencion(doc) && doc.facturaVinculo; as vinculo) {
+      <section class="panel sri-detail__card">
+        <h3>Se vinculará con</h3>
+        <p class="sri-detail__hint">{{ vinculo.mensaje }}</p>
+        @if (vinculo.facturas.length === 0) {
+          <p class="sri-detail__error">No hay factura de venta con el RUC {{ doc.rucEmisor }} y el doc. sustento {{ vinculo.docSustento || '—' }}.</p>
+        } @else {
+          <div class="sri-detail__table-wrap">
+            <table class="sri-detail__table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Factura</th>
+                  <th>Cliente</th>
+                  <th>Fecha</th>
+                  <th>Total</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (factura of vinculo.facturas; track factura.id) {
+                  <tr
+                    class="sri-detail__factura-row"
+                    [class.sri-detail__factura-row--sel]="facturaElegidaId() === factura.id"
+                    (click)="elegirFactura(factura.id)"
+                  >
+                    <td>
+                      <input
+                        type="radio"
+                        name="facturaVinculo"
+                        [checked]="facturaElegidaId() === factura.id"
+                        (change)="elegirFactura(factura.id)"
+                      />
+                    </td>
+                    <td>{{ factura.numeroDocumento }}</td>
+                    <td>
+                      {{ factura.cliente || '—' }}
+                      <span class="sri-detail__clave">{{ factura.identificador }}</span>
+                    </td>
+                    <td>{{ factura.fecha || '—' }}</td>
+                    <td>{{ factura.total != null ? (factura.total | currency: 'USD' : 'symbol' : '1.2-2') : '—' }}</td>
+                    <td>
+                      @if (factura.tieneRetencion) {
+                        Ya tiene retención
+                      } @else if (!factura.puedeIngresar) {
+                        {{ factura.motivo }}
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+
+    <section class="panel sri-detail__card">
+      <h3>{{ esRetencion(doc) ? 'Retenciones' : 'Detalle' }}</h3>
+      <div class="sri-detail__table-wrap">
+        @if (esRetencion(doc)) {
+          <table class="sri-detail__table">
+            <thead>
+              <tr>
+                <th>Cód.</th>
+                <th>Impuesto</th>
+                <th>%</th>
+                <th>Base</th>
+                <th>Valor retenido</th>
+                <th>Doc. sustento</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (linea of doc.detalles; track linea.id) {
+                <tr>
+                  <td>{{ linea.codigo }}</td>
+                  <td>{{ linea.impuesto || linea.descripcion }}</td>
+                  <td>{{ linea.porcentaje != null ? linea.porcentaje + '%' : '—' }}</td>
+                  <td>{{ linea.subtotal != null ? (linea.subtotal | currency: 'USD' : 'symbol' : '1.2-2') : '—' }}</td>
+                  <td>{{ linea.total != null ? (linea.total | currency: 'USD' : 'symbol' : '1.2-2') : '—' }}</td>
+                  <td>{{ linea.numeroDoc || '—' }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6">Sin líneas. Consulta el SRI si el comprobante ya está autorizado.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <table class="sri-detail__table">
+            <thead>
+              <tr>
+                <th>Cód.</th>
+                <th>Descripción</th>
+                <th>Cant.</th>
+                <th>P. unit.</th>
+                <th>Desc.</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (linea of doc.detalles; track linea.id) {
+                <tr>
+                  <td>{{ linea.codigo }}</td>
+                  <td>{{ linea.descripcion }}</td>
+                  <td>{{ linea.cantidad }}</td>
+                  <td>{{ linea.precioUnitario }}</td>
+                  <td>{{ linea.descuento }}</td>
+                  <td>{{ linea.subtotal != null ? (linea.subtotal | currency: 'USD' : 'symbol' : '1.2-2') : '—' }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6">Sin líneas. Consulta el SRI si el comprobante ya está autorizado.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+      <p class="sri-detail__total">
+        Subtotal {{ doc.subtotal != null ? (doc.subtotal | currency: 'USD' : 'symbol' : '1.2-2') : '—' }}
+        · IVA {{ doc.iva != null ? (doc.iva | currency: 'USD' : 'symbol' : '1.2-2') : '—' }}
+        · Total {{ doc.total != null ? (doc.total | currency: 'USD' : 'symbol' : '1.2-2') : '—' }}
+      </p>
+    </section>
+  }
+</div>

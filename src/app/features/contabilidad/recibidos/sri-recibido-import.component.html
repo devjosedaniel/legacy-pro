@@ -1,0 +1,40 @@
+<div class="sri-import">
+  <header class="sri-import__header">
+    <a routerLink="/dashboard/contabilidad/recibidos" class="sri-import__back">← Comprobantes recibidos</a>
+    <h2>Importar claves del SRI</h2>
+    <p>
+      En SRI en línea abre <strong>Comprobantes electrónicos recibidos</strong>, elige el mes y usa
+      <strong>Descargar reporte</strong>. Sube ese TXT o Excel, o pega las claves de 49 dígitos.
+    </p>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <section class="panel sri-import__card">
+    <div class="field">
+      <label for="archivoSri">Archivo TXT o Excel</label>
+      <input id="archivoSri" type="file" accept=".txt,.csv,.xls,.xlsx" (change)="onFile($event)" />
+      @if (fileName()) {
+        <span class="sri-import__file">{{ fileName() }}</span>
+      }
+    </div>
+    <div class="field">
+      <label for="clavesSri">Claves (una por línea o pegadas del reporte)</label>
+      <textarea
+        id="clavesSri"
+        rows="8"
+        [value]="claves()"
+        (input)="claves.set($any($event.target).value)"
+        placeholder="1234567890123456789012345678901234567890123456789"
+      ></textarea>
+    </div>
+    <div class="sri-import__actions">
+      <a routerLink="/dashboard/contabilidad/recibidos" class="btn btn--outline">Cancelar</a>
+      <button type="button" class="btn btn--primary" [disabled]="saving()" (click)="importar()">
+        {{ saving() ? 'Importando…' : 'Importar claves' }}
+      </button>
+    </div>
+  </section>
+</div>

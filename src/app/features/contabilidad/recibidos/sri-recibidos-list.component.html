@@ -1,0 +1,148 @@
+<div class="compras-page">
+  <header class="compras-page__header">
+    <div>
+      <h2>Comprobantes recibidos</h2>
+      <p>Importa el TXT/Excel del SRI y consulta el XML autorizado de cada clave.</p>
+    </div>
+    <div class="compras-page__header-actions">
+      @if (errores() > 0 && !enProceso()) {
+        <button type="button" class="btn btn--outline" [disabled]="starting()" (click)="consultarPendientes(true)">
+          Reintentar errores ({{ errores() }})
+        </button>
+      }
+      <button
+        type="button"
+        class="btn btn--outline"
+        [disabled]="starting() || enProceso() || pendientes() === 0"
+        (click)="consultarPendientes()"
+      >
+        @if (enProceso()) {
+          Consultando en segundo plano ({{ pendientes() }})
+        } @else {
+          Consultar pendientes ({{ pendientes() }})
+        }
+      </button>
+      <a routerLink="/dashboard/contabilidad/recibidos/importar" class="btn btn--primary">Importar claves</a>
+    </div>
+  </header>
+
+  @if (enProceso() && !estancado()) {
+    <div class="alert alert--success" role="status">
+      El SRI se consulta en segundo plano. Quedan {{ pendientes() }} pendientes; puedes salir de esta pantalla.
+    </div>
+  }
+  @if (estancado()) {
+    <div class="alert alert--error" role="alert">
+      Hay pendientes en cola pero no avanzan. En el servidor debe estar corriendo
+      <code>php artisan queue:work</code>.
+    </div>
+  }
+  @if (successMessage()) {
+    <div class="alert alert--success" role="status">{{ successMessage() }}</div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <section class="compras-page__filters panel">
+    <div class="field field--inline compras-page__search">
+      <label for="buscarSri">Buscar</label>
+      <input
+        id="buscarSri"
+        type="search"
+        placeholder="Clave, RUC, emisor o número"
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+        (keyup.enter)="buscar()"
+      />
+    </div>
+    <div class="field field--inline sri-list__filter--sm">
+      <label for="tipoSri">Tipo</label>
+      <select id="tipoSri" [value]="tipoFilter()" (change)="onTipo($any($event.target).value)">
+        <option value="">Todos</option>
+        @for (tipo of tipos; track tipo.id) {
+          <option [value]="tipo.id">{{ tipo.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="field field--inline sri-list__filter--sm">
+      <label for="estadoSri">Estado</label>
+      <select id="estadoSri" [value]="estadoFilter()" (change)="onEstado($any($event.target).value)">
+        <option value="">Todos</option>
+        <option value="PENDIENTE">Pendiente</option>
+        <option value="AUTORIZADO">Autorizado</option>
+        <option value="NO ENCONTRADO">No encontrado</option>
+        <option value="NO AUTORIZADO">No autorizado</option>
+        <option value="ERROR">Error</option>
+      </select>
+    </div>
+    <div class="field field--inline sri-list__filter--sm">
+      <label for="fechaDesdeSri">Desde</label>
+      <input id="fechaDesdeSri" type="date" [value]="fechaDesde()" (change)="onFechaDesde($any($event.target).value)" />
+    </div>
+    <div class="field field--inline sri-list__filter--sm">
+      <label for="fechaHastaSri">Hasta</label>
+      <input id="fechaHastaSri" type="date" [value]="fechaHasta()" (change)="onFechaHasta($any($event.target).value)" />
+    </div>
+    <button type="button" class="btn btn--outline" (click)="buscar()">Buscar</button>
+  </section>
+
+  @if (loading()) {
+    <div class="compras-page__empty panel"><p>Cargando comprobantes...</p></div>
+  } @else if (items().length === 0) {
+    <div class="compras-page__empty panel">
+      <h3>No hay comprobantes recibidos</h3>
+      <p>En SRI en línea descarga el reporte del mes y súbelo aquí.</p>
+      <a routerLink="/dashboard/contabilidad/recibidos/importar" class="btn btn--primary">Importar claves</a>
+    </div>
+  } @else {
+    <div class="compras-page__table-wrap panel">
+      <table class="compras-page__table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Emisor</th>
+            <th>Número</th>
+            <th>Factura</th>
+            <th>Estado</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.id) {
+            <tr class="sri-list__row" (click)="abrir(item)">
+              <td>{{ item.fechaEmision || '—' }}</td>
+              <td>{{ item.tipoNombre }}</td>
+              <td>
+                {{ item.razonSocialEmisor || 'Sin consultar' }}
+                <span class="compras-page__muted">{{ item.rucEmisor }}</span>
+              </td>
+              <td>{{ item.numero || '—' }}</td>
+              <td>
+                @if (item.tipoComprobante === '07') {
+                  <span>{{ facturaLabel(item) }}</span>
+                  @if (puedeIngresar(item)) {
+                    <button
+                      type="button"
+                      class="btn btn--primary btn--sm sri-list__ingresar"
+                      [disabled]="ingresandoId() === item.id"
+                      (click)="ingresar($event, item)"
+                    >
+                      {{ ingresandoId() === item.id ? 'Ingresando…' : 'Ingresar' }}
+                    </button>
+                  }
+                } @else {
+                  —
+                }
+              </td>
+              <td><span class="badge" [attr.data-sri]="estadoSlug(item.estado)">{{ item.estado }}</span></td>
+              <td>{{ item.total != null ? (item.total | currency: 'USD' : 'symbol' : '1.2-2') : '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination [page]="page()" [pageSize]="pageSize" [total]="total()" (pageChange)="cargar($event)" />
+  }
+</div>
