@@ -2,7 +2,13 @@
   <header class="compras-page__header">
     <div>
       <h2>Comprobantes recibidos</h2>
-      <p>Importa el TXT/Excel del SRI y consulta el XML autorizado de cada clave.</p>
+      <p>
+        @if (vista() === 'cuarentena') {
+          Comprobantes de más de 1 mes. Se eliminan a los 3 meses en cuarentena.
+        } @else {
+          Último mes. Luego pasan a cuarentena 3 meses y se eliminan.
+        }
+      </p>
     </div>
     <div class="compras-page__header-actions">
       @if (errores() > 0 && !enProceso()) {
@@ -43,6 +49,15 @@
   @if (errorMessage()) {
     <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
   }
+
+  <div class="sri-list__vistas">
+    <button type="button" class="btn btn--sm" [class.btn--primary]="vista() === 'lista'" [class.btn--outline]="vista() !== 'lista'" (click)="onVista('lista')">
+      Lista
+    </button>
+    <button type="button" class="btn btn--sm" [class.btn--primary]="vista() === 'cuarentena'" [class.btn--outline]="vista() !== 'cuarentena'" (click)="onVista('cuarentena')">
+      Cuarentena
+    </button>
+  </div>
 
   <section class="compras-page__filters panel">
     <div class="field field--inline compras-page__search">
@@ -91,8 +106,14 @@
     <div class="compras-page__empty panel"><p>Cargando comprobantes...</p></div>
   } @else if (items().length === 0) {
     <div class="compras-page__empty panel">
-      <h3>No hay comprobantes recibidos</h3>
-      <p>En SRI en línea descarga el reporte del mes y súbelo aquí.</p>
+      <h3>{{ vista() === 'cuarentena' ? 'No hay comprobantes en cuarentena' : 'No hay comprobantes recibidos' }}</h3>
+      <p>
+        @if (vista() === 'cuarentena') {
+          Los de más de un mes aparecen aquí hasta que se eliminen a los 3 meses.
+        } @else {
+          En SRI en línea descarga el reporte del mes y súbelo aquí.
+        }
+      </p>
       <a routerLink="/dashboard/contabilidad/recibidos/importar" class="btn btn--primary">Importar claves</a>
     </div>
   } @else {

@@ -1,5 +1,11 @@
 @use '../../compras/compras-page';
 
+.sri-list__vistas {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
 .sri-list__filter--sm {
   flex-basis: 11rem;
   max-width: 13rem;

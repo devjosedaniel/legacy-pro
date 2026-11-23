@@ -18,6 +18,7 @@ export class SriRecibidoService {
     tipo?: string;
     fechaDesde?: string;
     fechaHasta?: string;
+    vista?: 'lista' | 'cuarentena';
   }): Observable<{
     items: SriRecibido[];
     total: number;
@@ -33,6 +34,7 @@ export class SriRecibidoService {
     if (params.tipo) httpParams = httpParams.set('tipo', params.tipo);
     if (params.fechaDesde) httpParams = httpParams.set('fecha_desde', params.fechaDesde);
     if (params.fechaHasta) httpParams = httpParams.set('fecha_hasta', params.fechaHasta);
+    if (params.vista) httpParams = httpParams.set('vista', params.vista);
 
     return this.http
       .get<{

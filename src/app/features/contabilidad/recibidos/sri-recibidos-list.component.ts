@@ -7,7 +7,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 
 const PAGE_SIZE = 20;
 const POLL_MS = 4000;
-const FILTERS_KEY = 'sri-recibidos.list.filters.v1';
+const FILTERS_KEY = 'sri-recibidos.list.filters.v2';
 
 interface SriRecibidosSavedFilters {
   search?: string;
@@ -16,6 +16,7 @@ interface SriRecibidosSavedFilters {
   fechaDesde?: string;
   fechaHasta?: string;
   page?: number;
+  vista?: 'lista' | 'cuarentena';
 }
 
 @Component({
@@ -35,6 +36,7 @@ export class SriRecibidosListComponent implements OnInit, OnDestroy {
   protected readonly tipoFilter = signal('');
   protected readonly fechaDesde = signal(this.primerDiaMes());
   protected readonly fechaHasta = signal(this.hoy());
+  protected readonly vista = signal<'lista' | 'cuarentena'>('lista');
   protected readonly page = signal(1);
   protected readonly total = signal(0);
   protected readonly pendientes = signal(0);
@@ -93,6 +95,19 @@ export class SriRecibidosListComponent implements OnInit, OnDestroy {
     this.cargar(1);
   }
 
+  protected onVista(vista: 'lista' | 'cuarentena'): void {
+    if (this.vista() === vista) return;
+    this.vista.set(vista);
+    if (vista === 'cuarentena') {
+      this.fechaDesde.set('');
+      this.fechaHasta.set('');
+    } else if (!this.fechaDesde() && !this.fechaHasta()) {
+      this.fechaDesde.set(this.primerDiaMes());
+      this.fechaHasta.set(this.hoy());
+    }
+    this.cargar(1);
+  }
+
   protected cargar(page: number): void {
     this.page.set(page);
     if (!this.enProceso()) {
@@ -108,6 +123,7 @@ export class SriRecibidosListComponent implements OnInit, OnDestroy {
         tipo: this.tipoFilter(),
         fechaDesde: this.fechaDesde(),
         fechaHasta: this.fechaHasta(),
+        vista: this.vista(),
       })
       .subscribe({
         next: (res) => {
@@ -229,6 +245,7 @@ export class SriRecibidosListComponent implements OnInit, OnDestroy {
         fechaDesde: this.fechaDesde(),
         fechaHasta: this.fechaHasta(),
         page,
+        vista: this.vista(),
       };
       localStorage.setItem(FILTERS_KEY, JSON.stringify(payload));
     } catch {
@@ -244,8 +261,15 @@ export class SriRecibidosListComponent implements OnInit, OnDestroy {
       this.search.set(saved.search ?? '');
       this.estadoFilter.set(saved.estado ?? '');
       this.tipoFilter.set(saved.tipo ?? '');
+      if (saved.vista === 'cuarentena' || saved.vista === 'lista') {
+        this.vista.set(saved.vista);
+      }
       if (saved.fechaDesde) this.fechaDesde.set(saved.fechaDesde);
       if (saved.fechaHasta) this.fechaHasta.set(saved.fechaHasta);
+      if (this.vista() === 'cuarentena' && !saved.fechaDesde && !saved.fechaHasta) {
+        this.fechaDesde.set('');
+        this.fechaHasta.set('');
+      }
       const page = Number(saved.page);
       return Number.isFinite(page) && page > 0 ? page : 1;
     } catch {

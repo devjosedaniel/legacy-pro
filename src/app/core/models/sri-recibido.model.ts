@@ -81,6 +81,8 @@ export interface ApiSriRecibido {
   mensaje_error: string | null;
   consultas: number;
   consultado_at: string | null;
+  cuarentena_at?: string | null;
+  en_cuarentena?: boolean;
   tiene_xml: boolean;
   created_at?: string;
   detalles?: ApiSriRecibidoDetalle[];
@@ -167,6 +169,8 @@ export interface SriRecibido {
   mensajeError: string;
   consultas: number;
   consultadoAt: string;
+  cuarentenaAt: string;
+  enCuarentena: boolean;
   tieneXml: boolean;
   detalles: SriRecibidoDetalle[];
   docsSustento: SriDocSustento[];
@@ -210,6 +214,8 @@ export function mapSriRecibido(api: ApiSriRecibido): SriRecibido {
     mensajeError: api.mensaje_error ?? '',
     consultas: api.consultas ?? 0,
     consultadoAt: api.consultado_at ?? '',
+    cuarentenaAt: api.cuarentena_at ?? '',
+    enCuarentena: !!api.en_cuarentena,
     tieneXml: !!api.tiene_xml,
     detalles: (api.detalles ?? []).map((linea) => ({
       id: linea.id,
