@@ -93,7 +93,7 @@ export class SriRecibidoService {
         pendientes: number;
         errores?: number;
         en_proceso?: boolean;
-      }>(`${this.baseUrl}/consultar`, { reintentar: reintentar ? 1 : 0 })
+      }>(`${this.baseUrl}/consultar`, { reintentar: reintentar })
       .pipe(
         map((res) => ({
           mensaje: res.mensaje || 'Consulta enviada al SRI.',

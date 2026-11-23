@@ -7,7 +7,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 
 const PAGE_SIZE = 20;
 const POLL_MS = 4000;
-const FILTERS_KEY = 'sri-recibidos.list.filters.v2';
+const FILTERS_KEY = 'sri-recibidos.list.filters.v3';
 
 interface SriRecibidosSavedFilters {
   search?: string;
@@ -194,7 +194,13 @@ export class SriRecibidosListComponent implements OnInit, OnDestroy {
   protected puedeIngresar(item: SriRecibido): boolean {
     if (item.tipoComprobante !== '07' || item.estado !== 'AUTORIZADO') return false;
     const facturas = item.facturaVinculo?.facturas ?? [];
-    return facturas.length === 1 && facturas[0].puedeIngresar;
+    return facturas.some((f) => f.puedeIngresar);
+  }
+
+  protected yaTieneRetencion(item: SriRecibido): boolean {
+    if (item.tipoComprobante !== '07') return false;
+    const facturas = item.facturaVinculo?.facturas ?? [];
+    return facturas.length > 0 && facturas.every((f) => f.tieneRetencion);
   }
 
   protected ingresar(event: Event, item: SriRecibido): void {

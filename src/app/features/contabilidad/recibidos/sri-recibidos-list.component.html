@@ -86,6 +86,7 @@
         <option value="">Todos</option>
         <option value="PENDIENTE">Pendiente</option>
         <option value="AUTORIZADO">Autorizado</option>
+        <option value="POR_INGRESAR">Por ingresar</option>
         <option value="NO ENCONTRADO">No encontrado</option>
         <option value="NO AUTORIZADO">No autorizado</option>
         <option value="ERROR">Error</option>
@@ -143,6 +144,9 @@
               <td>
                 @if (item.tipoComprobante === '07') {
                   <span>{{ facturaLabel(item) }}</span>
+                  @if (yaTieneRetencion(item)) {
+                    <span class="badge" data-sri="con-retencion">Ya tiene retención</span>
+                  }
                   @if (puedeIngresar(item)) {
                     <button
                       type="button"
