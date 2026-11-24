@@ -1,0 +1,207 @@
+<div class="sri-config">
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="alert alert--success" role="status">{{ successMessage() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="panel sri-config__card"><p>Cargando configuración SRI…</p></div>
+  } @else {
+    @if (config()?.alerta; as alerta) {
+      @if (alerta.estado === 'por_vencer' || alerta.estado === 'vencido' || alerta.estado === 'sin_certificado') {
+        <div
+          class="alert"
+          [class.alert--error]="alerta.estado === 'vencido' || alerta.estado === 'sin_certificado'"
+          [class.alert--warn]="alerta.estado === 'por_vencer'"
+          role="status"
+        >
+          {{ alerta.mensaje }}
+        </div>
+      }
+    }
+
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="panel sri-config__card" novalidate>
+      <section class="sri-config__section">
+        <h3>Ambiente</h3>
+        <p class="sri-config__hint">
+          Empiece en pruebas (celcer). Producción (cel) usa otra secuencia y el mismo certificado vigente.
+        </p>
+        <div class="field">
+          <label for="ambiente">Ambiente SRI *</label>
+          <select id="ambiente" formControlName="ambiente">
+            <option value="pruebas">Pruebas</option>
+            <option value="produccion">Producción</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="sri-config__section">
+        <h3>Emisor</h3>
+        <div class="field-row">
+          <div class="field">
+            <label for="ruc">RUC *</label>
+            <input id="ruc" type="text" maxlength="13" formControlName="ruc" />
+          </div>
+          <div class="field">
+            <label for="estab">Establecimiento *</label>
+            <input id="estab" type="text" maxlength="3" formControlName="estab" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="razon_social">Razón social *</label>
+          <input id="razon_social" type="text" formControlName="razon_social" />
+        </div>
+        <div class="field">
+          <label for="nombre_comercial">Nombre comercial</label>
+          <input id="nombre_comercial" type="text" formControlName="nombre_comercial" />
+        </div>
+        <div class="field">
+          <label for="dir_matriz">Dirección matriz</label>
+          <input id="dir_matriz" type="text" formControlName="dir_matriz" />
+        </div>
+        <div class="field">
+          <label for="dir_establecimiento">Dirección establecimiento</label>
+          <input id="dir_establecimiento" type="text" formControlName="dir_establecimiento" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="obligado_contabilidad">Obligado a llevar contabilidad</label>
+            <select id="obligado_contabilidad" formControlName="obligado_contabilidad">
+              <option value="SI">SI</option>
+              <option value="NO">NO</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="contribuyente_especial">Contribuyente especial Nro.</label>
+            <input id="contribuyente_especial" type="text" formControlName="contribuyente_especial" />
+          </div>
+        </div>
+      </section>
+
+      <section class="sri-config__section">
+        <h3>Puntos de emisión</h3>
+        <div class="field-row field-row--5">
+          <div class="field">
+            <label for="pto_factura">Factura</label>
+            <input id="pto_factura" type="text" maxlength="3" formControlName="pto_factura" />
+          </div>
+          <div class="field">
+            <label for="pto_nc">Nota de crédito</label>
+            <input id="pto_nc" type="text" maxlength="3" formControlName="pto_nc" />
+          </div>
+          <div class="field">
+            <label for="pto_nd">Nota de débito</label>
+            <input id="pto_nd" type="text" maxlength="3" formControlName="pto_nd" />
+          </div>
+          <div class="field">
+            <label for="pto_guia">Guía</label>
+            <input id="pto_guia" type="text" maxlength="3" formControlName="pto_guia" />
+          </div>
+          <div class="field">
+            <label for="pto_retencion">Retención</label>
+            <input id="pto_retencion" type="text" maxlength="3" formControlName="pto_retencion" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="dias_aviso">Avisar caducidad (días antes)</label>
+          <input id="dias_aviso" type="number" min="1" max="180" formControlName="dias_aviso" />
+        </div>
+      </section>
+
+      <button type="submit" class="btn btn--primary" [disabled]="saving()">
+        {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
+      </button>
+    </form>
+
+    <section class="panel sri-config__card firma">
+      <header class="firma__header">
+        <div>
+          <h3>Firma electrónica</h3>
+          <p>El archivo se guarda en el servidor, no es público. Se valida la clave y la vigencia.</p>
+        </div>
+        <span class="firma__badge" [attr.data-estado]="estadoFirma()">{{ etiquetaEstado() }}</span>
+      </header>
+
+      @if (config()?.certificado?.cargado) {
+        <div class="firma__status" [attr.data-estado]="estadoFirma()">
+          <div class="firma__person">
+            <span class="firma__avatar">{{ titularCert().slice(0, 1) }}</span>
+            <div>
+              <strong>{{ titularCert() }}</strong>
+              <small>{{ emisorCert() }}</small>
+            </div>
+          </div>
+          <div class="firma__vigencia">
+            <span class="firma__label">Vigencia</span>
+            <strong>{{ fechaCorta(config()?.certificado?.valid_from) }} — {{ fechaCorta(config()?.certificado?.valid_to) }}</strong>
+            @if (config()?.alerta?.dias_restantes != null) {
+              <small>{{ config()!.alerta.dias_restantes }} días restantes</small>
+            }
+          </div>
+        </div>
+
+        <div class="firma__meta">
+          <div>
+            <span class="firma__label">Archivo</span>
+            <strong>{{ config()?.certificado?.nombre }}</strong>
+          </div>
+          <div>
+            <span class="firma__label">Identificación</span>
+            <strong>{{ identificacionCert() }}</strong>
+          </div>
+          <div>
+            <span class="firma__label">Prestador</span>
+            <strong>{{ emisorCert() }}</strong>
+          </div>
+        </div>
+
+        @if (config()?.certificado?.alerta_validacion) {
+          <p class="firma__warn">{{ config()?.certificado?.alerta_validacion }}</p>
+        }
+      } @else {
+        <div class="firma__empty">Aún no hay un certificado vigente. Cargue el .p12 para emitir al SRI.</div>
+      }
+
+      <form [formGroup]="certForm" (ngSubmit)="subirCertificado()" class="firma__upload" novalidate>
+        <h4>{{ config()?.certificado?.cargado ? 'Reemplazar certificado' : 'Cargar certificado' }}</h4>
+        <div class="firma__upload-grid">
+          <label
+            class="firma__drop"
+            for="certFile"
+            (dragover)="$event.preventDefault()"
+            (drop)="onDrop($event)"
+          >
+            <input id="certFile" type="file" accept=".p12,.pfx" (change)="onFile($event)" />
+            @if (fileName()) {
+              <strong>{{ fileName() }}</strong>
+              <span>Listo para validar</span>
+            } @else {
+              <strong>Arrastre el .p12 aquí</strong>
+              <span>o haga clic para seleccionarlo</span>
+            }
+          </label>
+          <div class="field">
+            <label for="certPass">Clave del certificado *</label>
+            <div class="firma__pass">
+              <input
+                id="certPass"
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="password"
+                autocomplete="new-password"
+                placeholder="Clave del .p12"
+              />
+              <button type="button" class="firma__pass-toggle" (click)="showPassword.set(!showPassword())">
+                {{ showPassword() ? 'Ocultar' : 'Ver' }}
+              </button>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn--primary" [disabled]="uploading()">
+          {{ uploading() ? 'Validando…' : 'Validar y guardar firma' }}
+        </button>
+      </form>
+    </section>
+  }
+</div>

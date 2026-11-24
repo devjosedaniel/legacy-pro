@@ -146,6 +146,13 @@ export const PERMISO_MODULOS: PermisoModulo[] = [
         route: '/dashboard/contabilidad/recibidos',
         available: true,
       },
+      {
+        id: 721,
+        slug: 'sri-emision-config',
+        nombre: 'Emisión SRI',
+        route: '/dashboard/contabilidad/emision',
+        available: true,
+      },
     ],
   },
   {

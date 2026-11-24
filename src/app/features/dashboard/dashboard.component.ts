@@ -164,6 +164,12 @@ export class DashboardComponent implements OnInit {
           route: '/dashboard/contabilidad/recibidos',
           permiso: 'sri-recibidos',
         },
+        {
+          label: 'Emisión SRI',
+          icon: 'settings',
+          route: '/dashboard/contabilidad/emision',
+          permiso: 'sri-emision-config',
+        },
       ],
     },
     { id: 'configuracion', label: 'Configuración', icon: 'settings', comingSoon: true },
@@ -541,6 +547,10 @@ export class DashboardComponent implements OnInit {
     }
     if (path.match(/^\/dashboard\/contabilidad\/recibidos\/\d+/)) {
       this.pageHeader.set({ module: 'Contabilidad', title: 'Comprobante recibido' });
+      return;
+    }
+    if (path.startsWith('/dashboard/contabilidad/emision')) {
+      this.pageHeader.set({ module: 'Contabilidad', title: 'Emisión SRI' });
       return;
     }
     if (path.startsWith('/dashboard/contabilidad')) {

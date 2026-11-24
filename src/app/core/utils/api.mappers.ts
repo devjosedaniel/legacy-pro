@@ -295,8 +295,13 @@ export function rolLabel(rol: string): string {
 
 export function extractApiError(error: unknown): string {
   if (typeof error === 'object' && error !== null && 'error' in error) {
-    const body = (error as { error?: { mensaje?: string; message?: string } }).error;
+    const body = (error as { error?: { mensaje?: string; message?: string; errors?: Record<string, string[] | string> } }).error;
     if (body?.mensaje) return body.mensaje;
+    if (body?.errors && typeof body.errors === 'object') {
+      const first = Object.values(body.errors)[0];
+      if (Array.isArray(first) && first[0]) return String(first[0]);
+      if (typeof first === 'string' && first) return first;
+    }
     if (body?.message) return body.message;
   }
   if (error instanceof Error) return error.message;

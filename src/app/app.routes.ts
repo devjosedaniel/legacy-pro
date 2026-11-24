@@ -394,6 +394,14 @@ export const routes: Routes = [
       },
       { path: 'contabilidad', redirectTo: 'contabilidad/recibidos', pathMatch: 'full' },
       {
+        path: 'contabilidad/emision',
+        loadComponent: () =>
+          import('./features/contabilidad/emision/sri-emision-config.component').then(
+            (m) => m.SriEmisionConfigComponent,
+          ),
+        canActivate: [permisoGuard('sri-emision-config')],
+      },
+      {
         path: 'contabilidad/recibidos',
         loadComponent: () =>
           import('./features/contabilidad/recibidos/sri-recibidos-list.component').then(
